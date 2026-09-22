@@ -1,12 +1,20 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
     <title>Anime Box</title>
+
+    <!-- Google Search Console Verification -->
+    <meta name="google-site-verification" content="dy9EAoauIrV70SWhGA3OC_l52PXbfk_xCcgX6d6x5jI" />
+
     <link rel="icon" type="image/png" href="https://cdn.imageurlgenerator.com/uploads/ce68f4a9-a8e6-42f7-9cde-64dd6467ccd1.png" />
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
     <style>
         /* ============================================================
                ROOT & RESET
@@ -1025,48 +1033,6 @@
             width: 100%;
         }
 
-        /* ============================================================
-               ADVERTISEMENT CONTAINER — NEW
-               ============================================================ */
-        .ad-section {
-            margin: 32px 0;
-            padding: 0 24px;
-        }
-        .ad-section .ad-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 260px;
-            background: var(--bg-card);
-            border-radius: var(--radius);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            overflow: hidden;
-            padding: 16px;
-            position: relative;
-        }
-        .ad-section .ad-container::before {
-            content: '— Sponsored —';
-            position: absolute;
-            top: 8px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 10px;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            color: var(--text-muted);
-            opacity: 0.4;
-            font-weight: 500;
-        }
-        .ad-section .ad-container > div {
-            max-width: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        .ad-section .ad-container iframe {
-            max-width: 100%;
-            border: none;
-        }
 
         /* ============================================================
                MODAL (preserved)
@@ -1486,13 +1452,6 @@
             .modal-body h2 {
                 font-size: 20px;
             }
-            .ad-section {
-                padding: 0 16px;
-            }
-            .ad-section .ad-container {
-                min-height: 220px;
-                padding: 12px;
-            }
         }
 
         @media (max-width: 520px) {
@@ -1588,18 +1547,6 @@
             }
             .modal-desc {
                 font-size: 13px;
-            }
-            .ad-section {
-                padding: 0 12px;
-                margin: 20px 0;
-            }
-            .ad-section .ad-container {
-                min-height: 180px;
-                padding: 8px;
-            }
-            .ad-section .ad-container::before {
-                font-size: 8px;
-                top: 4px;
             }
         }
 
@@ -1729,25 +1676,7 @@
             <div class="row-scroll" id="continueWatchingRow"></div>
         </div>
     </div>
-
-    <!-- ===== ADVERTISEMENT SECTION ===== -->
-    <div class="ad-section" id="adSection">
-        <div class="ad-container">
-            <script>
-                atOptions = {
-                    'key': 'bf8b4a79f154c23dfba95670021c3ec8',
-                    'format': 'iframe',
-                    'height': 250,
-                    'width': 300,
-                    'params': {}
-                };
-            </script>
-            <script src="https://www.highperformanceformat.com/bf8b4a79f154c23dfba95670021c3ec8/invoke.js">
-            </script>
-        </div>
-    </div>
-
-    <!-- ===== MOVIES ===== -->
+<!-- ===== MOVIES ===== -->
     <div class="section" id="movies">
         <div class="section-head">
             <h2><span class="dot"></span>Movies</h2>
@@ -2483,7 +2412,7 @@
         // ============================================================
         db.ref('content').on('value', () => renderContinueWatching());
 
-        console.log('🎬 Anime Box — UI updated with AB branding, modern header, and ad integration.');
+        console.log('🎬 Anime Box — UI updated with AB branding and modern header.');
     </script>
 
 
