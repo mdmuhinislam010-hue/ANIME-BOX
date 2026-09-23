@@ -1,20 +1,12 @@
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
     <title>Anime Box</title>
-
-    <!-- Google Search Console Verification -->
-    <meta name="google-site-verification" content="dy9EAoauIrV70SWhGA3OC_l52PXbfk_xCcgX6d6x5jI" />
-
     <link rel="icon" type="image/png" href="https://cdn.imageurlgenerator.com/uploads/ce68f4a9-a8e6-42f7-9cde-64dd6467ccd1.png" />
-
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-
     <style>
         /* ============================================================
                ROOT & RESET
@@ -1040,9 +1032,9 @@
         .modal-backdrop {
             position: fixed;
             inset: 0;
-            background: rgba(6, 6, 10, 0.85);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
+            background: rgba(0, 0, 0, 0.92);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             z-index: 2000;
             display: flex;
             align-items: center;
@@ -1050,255 +1042,160 @@
             opacity: 0;
             visibility: hidden;
             transition: all var(--transition);
-            padding: 20px;
+            padding: 14px;
         }
-        .modal-backdrop.show {
-            opacity: 1;
-            visibility: visible;
-        }
+        .modal-backdrop.show { opacity: 1; visibility: visible; }
 
         .modal {
-            background: var(--bg-soft);
-            border-radius: 18px;
-            max-width: 760px;
-            width: 100%;
-            overflow: hidden;
-            transform: scale(0.92);
-            transition: transform var(--transition);
-            box-shadow: var(--shadow);
-            max-height: 90vh;
+            position: relative;
+            background: #05050a;
+            border: 1px solid rgba(255,255,255,.06);
+            border-radius: 8px;
+            max-width: 1320px;
+            width: min(1320px, 100%);
+            max-height: 96vh;
             overflow-y: auto;
+            transform: scale(.97);
+            transition: transform var(--transition);
+            box-shadow: 0 30px 90px rgba(0,0,0,.75);
         }
-        .modal-backdrop.show .modal {
-            transform: scale(1);
-        }
-        .modal::-webkit-scrollbar {
-            width: 4px;
-        }
-        .modal::-webkit-scrollbar-thumb {
-            background: #2a2a38;
-            border-radius: 10px;
-        }
+        .modal-backdrop.show .modal { transform: scale(1); }
+        .modal::-webkit-scrollbar { width: 5px; }
+        .modal::-webkit-scrollbar-thumb { background: #25253a; border-radius: 10px; }
 
         .modal-hero {
             position: relative;
             background: #000;
-            aspect-ratio: 16 / 9;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            aspect-ratio: 16 / 5;
+            max-height: 310px;
+            overflow: hidden;
         }
-        .modal-hero img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
+        .modal-hero img { width:100%; height:100%; object-fit:cover; opacity:.72; }
         .modal-close {
-            position: absolute;
-            top: 14px;
-            right: 14px;
-            z-index: 50;
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            background: rgba(0, 0, 0, 0.55);
-            backdrop-filter: blur(4px);
-            color: #fff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 20px;
-            border: none;
-            transition: background var(--transition);
+            position: absolute; top: 12px; right: 12px; z-index: 100;
+            width: 38px; height: 38px; border-radius: 50%;
+            background: rgba(0,0,0,.65); color:#fff; display:flex; align-items:center; justify-content:center;
+            cursor:pointer; font-size:20px; border:1px solid rgba(255,255,255,.12);
         }
-        .modal-close:hover {
-            background: rgba(255, 255, 255, 0.15);
-        }
-
-        .modal-body {
-            padding: 8px 26px 30px;
-        }
-        .modal-body h2 {
-            font-family: 'Poppins', sans-serif;
-            font-size: 26px;
-            margin-bottom: 6px;
-        }
-        .modal-meta {
-            display: flex;
-            gap: 10px;
-            color: var(--text-muted);
-            font-size: 13px;
-            margin-bottom: 14px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-        .modal-meta span {
-            background: var(--bg-card);
-            padding: 4px 12px;
-            border-radius: var(--radius-full);
-        }
-        .modal-desc {
-            color: var(--text-secondary);
-            font-size: 14px;
-            line-height: 1.7;
-            margin-bottom: 20px;
-        }
-        .modal-actions {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-        .modal-actions .btn {
-            padding: 10px 24px;
-            border-radius: var(--radius-full);
-            font-weight: 600;
-            font-size: 14px;
-            border: none;
-            transition: all var(--transition);
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .modal-actions .btn-primary {
-            background: var(--gradient);
-            color: #fff;
-            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.3);
-        }
-        .modal-actions .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 28px rgba(139, 92, 246, 0.45);
-        }
-        .modal-actions .btn-ghost {
-            background: rgba(255, 255, 255, 0.06);
-            color: var(--text);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-        }
-        .modal-actions .btn-ghost:hover {
-            background: rgba(255, 255, 255, 0.12);
-        }
+        .modal-close:hover { background:rgba(255,255,255,.14); }
+        .modal-body { padding: 0 22px 26px; }
+        .modal-body h2 { font-family:'Poppins',sans-serif; font-size:24px; margin: 14px 0 6px; }
+        .modal-meta { display:flex; gap:8px; color:var(--text-muted); font-size:12px; margin-bottom:12px; flex-wrap:wrap; }
+        .modal-meta span { background:#151527; padding:4px 10px; border-radius:999px; }
+        .modal-desc { color:var(--text-secondary); font-size:13px; line-height:1.6; margin-bottom:16px; }
+        .modal-actions { display:flex; gap:10px; flex-wrap:wrap; }
+        .modal-actions .btn { padding:9px 20px; border-radius:999px; font-weight:600; font-size:13px; border:none; display:inline-flex; align-items:center; gap:7px; }
+        .modal-actions .btn-primary { background:var(--gradient); color:#fff; }
+        .modal-actions .btn-ghost { background:rgba(255,255,255,.06); color:var(--text); border:1px solid rgba(255,255,255,.08); }
 
         .playback-panel {
-            margin-top: 20px;
-            padding: 18px 20px;
-            border-radius: var(--radius);
-            background: var(--bg-card);
-            border: 1px solid rgba(255, 255, 255, 0.06);
+            margin: 0 -22px;
+            padding: 14px 0 0;
+            background: #05050a;
+            border: 0;
+            border-radius: 0;
         }
-        .playback-panel h3 {
-            font-family: 'Poppins', sans-serif;
-            font-size: 16px;
-            margin-bottom: 12px;
+        .playback-panel h3 { display:none; }
+        .watch-page-title {
+            padding: 2px 0 12px; color:#fff; font-size:14px; font-weight:600;
+        }
+        .watch-main {
+            display:grid; grid-template-columns:minmax(0,1fr) 250px; gap:18px; align-items:stretch;
+        }
+        .watch-player { min-width:0; background:#000; border-radius:3px; overflow:hidden; }
+        .video-stage {
+            position:relative; width:100%; aspect-ratio:16/9; min-height:300px;
+            background: radial-gradient(circle at 50% 45%, #202026 0%, #111115 35%, #050505 72%, #000 100%);
+            overflow:hidden;
+        }
+        .video-stage::after {
+            content:''; position:absolute; inset:0; pointer-events:none;
+            background:linear-gradient(90deg,rgba(0,0,0,.1),transparent 45%,rgba(0,0,0,.18));
+        }
+        #episodeFrame, #streamVideo {
+            position:absolute; inset:0; width:100%; height:100%; border:0; background:#000; display:none;
+        }
+        #streamVideo { max-height:none; }
+        .tap-play {
+            position:absolute; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center;
+            color:#fff; cursor:pointer; text-align:center; background:rgba(12,12,15,.18);
+        }
+        .tap-play .play-circle {
+            width:60px; height:60px; border:2px solid rgba(255,255,255,.58); border-radius:50%;
+            display:grid; place-items:center; margin-bottom:20px;
+        }
+        .tap-play .play-circle::after { content:'▶'; margin-left:4px; font-size:24px; color:#eee; }
+        .tap-play strong { font-size:30px; letter-spacing:-.5px; }
+        .tap-play span { margin-top:8px; color:#999; font-size:13px; }
+        .player-controls-bar { height:24px; background:#17172f; display:flex; align-items:center; justify-content:flex-end; padding:0 12px; color:#fff; font-size:12px; gap:12px; }
+
+        .server-panel {
+            background:#191936; border-radius:4px; min-height:100%; padding:25px 24px;
+            color:#fff;
+        }
+        .server-panel .server-heading { font-size:10px; font-weight:700; letter-spacing:.3px; color:#ddd; margin-bottom:34px; }
+        .server-panel .select-server { font-size:13px; text-align:center; margin-bottom:22px; }
+        .server-list { display:flex; flex-direction:column; gap:26px; }
+        .server-item {
+            background:transparent; border:0; color:#9b9bb1; text-align:left; padding:0; cursor:pointer; font-weight:700;
+            font-size:12px; transition:.2s; position:relative;
+        }
+        .server-item small { display:block; color:#66667f; font-size:9px; margin-top:2px; font-weight:600; }
+        .server-item.active { color:#f0f0f7; }
+        .server-item.active::after {
+            content:''; position:absolute; right:-5px; top:4px; width:7px; height:7px; border-radius:50%;
+            background:#20d8df; box-shadow:0 0 8px #20d8df;
         }
 
-        .playback-selects {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-            margin-bottom: 12px;
+        .season-bar {
+            margin-top:0; height:24px; background:#191936; color:#fff; display:flex; align-items:center; justify-content:space-between;
+            padding:0 14px; font-size:12px;
         }
-        .playback-field label {
-            display: block;
-            color: var(--text-muted);
-            font-size: 11.5px;
-            font-weight: 600;
-            margin-bottom: 4px;
-        }
-        .playback-field select {
-            width: 100%;
-            padding: 9px 12px;
-            border-radius: var(--radius-sm);
-            background: var(--bg-soft);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            color: var(--text);
-            outline: none;
-            font-family: inherit;
-            font-size: 13px;
-            cursor: pointer;
-        }
-        .playback-field select:focus {
-            border-color: var(--accent);
-        }
+        .season-bar .season-left { display:flex; align-items:center; gap:6px; }
+        .season-bar .season-left::before { content:'▤'; font-size:12px; }
+        .season-nav { display:flex; gap:12px; font-size:13px; opacity:.9; }
 
-        .watch-choice {
-            margin-top: 14px;
+        .choose-season { margin-top:20px; }
+        .choose-season-label { color:#77778c; font-size:9px; text-transform:uppercase; margin-bottom:4px; }
+        .season-heading-row { display:flex; align-items:center; gap:10px; margin-bottom:18px; }
+        .season-heading-row strong { font-size:18px; }
+        .season-heading-row select {
+            appearance:none; background:transparent; border:0; color:#fff; font-size:18px; font-weight:700; padding:0 22px 0 0;
+            background-image:linear-gradient(45deg,transparent 50%,#19d9de 50%),linear-gradient(135deg,#19d9de 50%,transparent 50%);
+            background-position:calc(100% - 9px) 8px,calc(100% - 4px) 8px; background-size:6px 6px; background-repeat:no-repeat; cursor:pointer;
         }
-        .watch-choice-label {
-            font-size: 13px;
-            color: var(--text-muted);
-            margin-bottom: 6px;
-            font-weight: 600;
+        .episode-grid {
+            display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px;
+            border-top:1px solid rgba(255,255,255,.08); padding-top:13px;
         }
-        .watch-pill-row {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
+        .episode-card { position:relative; min-width:0; cursor:pointer; }
+        .episode-thumb {
+            position:relative; aspect-ratio:16/7.7; background:#252531; overflow:hidden; border-radius:2px;
         }
-        .watch-pill {
-            padding: 8px 16px;
-            border-radius: var(--radius-full);
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            color: var(--text-secondary);
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all var(--transition);
+        .episode-thumb img { width:100%; height:100%; object-fit:cover; display:block; transition:transform .25s,filter .25s; }
+        .episode-card:hover .episode-thumb img { transform:scale(1.04); filter:brightness(1.08); }
+        .episode-number {
+            position:absolute; top:0; left:0; z-index:2; background:rgba(15,15,18,.9); color:#fff;
+            padding:3px 5px; font-size:17px; line-height:1; font-weight:800; border-radius:0 0 3px 0;
         }
-        .watch-pill:hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
-        .watch-pill.active {
-            background: var(--gradient);
-            color: #fff;
-            border-color: transparent;
-        }
+        .episode-card.active .episode-number { background:#19d9de; color:#061013; }
+        .episode-name { color:#e8e8ee; font-size:11px; line-height:1.25; margin-top:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .episode-empty { grid-column:1/-1; padding:28px; text-align:center; color:#77778c; background:#0c0c13; }
 
-        .watch-season-select {
-            padding: 9px 14px;
-            border-radius: var(--radius-full);
-            background: var(--bg-soft);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            color: var(--text);
-            font-family: inherit;
-            font-size: 13px;
-            font-weight: 600;
-            outline: none;
-            cursor: pointer;
-        }
-        .watch-season-select:focus {
-            border-color: var(--accent);
-        }
-
-        .playback-message {
-            color: var(--text-muted);
-            font-size: 13px;
-            padding: 6px 0;
-        }
-        .watch-external-note {
-            font-size: 12px;
-            color: var(--text-muted);
-            margin-top: 4px;
-        }
-
-        .video-wrap {
-            display: none;
-            margin-top: 14px;
-            background: #000;
-            border-radius: var(--radius-sm);
-            overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.06);
-        }
-        .video-wrap.show {
-            display: block;
-        }
-        #streamVideo {
-            display: block;
-            width: 100%;
-            max-height: 62vh;
-            background: #000;
-        }
+        .watch-choice { margin-top:18px; }
+        .watch-choice-label { font-size:10px; color:#77778c; text-transform:uppercase; margin-bottom:8px; }
+        .watch-pill-row { display:flex; gap:8px; flex-wrap:wrap; }
+        .watch-pill { padding:7px 12px; border-radius:3px; background:#151527; border:1px solid rgba(255,255,255,.07); color:#aaaabc; font-size:11px; font-weight:700; cursor:pointer; }
+        .watch-pill:hover { background:#20203b; color:#fff; }
+        .watch-pill.active { background:#19d9de; color:#061013; border-color:#19d9de; }
+        .watch-season-select { padding:0; border:0; border-radius:0; background:transparent; color:#fff; font-size:18px; font-weight:700; }
+        .watch-season-select:focus { outline:none; }
+        .playback-message { color:#77778c; font-size:11px; padding:7px 0; }
+        .watch-external-note { font-size:10px; color:#66667b; margin-top:4px; }
+        .video-wrap { display:none; margin-top:0; background:#000; border-radius:0; overflow:hidden; border:0; }
+        .video-wrap.show { display:block; }
+        .quality-row { margin-top:10px; }
+        .subtitle-note { color:#77778c; font-size:11px; margin-top:8px; }
 
         .quality-row {
             display: flex;
@@ -1573,7 +1470,35 @@
                 pointer-events: none !important;
             }
         }
-    </style>
+    
+<style>
+/* YouTube-style watch URL / episode meta */
+.watch-url-meta{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:8px;color:#b9b9c9;font-size:13px}
+.watch-url-meta .watch-chip{display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border:1px solid rgba(0,229,255,.22);border-radius:999px;background:rgba(0,229,255,.06);color:#eafcff;font-weight:700}
+.watch-url-meta .watch-chip strong{color:#00e5ff}
+</style>
+</style>
+<style>
+        @media (max-width: 900px) {
+            .watch-main { grid-template-columns: 1fr; }
+            .server-panel { min-height: auto; padding: 16px; }
+            .server-list { flex-direction:row; flex-wrap:wrap; gap:10px 18px; }
+            .server-item.active::after { right:-10px; }
+            .episode-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+        }
+        @media (max-width: 620px) {
+            .modal-backdrop { padding:0; }
+            .modal { width:100%; max-height:100vh; min-height:100vh; border-radius:0; }
+            .modal-body { padding:0 10px 20px; }
+            .playback-panel { margin:0 -10px; }
+            .watch-page-title { padding:8px 10px 10px; }
+            .episode-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; padding:10px; }
+            .episode-number { font-size:14px; }
+            .episode-name { font-size:10px; }
+            .tap-play strong { font-size:24px; }
+            .tap-play .play-circle { width:52px; height:52px; }
+        }
+</style>
 </head>
 <body>
 
@@ -1722,32 +1647,45 @@
                 </div>
 
                 <div class="playback-panel" id="playbackPanel" style="display:none;">
-                    <h3>Choose what to watch</h3>
-
-                    <div class="watch-choice" id="seasonField" style="display:none;">
-                        <div class="watch-choice-label">Season</div>
-                        <select class="watch-season-select" id="seasonSelect"></select>
+                    <div class="watch-page-title" id="watchPageTitle"></div>
+                    <div class="watch-url-meta" id="watchUrlMeta"></div>
+                    <div class="watch-main">
+                        <div class="watch-player">
+                            <div class="video-stage" id="videoStage">
+                                <iframe id="episodeFrame" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen referrerpolicy="no-referrer"></iframe>
+                                <div class="tap-play" id="tapPlay">
+                                    <div class="play-circle"></div>
+                                    <strong>Tap to Play</strong>
+                                    <span>Start watching</span>
+                                </div>
+                            </div>
+                            <div class="player-controls-bar"><span>◀</span><span>▶</span></div>
+                        </div>
+                        <aside class="server-panel" id="dubField">
+                            <div class="server-heading">OPTIONS</div>
+                            <div class="select-server">Select Server</div>
+                            <div class="server-list" id="dubPills"></div>
+                        </aside>
                     </div>
-
+                    <div class="season-bar">
+                        <div class="season-left">Seasons</div>
+                        <div class="season-nav"><span>◀</span><span>▶</span></div>
+                    </div>
+                    <div class="choose-season" id="seasonField" style="display:none;">
+                        <div class="choose-season-label">CHOOSE SEASON</div>
+                        <div class="season-heading-row">
+                            <strong id="seasonCountLabel">Seasons</strong>
+                            <select class="watch-season-select" id="seasonSelect"></select>
+                        </div>
+                    </div>
                     <div class="watch-choice" id="episodeField" style="display:none;">
-                        <div class="watch-choice-label">Episodes</div>
-                        <div class="watch-pill-row" id="episodePills"></div>
+                        <div class="episode-grid" id="episodePills"></div>
                     </div>
-
-                    <div class="watch-choice" id="dubField" style="display:none;">
-                        <div class="watch-choice-label">Dub / Language</div>
-                        <div class="watch-pill-row" id="dubPills"></div>
-                    </div>
-
                     <select id="episodeSelect" style="display:none;"></select>
                     <select id="dubSelect" style="display:none;"></select>
-
                     <div class="playback-message" id="playbackMessage">Loading playback options…</div>
-                    <div class="watch-external-note" id="watchExternalNote" style="display:none;">Click an episode to open its watch link.</div>
-
-                    <div class="video-wrap" id="videoWrap">
-                        <video id="streamVideo" controls playsinline preload="metadata"></video>
-                    </div>
+                    <div class="watch-external-note" id="watchExternalNote" style="display:none;"></div>
+                    <div class="video-wrap" id="videoWrap"><video id="streamVideo" controls playsinline preload="metadata"></video></div>
                     <div class="quality-row" id="qualityRow" style="display:none;"></div>
                     <div class="subtitle-note" id="subtitleNote" style="display:none;"></div>
                 </div>
@@ -1841,6 +1779,7 @@
             content = sortByOrder(onlyEnabled(toArray(snap.val())));
             renderAll();
             $('loader').classList.add('hide');
+            openWatchFromUrl();
         });
 
         // ============================================================
@@ -2137,6 +2076,9 @@
         let playbackEpisodes = [];
         let playbackDubs = [];
         let playbackSources = {};
+        let currentPlaybackEpisode = null;
+        let currentPlaybackSeason = null;
+        let openedFromWatchUrl = false;
 
         function resetPlaybackUI() {
             $('playbackPanel').style.display = 'none';
@@ -2152,17 +2094,113 @@
             $('dubPills').innerHTML = '';
             $('watchExternalNote').style.display = 'none';
             $('videoWrap').classList.remove('show');
+            if (typeof hlsInstance !== 'undefined' && hlsInstance) { try { hlsInstance.destroy(); } catch(e) {} hlsInstance = null; }
             const v = $('streamVideo');
             v.pause();
             v.removeAttribute('src');
             v.load();
+            const frame = $('episodeFrame');
+            if (frame) frame.src = '';
+            const tap = $('tapPlay');
+            if (tap) tap.style.display = 'flex';
+            $('modalHero').style.display = '';
+            $('modalTitle').style.display = '';
+            $('modalMeta').style.display = '';
+            $('modalDesc').style.display = '';
+            $('modalCloseBtn').style.display = '';
+            $('modalPlayBtn').style.display = '';
             playbackSeasons = [];
             playbackEpisodes = [];
             playbackDubs = [];
             playbackSources = {};
         }
 
-        function openContentById(id) {
+        // ============================================================
+        // YOUTUBE-STYLE HASH WATCH URL
+        // Format: /#naruto#Season-1#ep1x1
+        // ============================================================
+        function slugifyWatch(value) {
+            return String(value || '')
+                .trim().toLowerCase()
+                .replace(/&/g, 'and')
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-+|-+$/g, '');
+        }
+
+        function getSeasonNumber(season, index = 0) {
+            const n = season?.number ?? String(season?.name || '').match(/\d+/)?.[0];
+            return Number(n) || (index + 1);
+        }
+
+        function getEpisodeNumber(episode, index = 0) {
+            const n = episode?.episodeNumber ?? episode?.number ?? String(episode?.title || episode?.name || '').match(/\d+/)?.[0];
+            return Number(n) || (index + 1);
+        }
+
+        function getWatchUrlState() {
+            const raw = String(window.location.hash || '').replace(/^#/, '');
+            const parts = raw.split('#').filter(Boolean);
+            if (parts.length < 1) return { videoSlug: '', seasonSlug: '', episodeSlug: '' };
+            return {
+                videoSlug: decodeURIComponent(parts[0] || ''),
+                seasonSlug: decodeURIComponent(parts[1] || ''),
+                episodeSlug: decodeURIComponent(parts[2] || '')
+            };
+        }
+
+        function buildWatchHash(item, season, episode) {
+            if (!item) return '';
+            const videoSlug = slugifyWatch(item.title || item.name || item.id);
+            const seasonIndex = playbackSeasons.findIndex(s => String(s.id) === String(season?.id));
+            const seasonNo = getSeasonNumber(season, seasonIndex >= 0 ? seasonIndex : 0);
+            const seasonSlug = season ? `Season-${seasonNo}` : '';
+            const episodeIndex = playbackEpisodes.findIndex(e => String(e.id) === String(episode?.id));
+            const epNo = episode ? getEpisodeNumber(episode, episodeIndex >= 0 ? episodeIndex : 0) : 0;
+            const episodeSlug = episode ? `ep${seasonNo}x${epNo}` : '';
+            return '#' + [videoSlug, seasonSlug, episodeSlug].filter(Boolean).join('#');
+        }
+
+        function updateWatchUrl(item, season, episode, replace = false) {
+            if (!item) return;
+            const hash = buildWatchHash(item, season, episode);
+            const state = {
+                videoId: item.id,
+                seasonId: season?.id || '',
+                episodeId: episode?.id || '',
+                videoSlug: slugifyWatch(item.title || item.name || item.id)
+            };
+            if (replace) history.replaceState(state, '', window.location.pathname + window.location.search + hash);
+            else history.pushState(state, '', window.location.pathname + window.location.search + hash);
+            updateWatchMeta(item, season, episode);
+        }
+
+        function updateWatchMeta(item, season, episode) {
+            const meta = $('watchUrlMeta');
+            if (!meta) return;
+            const seasonIndex = playbackSeasons.findIndex(s => String(s.id) === String(season?.id));
+            const seasonNo = getSeasonNumber(season, seasonIndex >= 0 ? seasonIndex : 0);
+            const seasonName = season?.name || ('Season ' + seasonNo);
+            const episodeIndex = playbackEpisodes.findIndex(e => String(e.id) === String(episode?.id));
+            const epNo = episode ? getEpisodeNumber(episode, episodeIndex >= 0 ? episodeIndex : 0) : '';
+            meta.innerHTML = `
+                <span class="watch-chip">🎬 <strong>${escapeHtml(item?.title || 'Video')}</strong></span>
+                ${season ? `<span class="watch-chip">📺 ${escapeHtml(seasonName)}</span>` : ''}
+                ${episode ? `<span class="watch-chip">▶ EP ${escapeHtml(epNo)}</span>` : ''}
+            `;
+        }
+
+        function openWatchFromUrl() {
+            if (openedFromWatchUrl) return;
+            const state = getWatchUrlState();
+            if (!state.videoSlug || !content.length) return;
+            const wantedSlug = slugifyWatch(state.videoSlug);
+            const item = content.find(c => slugifyWatch(c.title || c.name || c.id) === wantedSlug);
+            if (!item) return;
+            openedFromWatchUrl = true;
+            openContentById(item.id, true, state);
+        }
+
+        function openContentById(id, fromUrl = false, watchState = null) {
             if (!id) return;
             const item = content.find(c => c.id === id);
             if (!item) return;
@@ -2183,20 +2221,40 @@
             $('modalPlayBtn').onclick = () => openPlayback(item);
 
             $('modalBackdrop').classList.add('show');
+            if (fromUrl) {
+                openPlayback(item, watchState || getWatchUrlState());
+            }
         }
 
-        function openPlayback(item) {
+        function openPlayback(item, watchState = null) {
+            $('modalHero').style.display = 'none';
+            $('modalTitle').style.display = 'none';
+            $('modalMeta').style.display = 'none';
+            $('modalDesc').style.display = 'none';
+            $('modalPlayBtn').style.display = 'none';
+            $('modalCloseBtn').style.display = 'none';
             $('playbackPanel').style.display = 'block';
+            $('watchPageTitle').textContent = item.title || '';
+            $('watchUrlMeta').innerHTML = `<span class="watch-chip">🎬 <strong>${escapeHtml(item.title || 'Video')}</strong></span>`;
             $('playbackMessage').textContent = 'Loading playback options…';
+            currentPlaybackSeason = null;
+            currentPlaybackEpisode = null;
+
+            if (!watchState) {
+                const existing = getWatchUrlState();
+                if (existing.videoSlug === slugifyWatch(item.title || item.name || item.id)) watchState = existing;
+            }
 
             if (item.type === 'movie') {
                 loadMovieDubs(item.id);
             } else {
-                loadSeriesPlayback(item.id);
+                loadSeriesPlayback(item.id, watchState);
             }
         }
 
         function loadMovieDubs(contentId) {
+            const item = content.find(c => String(c.id) === String(contentId));
+            if (item) updateWatchUrl(item, null, null, true);
             db.ref(`content/${contentId}/dubs`).once('value').then(snap => {
                 playbackDubs = sortByOrder(onlyEnabled(toArray(snap.val())));
                 $('seasonField').style.display = 'none';
@@ -2214,7 +2272,7 @@
             });
         }
 
-        function loadSeriesPlayback(contentId) {
+        function loadSeriesPlayback(contentId, watchState = null) {
             db.ref(`seasons/${contentId}`).once('value').then(snap => {
                 playbackSeasons = sortByOrder(onlyEnabled(toArray(snap.val())));
                 if (!playbackSeasons.length) {
@@ -2225,7 +2283,12 @@
                 $('episodeField').style.display = 'block';
                 $('dubField').style.display = 'block';
                 populateSeasonSelect();
-                loadEpisodesForSeason($('seasonSelect').value);
+                const wantedSeasonNo = String(watchState?.seasonSlug || '').match(/(\d+)/)?.[1] || '';
+                const wantedSeason = wantedSeasonNo ? playbackSeasons.find((s, i) => String(getSeasonNumber(s, i)) === wantedSeasonNo) : null;
+                const selectedSeasonId = wantedSeason ? wantedSeason.id : $('seasonSelect').value;
+                $('seasonSelect').value = selectedSeasonId;
+                currentPlaybackSeason = playbackSeasons.find(s => String(s.id) === String(selectedSeasonId)) || null;
+                loadEpisodesForSeason(selectedSeasonId, watchState?.episodeSlug || '');
             }).catch(() => {
                 $('playbackMessage').textContent = 'Unable to load seasons.';
             });
@@ -2233,12 +2296,13 @@
 
         function populateSeasonSelect() {
             const sel = $('seasonSelect');
+            $('seasonCountLabel').textContent = 'Seasons';
             sel.innerHTML = playbackSeasons.map((s, i) =>
                 `<option value="${s.id}">${escapeHtml(s.name || ('Season ' + (s.number || i + 1)))}</option>`
             ).join('');
         }
 
-        function loadEpisodesForSeason(seasonId) {
+        function loadEpisodesForSeason(seasonId, wantedEpisodeId = '') {
             $('episodeSelect').innerHTML = '<option value="">Loading episodes…</option>';
             $('dubSelect').innerHTML = '<option value="">Choose dub / language</option>';
             $('episodePills').innerHTML = '';
@@ -2261,8 +2325,15 @@
                 renderEpisodePills();
 
                 if (playbackEpisodes.length) {
+                    currentPlaybackSeason = playbackSeasons.find(s => String(s.id) === String(seasonId)) || currentPlaybackSeason;
+                    const wantedEpNo = String(wantedEpisodeId || '').match(/x(\d+)$/)?.[1] || '';
+                    const wantedEpisode = wantedEpNo ? playbackEpisodes.find((e, i) => String(getEpisodeNumber(e, i)) === wantedEpNo) : null;
+                    const episode = wantedEpisode || playbackEpisodes[0];
+                    currentPlaybackEpisode = episode;
+                    updateWatchUrl(currentPlaybackItem, currentPlaybackSeason, episode, true);
+                    renderEpisodePills(episode.id);
                     $('watchExternalNote').style.display = 'block';
-                    loadDubsForEpisode(playbackEpisodes[0].id);
+                    loadDubsForEpisode(episode.id);
                 } else {
                     $('playbackMessage').textContent = 'No episodes have been added to this season yet.';
                 }
@@ -2271,57 +2342,135 @@
             });
         }
 
-        function renderEpisodePills() {
+        function renderEpisodePills(activeEpisodeId = '') {
             const row = $('episodePills');
             row.innerHTML = playbackEpisodes.length ?
-                playbackEpisodes.map((e, i) => `
-                        <button type="button" class="watch-pill ${i === 0 ? 'active' : ''}" data-episode-id="${escapeHtml(e.id)}">
-                            EP ${escapeHtml(e.episodeNumber ?? i + 1)}
-                        </button>
-                    `).join('') :
-                '<span class="watch-external-note">No episodes</span>';
+                playbackEpisodes.map((e, i) => {
+                    const img = e.thumbnail || e.image || e.poster || e.cover || e.backdrop || currentPlaybackItem?.backdrop || currentPlaybackItem?.poster || '';
+                    const title = e.title || e.name || e.episodeTitle || ('Episode ' + (e.episodeNumber ?? i + 1));
+                    return `<div class="episode-card ${String(e.id) === String(activeEpisodeId || playbackEpisodes[0]?.id) ? 'active' : ''}" data-episode-id="${escapeHtml(e.id)}">
+                        <div class="episode-thumb">
+                            <img src="${escapeHtml(img)}" loading="lazy" alt="${escapeHtml(title)}" onerror="this.onerror=null;this.src=escapeHtml(currentPlaybackItem?.poster || currentPlaybackItem?.backdrop || '')">
+                            <span class="episode-number">${escapeHtml((currentPlaybackItem?.seasonLabel ? currentPlaybackItem.seasonLabel + 'x' : '') + (e.episodeNumber ?? i + 1))}</span>
+                        </div>
+                        <div class="episode-name">${escapeHtml(title)}</div>
+                    </div>`;
+                }).join('') :
+                '<div class="episode-empty">No episodes</div>';
 
-            row.querySelectorAll('.watch-pill').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    row.querySelectorAll('.watch-pill').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    const episode = playbackEpisodes.find(e => e.id === btn.dataset.episodeId);
-                    if (episode) handleEpisodeClick(episode);
+            row.querySelectorAll('.episode-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    row.querySelectorAll('.episode-card').forEach(c => c.classList.remove('active'));
+                    card.classList.add('active');
+                    const episode = playbackEpisodes.find(e => e.id === card.dataset.episodeId);
+                    if (episode) {
+                        currentPlaybackEpisode = episode;
+                        currentPlaybackSeason = playbackSeasons.find(s => String(s.id) === String(episode.seasonId || episode.season)) || currentPlaybackSeason;
+                        updateWatchUrl(currentPlaybackItem, currentPlaybackSeason, episode);
+                        handleEpisodeClick(episode);
+                    }
                 });
             });
         }
 
+        let hlsInstance = null;
+
         function handleEpisodeClick(episode) {
-            const url = String(episode?.websiteUrl || episode?.externalUrl || episode?.watchUrl || episode?.url || '').trim();
-            if (!url) {
-                $('playbackMessage').textContent = 'This episode has no watch website link yet.';
-                return;
+            currentPlaybackEpisode = episode;
+            $('playbackMessage').textContent = 'Loading video…';
+            resetPlayerOnly();
+            loadDubsForEpisode(episode.id);
+        }
+
+        function resetPlayerOnly() {
+            if (hlsInstance) { try { hlsInstance.destroy(); } catch(e) {} hlsInstance = null; }
+            const v = $('streamVideo');
+            v.pause();
+            v.removeAttribute('src');
+            v.load();
+            $('videoWrap').classList.remove('show');
+            const frame = $('episodeFrame');
+            frame.src = '';
+            frame.style.display = 'none';
+            $('tapPlay').style.display = 'flex';
+        }
+
+        function playVideoSource(url) {
+            const clean = String(url || '').trim();
+            if (!clean || !/^https?:\/\//i.test(clean)) {
+                $('playbackMessage').textContent = 'Invalid video URL.';
+                return false;
             }
-            if (!/^https?:\/\//i.test(url)) {
-                $('playbackMessage').textContent = 'Invalid episode watch website link.';
-                return;
+
+            const video = $('streamVideo');
+            const frame = $('episodeFrame');
+            const tap = $('tapPlay');
+            const lower = clean.split('?')[0].toLowerCase();
+
+            if (hlsInstance) { try { hlsInstance.destroy(); } catch(e) {} hlsInstance = null; }
+            frame.src = '';
+            frame.style.display = 'none';
+
+            if (lower.endsWith('.m3u8')) {
+                $('videoWrap').classList.add('show');
+                tap.style.display = 'none';
+                if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                    video.src = clean;
+                } else {
+                    const startHls = () => {
+                        if (window.Hls && window.Hls.isSupported()) {
+                            hlsInstance = new window.Hls({ enableWorker: true });
+                            hlsInstance.loadSource(clean);
+                            hlsInstance.attachMedia(video);
+                            hlsInstance.on(window.Hls.Events.MANIFEST_PARSED, () => { video.play().catch(()=>{}); });
+                        } else {
+                            $('playbackMessage').textContent = 'This browser cannot play the M3U8 video.';
+                        }
+                    };
+                    if (window.Hls) startHls();
+                    else {
+                        const sc=document.createElement('script');
+                        sc.src='https://cdn.jsdelivr.net/npm/hls.js@latest';
+                        sc.onload=startHls;
+                        sc.onerror=()=>{$('playbackMessage').textContent='Unable to load video player.'};
+                        document.head.appendChild(sc);
+                    }
+                }
+                video.play().catch(()=>{});
+                return true;
             }
-            openWebsitePopup(url, `Episode ${episode.episodeNumber || ''}`);
-            $('playbackMessage').textContent = 'Opening episode website…';
+
+            if (/\.(mp4|webm|ogg)(\?.*)?$/i.test(clean)) {
+                $('videoWrap').classList.add('show');
+                tap.style.display = 'none';
+                video.src = clean;
+                video.load();
+                video.play().catch(()=>{});
+                return true;
+            }
+
+            // Non-video URLs are opened in the embedded player frame.
+            frame.src = clean;
+            frame.style.display = 'block';
+            tap.style.display = 'none';
+            return true;
+        }
+
+        function loadPlayerUrl(url) {
+            return playVideoSource(url);
         }
 
         function loadDubsForEpisode(episodeId) {
             $('dubSelect').innerHTML = '<option value="">Loading dubs…</option>';
             playbackDubs = [];
             playbackSources = {};
-            $('videoWrap').classList.remove('show');
-
             if (!episodeId) return;
 
             db.ref(`episodes/${currentPlaybackItem.id}/${episodeId}/dubs`).once('value').then(snap => {
                 playbackDubs = sortByOrder(onlyEnabled(toArray(snap.val())));
                 populateDubSelect();
                 renderDubPills();
-                if (playbackDubs.length) {
-                    selectPlaybackDub($('dubSelect').value);
-                } else {
-                    $('playbackMessage').textContent = 'No playable dub has been added for this episode.';
-                }
+                if (playbackDubs.length) selectPlaybackDub(playbackDubs[0].id);
             }).catch(() => {
                 $('playbackMessage').textContent = 'Unable to load dubs.';
             });
@@ -2337,15 +2486,16 @@
             const row = $('dubPills');
             row.innerHTML = playbackDubs.length ?
                 playbackDubs.map((d, i) => `
-                        <button type="button" class="watch-pill ${i === 0 ? 'active' : ''}" data-dub-id="${escapeHtml(d.id)}">
-                            ${escapeHtml(d.name || 'Default')}
-                        </button>
-                    `).join('') :
-                '<span class="watch-external-note">No dub / language</span>';
+                    <button type="button" class="server-item ${i === 0 ? 'active' : ''}" data-dub-id="${escapeHtml(d.id)}">
+                        SERVER ${i + 1}
+                        <small>${escapeHtml(d.name || 'MULTICLOUD')}</small>
+                    </button>`
+                ).join('') :
+                '<span class="watch-external-note">No server</span>';
 
-            row.querySelectorAll('.watch-pill').forEach(btn => {
+            row.querySelectorAll('.server-item').forEach(btn => {
                 btn.addEventListener('click', () => {
-                    row.querySelectorAll('.watch-pill').forEach(b => b.classList.remove('active'));
+                    row.querySelectorAll('.server-item').forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
                     $('dubSelect').value = btn.dataset.dubId;
                     selectPlaybackDub(btn.dataset.dubId);
@@ -2354,12 +2504,60 @@
         }
 
         function selectPlaybackDub(dubId) {
-            $('playbackMessage').textContent = 'Dub selected: ' + (dubId || 'None');
+            const dub = playbackDubs.find(d => String(d.id) === String(dubId));
+            if (!dub) {
+                $('playbackMessage').textContent = 'No playable server has been added.';
+                return;
+            }
+
+            // Admin stores actual video URLs inside dub.sources (quality -> URL).
+            let url = '';
+            if (dub.sources && typeof dub.sources === 'object') {
+                const preferred = ['1080p','720p','480p','360p','auto','4K'];
+                for (const q of preferred) {
+                    if (dub.sources[q]) { url = String(dub.sources[q]).trim(); break; }
+                }
+                if (!url) {
+                    const first = Object.values(dub.sources).find(Boolean);
+                    if (first) url = String(first).trim();
+                }
+            }
+            url = url || String(dub.url || dub.src || dub.videoUrl || dub.streamUrl || '').trim();
+
+            if (url && /^https?:\/\//i.test(url)) {
+                playVideoSource(url);
+                $('playbackMessage').textContent = '';
+            } else {
+                const fallback = String(currentPlaybackEpisode?.websiteUrl || currentPlaybackEpisode?.externalUrl || currentPlaybackEpisode?.watchUrl || currentPlaybackEpisode?.url || '').trim();
+                if (fallback) playVideoSource(fallback);
+                else $('playbackMessage').textContent = 'No video source has been added for this server.';
+            }
         }
 
-        $('seasonSelect').addEventListener('change', e => loadEpisodesForSeason(e.target.value));
+        $('tapPlay').addEventListener('click', () => {
+            if (currentPlaybackEpisode) {
+                if (playbackDubs.length) {
+                    selectPlaybackDub(playbackDubs[0].id);
+                } else {
+                    const url = String(currentPlaybackEpisode.websiteUrl || currentPlaybackEpisode.externalUrl || currentPlaybackEpisode.watchUrl || currentPlaybackEpisode.url || '').trim();
+                    if (url) playVideoSource(url);
+                    else $('playbackMessage').textContent = 'No video source has been added for this episode.';
+                }
+            }
+        });
+
+        $('seasonSelect').addEventListener('change', e => {
+            currentPlaybackSeason = playbackSeasons.find(s => String(s.id) === String(e.target.value)) || null;
+            updateWatchUrl(currentPlaybackItem, currentPlaybackSeason, null);
+            loadEpisodesForSeason(e.target.value);
+        });
         $('episodeSelect').addEventListener('change', e => loadDubsForEpisode(e.target.value));
         $('dubSelect').addEventListener('change', e => selectPlaybackDub(e.target.value));
+
+        window.addEventListener('hashchange', () => {
+            openedFromWatchUrl = false;
+            openWatchFromUrl();
+        });
 
         // ============================================================
         // MODAL CLOSE
@@ -2411,6 +2609,16 @@
         // RE-RENDER CONTINUE WATCHING ON CONTENT CHANGE
         // ============================================================
         db.ref('content').on('value', () => renderContinueWatching());
+
+        window.addEventListener('popstate', () => {
+            openedFromWatchUrl = false;
+            const state = getWatchUrlState();
+            if (!state.videoId) return;
+            const item = content.find(c => String(c.id) === String(state.videoId));
+            if (item) {
+                openContentById(item.id, true, state);
+            }
+        });
 
         console.log('🎬 Anime Box — UI updated with AB branding and modern header.');
     </script>
