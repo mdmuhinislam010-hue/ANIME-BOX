@@ -2620,11 +2620,59 @@
                 if (existing.videoSlug === slugifyWatch(item.title || item.name || item.id)) watchState = existing;
             }
 
-            if (item.type === 'movie') {
-                loadMovieDubs(item.id);
-            } else {
-                loadSeriesPlayback(item.id, watchState);
-            }
+            // Load seasons for BOTH movies and series.
+            // Some movie entries can also have seasons/episodes in Firebase.
+            loadPlaybackSeasonsFirst(item.id, watchState);
+        }
+
+        function loadPlaybackSeasonsFirst(contentId, watchState = null) {
+            playbackSeasons = [];
+            db.ref(`seasons/${contentId}`).once('value').then(snap => {
+                const seasons = sortByOrder(onlyEnabled(toArray(snap.val())));
+                playbackSeasons = seasons;
+
+                if (seasons.length) {
+                    // Season data exists, so show Season + Episode controls
+                    // even when Firebase stores the content type as "movie".
+                    $('seasonField').style.display = 'block';
+                    $('episodeField').style.display = 'block';
+                    $('dubField').style.display = 'block';
+                    populateSeasonSelect();
+
+                    const wantedSeasonNo = String(watchState?.seasonSlug || '').match(/(\d+)/)?.[1] || '';
+                    const wantedSeason = wantedSeasonNo
+                        ? playbackSeasons.find((ss, i) => String(getSeasonNumber(ss, i)) === wantedSeasonNo)
+                        : null;
+
+                    const selectedSeasonId = wantedSeason
+                        ? wantedSeason.id
+                        : $('seasonSelect').value || playbackSeasons[0]?.id || '';
+
+                    $('seasonSelect').value = selectedSeasonId;
+                    currentPlaybackSeason =
+                        playbackSeasons.find(ss => String(ss.id) === String(selectedSeasonId)) || null;
+
+                    loadEpisodesForSeason(selectedSeasonId, watchState?.episodeSlug || '');
+                    return;
+                }
+
+                // No seasons: preserve the existing direct-movie-dub behaviour.
+                if (String(currentPlaybackItem?.type || '').toLowerCase() === 'movie') {
+                    loadMovieDubs(contentId);
+                } else {
+                    $('seasonField').style.display = 'none';
+                    $('episodeField').style.display = 'none';
+                    $('dubField').style.display = 'none';
+                    $('playbackMessage').textContent = 'No seasons have been added by the admin yet.';
+                }
+            }).catch(() => {
+                // If the seasons node is unavailable, keep movie playback working.
+                if (String(currentPlaybackItem?.type || '').toLowerCase() === 'movie') {
+                    loadMovieDubs(contentId);
+                } else {
+                    $('playbackMessage').textContent = 'Unable to load seasons.';
+                }
+            });
         }
 
         function loadMovieDubs(contentId) {
