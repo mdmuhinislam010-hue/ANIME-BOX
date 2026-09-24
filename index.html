@@ -949,6 +949,30 @@
         .simple-watch{align-self:flex-start;padding:8px 13px;border-radius:10px;background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;font-size:10px;font-weight:900;letter-spacing:.2px;box-shadow:0 8px 20px rgba(124,58,237,.28);border:1px solid rgba(255,255,255,.18)}
         @media(max-width:520px){.simple-card{flex-basis:170px!important;width:170px!important;height:245px!important}.simple-card-info{padding:9px!important}.simple-title{font-size:13px}.simple-date{font-size:12px!important;padding:7px 10px!important}.simple-lang{font-size:8px;padding:3px 5px}.simple-badge{font-size:8px;padding:3px 6px}}
 
+
+        /* RANDOM ANIME / MOVIE INFINITE SCROLL */
+        #randomFeedSection{margin-bottom:40px;}
+        .random-feed-grid{
+            display:grid;
+            grid-template-columns:repeat(auto-fill,minmax(170px,1fr));
+            gap:20px;
+        }
+        .random-feed-grid .simple-card{width:100%!important;flex-basis:auto!important;}
+        #randomFeedLoader{
+            min-height:90px;display:flex;align-items:center;justify-content:center;
+            color:var(--text-muted);font-size:12px;gap:8px;
+        }
+        #randomFeedLoader .rf-dot{
+            width:7px;height:7px;border-radius:50%;background:var(--accent3);
+            box-shadow:0 0 12px rgba(34,211,238,.65);
+            animation:rfPulse 1s ease-in-out infinite;
+        }
+        #randomFeedLoader .rf-dot:nth-child(2){animation-delay:.15s}
+        #randomFeedLoader .rf-dot:nth-child(3){animation-delay:.3s}
+        @keyframes rfPulse{0%,100%{transform:scale(.65);opacity:.45}50%{transform:scale(1);opacity:1}}
+        @media(max-width:700px){.random-feed-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}}
+        @media(max-width:380px){.random-feed-grid{gap:9px}}
+
         /* ============================================================
                SECTIONS (preserved)
                ============================================================ */
@@ -1620,6 +1644,209 @@
 .watch-url-meta{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:8px;color:#b9b9c9;font-size:13px}
 .watch-url-meta .watch-chip{display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border:1px solid rgba(0,229,255,.22);border-radius:999px;background:rgba(0,229,255,.06);color:#eafcff;font-weight:700}
 .watch-url-meta .watch-chip strong{color:#00e5ff}
+
+/* ===== SAME FILE DEDICATED CONTENT PAGE ===== */
+body.detail-mode > *:not(#singleDetailPage){display:none!important}
+#singleDetailPage{display:none}
+body.detail-mode #singleDetailPage{
+  display:block;min-height:100vh;background:
+  radial-gradient(circle at 78% 12%,rgba(139,92,246,.18),transparent 30%),
+  #090a0d;color:#fff;
+}
+.detail-shell{max-width:1180px;margin:auto;padding:24px 20px 70px}
+.detail-nav{height:58px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #242a33;margin-bottom:30px}
+.detail-logo{font-size:21px;font-weight:800}.detail-logo span{color:#8b5cf6}
+.detail-back{padding:9px 15px;border:1px solid #2a3039;border-radius:10px;background:#15181e;color:#fff;cursor:pointer}
+.detail-hero{display:grid;grid-template-columns:300px minmax(0,1fr);gap:34px;align-items:start}
+.detail-poster{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:18px;background:#15181e;border:1px solid #303744;box-shadow:0 22px 70px rgba(0,0,0,.55)}
+.detail-type{display:inline-block;padding:6px 11px;border-radius:999px;background:rgba(139,92,246,.15);border:1px solid rgba(139,92,246,.35);color:#c4b5fd;font-size:12px;font-weight:800;text-transform:uppercase}
+.detail-title{font-size:clamp(30px,5vw,54px);line-height:1.08;margin:14px 0}
+.detail-meta{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 20px}
+.detail-meta span{padding:6px 9px;border:1px solid #252b34;border-radius:8px;background:#11141a;color:#cbd2dc;font-size:13px}
+.detail-desc{max-width:820px;color:#b7bec9;line-height:1.85;font-size:15px}
+.detail-actions{display:flex;flex-wrap:wrap;gap:11px;margin-top:25px}
+.detail-btn{padding:12px 18px;border-radius:11px;border:1px solid #2b313b;background:#171b21;color:#fff;font-weight:800;cursor:pointer}
+.detail-btn.primary{background:linear-gradient(135deg,#8b5cf6,#6d28d9);border-color:#9b7cff}
+.detail-info{margin-top:38px}
+.detail-info h2{font-size:21px;margin-bottom:15px}
+.detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.detail-box{background:#12151a;border:1px solid #252b34;border-radius:13px;padding:15px}
+.detail-box small{display:block;color:#7f8997;font-size:11px;margin-bottom:5px}
+.detail-box b{font-size:14px}
+.detail-loading{min-height:70vh;display:grid;place-items:center;text-align:center;color:#9aa3af}
+.detail-loading h2{color:#fff;margin-bottom:8px}
+.detail-loading p{margin-bottom:18px}
+@media(max-width:720px){
+ .detail-shell{padding:18px 14px 55px}.detail-hero{grid-template-columns:150px minmax(0,1fr);gap:18px}
+ .detail-title{font-size:25px}.detail-desc{font-size:13px;line-height:1.7}
+}
+@media(max-width:500px){
+ .detail-hero{grid-template-columns:1fr}.detail-poster{width:190px;max-width:65vw;margin:auto}
+ .detail-hero-content{text-align:center}.detail-meta,.detail-actions{justify-content:center}
+ .detail-desc{text-align:left}.detail-grid{grid-template-columns:1fr}
+}
+
+    
+/* ===== HOME TYPE ROWS ===== */
+.home-more{
+  border:0;background:none;color:#aeb7c6;font:600 13px Poppins,Arial;cursor:pointer;padding:5px 2px;
+}
+.home-more:hover{color:#fff}
+.type-row-wrap{position:relative;width:100%;overflow:hidden}
+.type-row{
+  display:flex!important;flex-wrap:nowrap!important;gap:16px;overflow-x:auto!important;overflow-y:hidden;
+  padding:2px 2px 14px;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;
+}
+.type-row::-webkit-scrollbar{height:5px}
+.type-row::-webkit-scrollbar-thumb{background:#3a3a4a;border-radius:10px}
+.type-row::-webkit-scrollbar-track{background:transparent}
+.type-row .simple-card{flex:0 0 220px!important}
+@media(max-width:600px){.type-row .simple-card{flex-basis:180px!important;width:180px!important;height:270px!important}}
+
+/* ===== SAME-FILE CATEGORY PAGE ===== */
+body.category-mode > *:not(#categoryPage):not(#sidebar):not(#sidebarOverlay):not(#mainHeader):not(#loader){display:none!important}
+#categoryPage{display:none}
+body.category-mode #categoryPage{display:block;min-height:100vh;background:#090a0d;color:#fff;padding-top:var(--header-height)}
+body.category-mode #sidebar{display:flex!important}
+body.category-mode #mainHeader{display:flex!important;position:fixed!important;top:0;left:var(--sidebar-width);right:0;z-index:500!important}
+body.category-mode #sidebarOverlay{display:none!important}
+body.category-mode #loader{display:none!important}
+@media(max-width:820px){body.category-mode{padding-left:0}body.category-mode #mainHeader{left:0}body.category-mode #sidebar{display:flex!important;transform:translateX(-100%)}body.category-mode #sidebar.open{transform:translateX(0)}}
+.category-shell{max-width:1250px;margin:auto;padding:18px 18px 60px}
+.category-nav{height:58px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #252b34;margin-bottom:25px}
+.category-logo{font-size:22px;font-weight:800}.category-logo span{color:#8b5cf6}
+.category-back{border:1px solid #2b313b;background:#15181e;color:#fff;border-radius:10px;padding:9px 15px;cursor:pointer}
+.category-head{display:flex;align-items:end;justify-content:space-between;gap:15px;margin-bottom:18px}
+.category-head h1{font-size:clamp(25px,4vw,38px)}
+.category-count{color:#8e98a7;font-size:13px}
+.category-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;
+}
+.category-grid .simple-card{width:auto!important;min-width:0!important;height:300px!important}
+.category-tabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:14px;margin-bottom:5px}
+.category-tabs button{white-space:nowrap;border:1px solid #2a3038;background:#171b21;color:#cbd2dc;border-radius:999px;padding:8px 13px;cursor:pointer}
+.category-tabs button.active{background:#8b5cf6;border-color:#8b5cf6;color:#fff}
+.category-empty{padding:70px 10px;text-align:center;color:#8e98a7;grid-column:1/-1}
+@media(max-width:600px){
+ .category-shell{padding:14px 12px 50px}
+ .category-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+ .category-grid .simple-card{height:260px!important}
+}
+
+
+/* Search UI update */
+.header-center .search-box{
+  min-height:50px!important;
+  height:50px!important;
+  font-size:15px!important;
+  padding:13px 18px!important;
+  border-radius:13px!important;
+}
+
+
+/* ===== SAME-FILE SEARCH RESULTS PAGE ===== */
+body.search-mode > *:not(#searchPage):not(#sidebar):not(#sidebarOverlay):not(#mainHeader):not(#loader){display:none!important}
+body.search-mode #sidebar{display:flex!important}
+body.search-mode #mainHeader{display:flex!important;position:fixed!important;top:0;left:var(--sidebar-width);right:0;z-index:500!important}
+body.search-mode #sidebarOverlay{display:none!important}
+body.search-mode #searchPage{display:block;min-height:100vh;background:#090a0d;color:#fff;padding-top:var(--header-height)}
+body.search-mode #loader{display:none!important}
+@media(max-width:820px){body.search-mode{padding-left:0}body.search-mode #mainHeader{left:0}body.search-mode #sidebar{display:flex!important;transform:translateX(-100%)}body.search-mode #sidebar.open{transform:translateX(0)}}
+#searchPage{display:none}
+body.search-mode #searchPage{display:block}
+.search-page-shell{max-width:1250px;margin:auto;padding:18px 18px 60px}
+.search-page-nav{height:58px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #252b34;margin-bottom:25px}
+.search-page-logo{font-size:22px;font-weight:800}.search-page-logo span{color:#8b5cf6}
+.search-page-nav button{border:1px solid #2b313b;background:#15181e;color:#fff;border-radius:10px;padding:9px 15px;cursor:pointer}
+.search-page-head{display:flex;align-items:end;justify-content:space-between;gap:15px;margin-bottom:20px}
+.search-page-head h1{font-size:clamp(24px,4vw,36px)}
+.search-page-head span{color:#8e98a7;font-size:13px}
+.search-page-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px}
+.search-page-grid .simple-card{width:auto!important;min-width:0!important;height:300px!important}
+.search-page-empty{grid-column:1/-1;text-align:center;color:#8e98a7;padding:80px 10px}
+@media(max-width:600px){
+ .search-page-shell{padding:14px 12px 50px}
+ .search-page-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+ .search-page-grid .simple-card{height:260px!important}
+}
+
+
+/* Search box: clean magnifier, no emoji */
+.search-wrap{position:relative}
+.search-wrap::before{
+  content:'';position:absolute;left:15px;top:50%;width:13px;height:13px;
+  border:2px solid #aab1bd;border-radius:50%;transform:translateY(-58%);z-index:3;pointer-events:none
+}
+.search-wrap::after{
+  content:'';position:absolute;left:28px;top:calc(50% + 5px);width:7px;height:2px;
+  background:#aab1bd;transform:rotate(45deg);border-radius:2px;z-index:3;pointer-events:none
+}
+.header-center .search-box{padding-left:43px!important}
+
+/* Search page — MovieBox-style results layout */
+.search-page-shell{max-width:1220px!important;padding:18px 22px 70px!important}
+.search-page-breadcrumb{
+  display:flex;align-items:center;gap:9px;color:#8e96a4;font-size:13px;
+  padding:4px 0 15px;border-bottom:1px solid #20252d;margin-bottom:14px
+}
+.search-page-back{border:1px solid #2b313b;background:#15181e;color:#fff;border-radius:9px;padding:6px 11px;cursor:pointer;font:600 12px Inter,Arial}.search-page-back:hover{background:#232832;border-color:#8b5cf6}.search-page-breadcrumb a{color:#9da6b5}.search-page-breadcrumb b{color:#f2f4f7;font-weight:600}
+.search-page-head{align-items:center!important;margin-bottom:13px!important}
+.search-page-head h1{font-size:18px!important;font-weight:800!important}
+.search-page-head span{font-size:12px!important}
+.search-page-tabs{
+  display:flex;gap:9px;overflow-x:auto;padding:0 0 18px;
+}
+.search-page-tabs button{
+  border:0;background:#25282e;color:#d6d9df;border-radius:18px;padding:7px 15px;
+  font:600 12px Poppins,Arial;cursor:pointer;white-space:nowrap
+}
+.search-page-tabs button.active{background:#f5f5f5;color:#14161a}
+.search-page-grid{
+  display:grid!important;
+  grid-template-columns:repeat(8,minmax(0,1fr))!important;
+  gap:24px 12px!important;
+  align-items:start;
+}
+.search-card{
+  min-width:0;cursor:pointer;color:#fff;
+}
+.search-card-poster{
+  position:relative;width:100%;aspect-ratio:2/3;border-radius:8px;overflow:hidden;
+  background:#15171c;border:1px solid rgba(255,255,255,.07)
+}
+.search-card-poster img{width:100%;height:100%;display:block;object-fit:cover}
+.search-card-rating{
+  position:absolute;right:6px;bottom:6px;background:rgba(0,0,0,.82);color:#fff;
+  padding:3px 5px;border-radius:5px;font-size:11px;font-weight:800
+}
+.search-card-free{
+  position:absolute;left:6px;top:6px;background:#20c878;color:#fff;padding:4px 6px;
+  border-radius:5px;font-size:8px;font-weight:800
+}
+.search-card-title{
+  margin-top:8px;height:35px;overflow:hidden;font-size:12px;line-height:1.35;
+  font-weight:700;color:#f4f5f7
+}
+.search-card-watch{
+  width:100%;margin-top:8px;border:0;border-radius:7px;padding:8px 5px;
+  background:linear-gradient(90deg,#397df6,#21cf7d);color:#fff;font-size:11px;font-weight:800
+}
+.search-card:hover .search-card-title{color:#a78bfa}
+.search-card:hover .search-card-poster{outline:1px solid #8b5cf6}
+.search-page-empty{grid-column:1/-1!important;padding:90px 10px!important}
+@media(max-width:1100px){
+ .search-page-grid{grid-template-columns:repeat(6,minmax(0,1fr))!important}
+}
+@media(max-width:800px){
+ .search-page-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:20px 10px!important}
+ .search-page-shell{padding:15px 12px 50px!important}
+}
+@media(max-width:520px){
+ .search-page-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:17px 8px!important}
+ .search-card-title{font-size:10px;height:29px}
+ .search-card-watch{font-size:9px;padding:7px 3px}
+}
+
 </style>
 </style>
 <style>
@@ -1816,6 +2043,54 @@
 </head>
 <body>
 
+
+
+<div id="searchPage">
+  <div class="search-page-shell">
+    <div class="search-page-breadcrumb">
+      <button class="search-page-back" type="button" onclick="goSearchBack()">‹ Back</button>
+      <a href="#" onclick="goHome();return false;">Home</a><span>›</span><b id="searchPageCrumb">Search</b>
+    </div>
+    <div class="search-page-head">
+      <h1 id="searchPageTitle">Search Results</h1>
+      <span id="searchPageCount"></span>
+    </div>
+    <div class="search-page-tabs" id="searchPageTabs">
+      <button class="active" data-filter="all">All</button>
+      <button data-filter="tv">TV Show</button>
+      <button data-filter="movie">Movies</button>
+      <button data-filter="anime">Anime</button>
+    </div>
+    <div class="search-page-grid" id="searchPageGrid"></div>
+  </div>
+</div>
+
+<div id="categoryPage">
+  <div class="category-shell">
+    <div class="category-nav">
+      <a class="category-logo" href="#" onclick="goHome();return false;">Anime <span>Box</span></a>
+      <button class="category-back" onclick="goHome()">‹ Home</button>
+    </div>
+    <div class="category-head">
+      <h1 id="categoryTitle">Category</h1>
+      <span class="category-count" id="categoryCount"></span>
+    </div>
+    <div class="category-tabs" id="categoryTabs"></div>
+    <div class="category-grid" id="categoryGrid"></div>
+  </div>
+</div>
+
+<div id="singleDetailPage">
+  <div class="detail-shell">
+    <div class="detail-nav">
+      <a class="detail-logo" href="#" onclick="history.back();return false;">Anime <span>Box</span></a>
+      <button class="detail-back" onclick="history.back()">‹ Back</button>
+    </div>
+    <div id="singleDetailContent" class="detail-loading">Loading title...</div>
+  </div>
+</div>
+
+
     <!-- ===== LOADER ===== -->
     <div id="loader"><div class="loader-ring"></div></div>
 
@@ -1878,8 +2153,7 @@
 
         <div class="header-center">
             <div class="search-wrap" id="searchWrap">
-                <span class="search-icon">🔍</span>
-                <input type="text" class="search-box" id="searchInput" placeholder="Search movies, shows, anime..." />
+                <input type="text" class="search-box" id="searchInput" placeholder="Search movies, shows, anime..." autocomplete="off" />
                 <div class="search-results" id="searchResults"></div>
             </div>
         </div>
@@ -1919,27 +2193,45 @@
     <div class="section" id="movies">
         <div class="section-head">
             <h2><span class="dot"></span>Movies</h2>
+            <button class="home-more" onclick="openCategoryPage('movie')">More ›</button>
         </div>
         <div class="tabs" id="movieCatTabs"></div>
-        <div class="grid" id="moviesGrid"></div>
+        <div class="type-row-wrap"><div class="type-row" id="moviesGrid"></div></div>
     </div>
 
     <!-- ===== TV SHOWS ===== -->
     <div class="section" id="tvshows">
         <div class="section-head">
             <h2><span class="dot"></span>TV Shows</h2>
+            <button class="home-more" onclick="openCategoryPage('tv')">More ›</button>
         </div>
         <div class="tabs" id="tvCatTabs"></div>
-        <div class="grid" id="tvGrid"></div>
+        <div class="type-row-wrap"><div class="type-row" id="tvGrid"></div></div>
     </div>
 
     <!-- ===== ANIME ===== -->
     <div class="section" id="anime">
         <div class="section-head">
             <h2><span class="dot"></span>Anime</h2>
+            <button class="home-more" onclick="openCategoryPage('anime')">More ›</button>
         </div>
         <div class="tabs" id="animeCatTabs"></div>
-        <div class="grid" id="animeGrid"></div>
+        <div class="type-row-wrap"><div class="type-row" id="animeGrid"></div></div>
+    </div>
+
+
+    <!-- RANDOM ANIME / MOVIE INFINITE FEED -->
+    <div class="section" id="randomFeedSection">
+        <div class="section-head">
+            <h2><span class="dot"></span>More Anime & Movies</h2>
+            <span class="see-all">Random Picks</span>
+        </div>
+        <div class="random-feed-grid" id="randomFeedGrid"></div>
+        <div id="randomFeedLoader" aria-live="polite">
+            <span class="rf-dot"></span><span class="rf-dot"></span><span class="rf-dot"></span>
+            <span>Scroll down for more</span>
+        </div>
+        <div id="randomFeedSentinel" style="height:1px;"></div>
     </div>
 
     <footer class="footer">© <span id="year"></span> Anime Box — All content is streamed live from Firebase.</footer>
@@ -2107,9 +2399,298 @@
             renderGrids();
         });
 
+
+
+
+        // ============================================================
+        // SAME HTML SEARCH RESULTS PAGE
+        // ?search=one%20piece
+        // ============================================================
+        function getSearchFromUrl(){
+            return new URLSearchParams(window.location.search).get('search') || '';
+        }
+
+        window.addEventListener('popstate', () => {
+            const q=getSearchFromUrl();
+            const cat=getCategoryFromUrl();
+            if(q){ renderSearchPage(); window.scrollTo({top:0,behavior:'auto'}); }
+            else if(cat){ renderCategoryPage(); window.scrollTo({top:0,behavior:'auto'}); }
+            else { goHome(); }
+        });
+
+        function openSearchPage(query){
+            query=String(query||'').trim();
+            if(!query) return;
+            const encoded=encodeURIComponent(query);
+            const url=window.location.pathname+'?search='+encoded;
+            if(window.location.search !== '?search='+encoded) history.pushState({},'',url);
+            currentSearchFilter='all';
+            const tabs=$('searchPageTabs');
+            if(tabs) tabs.querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.filter==='all'));
+            const input=$('searchInput');
+            if(input) input.value=query;
+            const results=$('searchResults');
+            if(results) results.classList.remove('show');
+            renderSearchPage();
+            window.scrollTo({top:0,behavior:'auto'});
+        }
+
+        function goSearchBack(){
+            if(window.history.length>1) history.back();
+            else goHome();
+        }
+
+
+
+        function openSearchResultPlayer(encodedId){
+            const id = decodeURIComponent(String(encodedId || ''));
+            const item = content.find(c => String(c.id) === String(id));
+            if(!item) return;
+
+            // Use the site's existing Firebase/player system.
+            document.body.classList.remove('search-mode','category-mode','detail-mode');
+            const loader = $('loader');
+            if(loader) loader.classList.add('hide');
+
+            // openContentById is the existing player entry point in Anime Box.
+            if(typeof openContentById === 'function'){
+                openContentById(item.id);
+            }
+        }
+
+        function searchCardHTML(item){
+            const poster = item.poster || item.backdrop || '';
+            const title = item.title || item.name || 'Untitled';
+            const rating = item.rating || item.score || '';
+            const badge = item.badge || (item.limitedFree ? 'Limited Free' : '');
+            return `
+              <article class="search-card" onclick="openSearchResultPlayer('${encodeURIComponent(String(item.id))}')">
+                <div class="search-card-poster">
+                  <img src="${escapeHtml(poster)}" loading="lazy" alt="${escapeHtml(title)}"
+                       onerror="this.style.opacity='.25'">
+                  ${badge ? `<span class="search-card-free">${escapeHtml(badge)}</span>` : ''}
+                  ${rating ? `<span class="search-card-rating">★ ${escapeHtml(rating)}</span>` : ''}
+                </div>
+                <div class="search-card-title">${escapeHtml(title)}</div>
+                <button class="search-card-watch" onclick="event.stopPropagation();openSearchResultPlayer('${encodeURIComponent(String(item.id))}')">Watch now</button>
+              </article>`;
+        }
+
+        let currentSearchFilter = 'all';
+
+        function renderSearchPage(){
+            const query=getSearchFromUrl().trim();
+            if(!query) return false;
+
+            document.body.classList.add('search-mode');
+            const homeLoader = $('loader');
+            if(homeLoader) homeLoader.classList.add('hide');
+            document.title='Search: '+query+' - Anime Box';
+            const searchInputEl=$('searchInput');
+            if(searchInputEl) searchInputEl.value=query;
+
+            const title=$('searchPageTitle');
+            const count=$('searchPageCount');
+            const grid=$('searchPageGrid');
+            const tabs=$('searchPageTabs');
+            const crumb=$('searchPageCrumb');
+            if(!title || !count || !grid) return true;
+
+            title.textContent='Search Results for "'+query+'"';
+            if(crumb) crumb.textContent='Search results for "'+query+'"';
+
+            if(tabs && !tabs.dataset.ready){
+                tabs.dataset.ready='1';
+                tabs.querySelectorAll('button').forEach(btn=>{
+                    btn.addEventListener('click',()=>{
+                        tabs.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+                        btn.classList.add('active');
+                        currentSearchFilter=btn.dataset.filter || 'all';
+                        drawSearchResults();
+                    });
+                });
+            }
+
+            drawSearchResults();
+            return true;
+        }
+
+        function drawSearchResults(){
+            const query=getSearchFromUrl().trim();
+            if(!query) return;
+
+            const q=query.toLowerCase();
+            let matches=content.filter(item=>{
+                const text=[
+                    item.title,item.name,item.type,item.category,item.genre,
+                    item.language,item.lang,item.tags,item.description,item.overview,
+                    item.country,item.year
+                ].filter(Boolean).join(' ').toLowerCase();
+                return text.includes(q);
+            });
+
+            if(currentSearchFilter!=='all'){
+                matches=matches.filter(item=>normalizeType(item.type)===currentSearchFilter);
+            }
+
+            const count=$('searchPageCount');
+            const grid=$('searchPageGrid');
+            if(count) count.textContent=matches.length+' result'+(matches.length===1?'':'s');
+
+            grid.innerHTML=matches.length
+                ? matches.map(searchCardHTML).join('')
+                : '<div class="search-page-empty">No results found for "'+escapeHtml(query)+'".</div>';
+        }
+
+        // ============================================================
+        // SAME HTML CATEGORY PAGE
+        // ?category=anime / ?category=movie / ?category=tv
+        // ============================================================
+        function getCategoryFromUrl(){
+            const p = new URLSearchParams(window.location.search);
+            return (p.get('category') || '').toLowerCase();
+        }
+
+        function openCategoryPage(type){
+            const clean = String(type || '').toLowerCase();
+            if(!['anime','movie','tv'].includes(clean)) return;
+            const url=window.location.pathname+'?category='+encodeURIComponent(clean);
+            if(window.location.search !== '?category='+encodeURIComponent(clean)) history.pushState({},'',url);
+            const input=$('searchInput');
+            if(input) input.value='';
+            const results=$('searchResults');
+            if(results) results.classList.remove('show');
+            renderCategoryPage();
+            window.scrollTo({top:0,behavior:'auto'});
+        }
+
+        function goHome(){
+            history.pushState({},'',window.location.pathname);
+            document.body.classList.remove('search-mode','category-mode','detail-mode');
+            document.title='Anime Box';
+            const input=$('searchInput');
+            if(input) input.value='';
+            const results=$('searchResults');
+            if(results) results.classList.remove('show');
+            const loader=$('loader');
+            if(loader) loader.classList.add('hide');
+            updateRandomFeedState();
+            renderAll();
+            setupRandomFeed();
+            window.scrollTo({top:0,behavior:'auto'});
+        }
+
+        function normalizeType(t){
+            t=String(t||'').toLowerCase().trim().replace(/[_-]+/g,' ');
+            if(t==='tvshow' || t==='tv show' || t==='series') return 'tv';
+            if(t==='movie' || t==='movies') return 'movie';
+            if(t==='anime' || t==='animes') return 'anime';
+            return t;
+        }
+
+        function renderCategoryPage(){
+            const type=normalizeType(getCategoryFromUrl());
+            if(!['anime','movie','tv'].includes(type)) return false;
+
+            document.body.classList.add('category-mode');
+            const homeLoader = $('loader');
+            if(homeLoader) homeLoader.classList.add('hide');
+            document.title = (type==='anime'?'Anime':type==='movie'?'Movies':'TV Shows') + ' - Anime Box';
+
+            const titleEl=$('categoryTitle');
+            const countEl=$('categoryCount');
+            const grid=$('categoryGrid');
+            const tabs=$('categoryTabs');
+
+            const title = type==='anime' ? 'Anime' : type==='movie' ? 'Movies' : 'TV Shows';
+            titleEl.textContent=title;
+
+            let items=content.filter(x=>normalizeType(x.type)===type);
+            const cats=[...new Set(items.map(x=>String(x.category||'').trim()).filter(Boolean))];
+
+            tabs.innerHTML =
+                `<button class="active" data-cat="all">All</button>` +
+                cats.map(c=>`<button data-cat="${escapeHtml(c)}">${escapeHtml(c)}</button>`).join('');
+
+            const draw=(cat='all')=>{
+                let list=items;
+                if(cat!=='all') list=items.filter(x=>String(x.category||'').trim()===cat);
+                countEl.textContent=list.length + ' titles';
+                grid.innerHTML=list.length ? list.map(cardHTML).join('') :
+                    `<div class="category-empty">No ${escapeHtml(title)} found.</div>`;
+            };
+
+            tabs.querySelectorAll('button').forEach(btn=>{
+                btn.addEventListener('click',()=>{
+                    tabs.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+                    btn.classList.add('active');
+                    draw(btn.dataset.cat);
+                });
+            });
+
+            draw('all');
+            return true;
+        }
+
+        // ============================================================
+        // SAME HTML DEDICATED CONTENT PAGE
+        // URL: animebox-final.html?details=FIREBASE_CONTENT_ID
+        // ============================================================
+        function getDetailIdFromUrl(){ return ""; }
+        function openDetailInPlayer(id){
+            const item = content.find(c => String(c.id) === String(id));
+            if(!item) return;
+
+            document.body.classList.remove('detail-mode','search-mode','category-mode');
+            const loader = $('loader');
+            if(loader) loader.classList.add('hide');
+            document.title = 'Anime Box';
+
+            if(typeof openContentById === 'function'){
+                openContentById(item.id);
+            }
+        }
+
+        function loadSingleDetailIfNeeded(){
+            const detailId = getDetailIdFromUrl();
+            if(!detailId) return false;
+
+            // Hide normal page immediately, then Firebase listener fills the details.
+            document.body.classList.remove('detail-mode');
+            document.title = 'Loading...';
+            return true;
+        }
+
+        loadSingleDetailIfNeeded();
+        if(getSearchFromUrl() || getCategoryFromUrl() || getDetailIdFromUrl()){
+            const homeLoader = $('loader');
+            if(homeLoader) homeLoader.classList.add('hide');
+        }
+
         db.ref('content').on('value', snap => {
             content = sortByOrder(onlyEnabled(toArray(snap.val())));
+
+            if(renderSearchPage()){
+                return;
+            }
+
+            if(renderCategoryPage()){
+                return;
+            }
+
+            // Normal home page.
+            updateRandomFeedState();
             renderAll();
+            setupRandomFeed();
+
+            requestAnimationFrame(() => {
+                const sentinel = $('randomFeedSentinel');
+                const hasNew = getRandomFeedPool().some(item => !randomFeedUsed.has(item.id));
+                if(sentinel && hasNew && sentinel.getBoundingClientRect().top < window.innerHeight + 1000){
+                    loadRandomFeed();
+                }
+            });
+
             $('loader').classList.add('hide');
             openWatchFromUrl();
         });
@@ -2135,6 +2716,15 @@
         document.querySelectorAll('.sidebar-nav a').forEach(link => {
             link.addEventListener('click', (e) => {
                 const target = link.dataset.section;
+                if(document.body.classList.contains('search-mode')){
+                    e.preventDefault();
+                    if(target==='home') goHome();
+                    else if(target==='movies') openCategoryPage('movie');
+                    else if(target==='tvshows') openCategoryPage('tv');
+                    else if(target==='anime') openCategoryPage('anime');
+                    if(window.innerWidth <= 820) toggleSidebar(false);
+                    return;
+                }
                 if (target && target !== 'home') {
                     const el = $(target);
                     if (el) {
@@ -2154,6 +2744,13 @@
                 const target = link.dataset.section;
                 if (target) {
                     e.preventDefault();
+                    if(document.body.classList.contains('search-mode')){
+                        if(target==='home') goHome();
+                        else if(target==='movies') openCategoryPage('movie');
+                        else if(target==='tvshows') openCategoryPage('tv');
+                        else if(target==='anime') openCategoryPage('anime');
+                        return;
+                    }
                     const el = $(target);
                     if (el) {
                         el.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -2287,6 +2884,11 @@
             return raw;
         }
 
+        function openDetailsPage(encodedId){
+            if(!encodedId) return;
+            openSearchResultPlayer(encodedId);
+        }
+
         function cardHTML(item) {
             const release = formatReleaseDate(item.releaseDate || item.release || item.date || '');
             const language = item.language || item.lang || item.audioLanguage || 'Hindi';
@@ -2297,7 +2899,7 @@
             const title = item.title || item.name || 'Untitled';
 
             return `
-                <div class="simple-card" onclick="openContentById('${escapeHtml(item.id)}')">
+                <div class="simple-card" onclick="openSearchResultPlayer('${encodeURIComponent(String(item.id))}')">
                     <div class="simple-card-poster">
                         <img src="${escapeHtml(poster)}" loading="lazy" alt="${escapeHtml(title)}" onerror="this.style.display='none';this.parentElement.classList.add('no-image')">
                         ${coming ? '<span class="simple-coming">Coming Soon</span>' : ''}
@@ -2343,20 +2945,163 @@
                 `<div class="empty-state">No titles found.</div>`;
         }
 
+
+        // RANDOM CONTENT INFINITE SCROLL
+        // No duplicate cards until every currently loaded title has been shown.
+        // New items added from Admin/Firebase are automatically eligible.
+        let randomFeedUsed = new Set();
+        let randomFeedLoading = false;
+        let randomFeedFinished = false;
+        let randomFeedStarted = false;
+        let randomFeedObserver = null;
+        const RANDOM_BATCH_SIZE = 8;
+
+        function randomShuffle(arr){
+            const a = [...arr];
+            for(let i=a.length-1;i>0;i--){
+                const j = Math.floor(Math.random()*(i+1));
+                [a[i],a[j]] = [a[j],a[i]];
+            }
+            return a;
+        }
+
+        function getRandomFeedPool(){
+            return content.filter(item => {
+                const type = String(item.type || '')
+                    .trim()
+                    .toLowerCase()
+                    .replace(/[_-]+/g, ' ')
+                    .replace(/\\s+/g, ' ');
+
+                // Supports Admin content types: Anime, Movie, TV, TV Show, TVShow, Series
+                return ['anime', 'movie', 'tv', 'tv show', 'tvshow', 'series'].includes(type);
+            });
+        }
+
+        function updateRandomFeedState(){
+            const pool = getRandomFeedPool();
+            const hasUnused = pool.some(item => !randomFeedUsed.has(item.id));
+
+            // Firebase/Realtime Database update:
+            // if Admin adds a new title, it becomes available immediately.
+            if(hasUnused){
+                randomFeedFinished = false;
+                const loader = $('randomFeedLoader');
+                if(loader && !randomFeedLoading){
+                    loader.innerHTML = '<span class="rf-dot"></span><span class="rf-dot"></span><span class="rf-dot"></span><span>Scroll down for more</span>';
+                }
+            } else if(pool.length && !randomFeedLoading){
+                randomFeedFinished = true;
+                const loader = $('randomFeedLoader');
+                if(loader) loader.innerHTML = '<span>All available titles have been shown.</span>';
+            }
+        }
+
+        function loadRandomFeed(){
+            const grid = $('randomFeedGrid');
+            const loader = $('randomFeedLoader');
+            if(!grid || randomFeedLoading) return;
+
+            const pool = getRandomFeedPool();
+
+            if(!pool.length){
+                randomFeedFinished = true;
+                if(loader) loader.innerHTML = '<span>Waiting for Anime, Movie or TV Show from Admin...</span>';
+                return;
+            }
+
+            let available = pool.filter(item => !randomFeedUsed.has(item.id));
+
+            // IMPORTANT: never clear randomFeedUsed here.
+            // This prevents Anime/Movie/TV Show cards from repeating.
+            if(!available.length){
+                randomFeedFinished = true;
+                if(loader) loader.innerHTML = '<span>All available titles have been shown.</span>';
+                return;
+            }
+
+            randomFeedLoading = true;
+            randomFeedFinished = false;
+            if(loader){
+                loader.innerHTML = '<span class="rf-dot"></span><span class="rf-dot"></span><span class="rf-dot"></span><span>Loading more titles...</span>';
+            }
+
+            setTimeout(() => {
+                available = getRandomFeedPool().filter(item => !randomFeedUsed.has(item.id));
+
+                const batch = randomShuffle(available).slice(0, RANDOM_BATCH_SIZE);
+                batch.forEach(item => randomFeedUsed.add(item.id));
+
+                if(batch.length){
+                    grid.insertAdjacentHTML('beforeend', batch.map(cardHTML).join(''));
+                }
+
+                randomFeedLoading = false;
+                updateRandomFeedState();
+
+                // If the sentinel is still close to the viewport, fill another batch.
+                requestAnimationFrame(() => {
+                    const sentinel = $('randomFeedSentinel');
+                    const moreAvailable = getRandomFeedPool().some(item => !randomFeedUsed.has(item.id));
+                    if(sentinel && moreAvailable && sentinel.getBoundingClientRect().top < window.innerHeight + 250){
+                        loadRandomFeed();
+                    }
+                });
+            }, 180);
+        }
+
+        function setupRandomFeed(){
+            const sentinel = $('randomFeedSentinel');
+            if(!sentinel || randomFeedStarted) return;
+
+            randomFeedStarted = true;
+
+            if('IntersectionObserver' in window){
+                randomFeedObserver = new IntersectionObserver(entries => {
+                    if(entries.some(entry => entry.isIntersecting)){
+                        loadRandomFeed();
+                    }
+                }, {root:null, rootMargin:'0px 0px 900px 0px', threshold:0});
+
+                randomFeedObserver.observe(sentinel);
+            } else {
+                window.addEventListener('scroll', () => {
+                    if(window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 900){
+                        loadRandomFeed();
+                    }
+                }, {passive:true});
+            }
+
+            // Content may load asynchronously from Firebase, so try once here too.
+            loadRandomFeed();
+        }
+
         // ============================================================
         // SEARCH
         // ============================================================
         const searchInput = $('searchInput');
         const searchResults = $('searchResults');
 
+        searchInput.addEventListener('keydown', (e) => {
+            if(e.key === 'Enter'){
+                e.preventDefault();
+                e.stopPropagation();
+                const q = searchInput.value.trim();
+                if(q) openSearchPage(q);
+            }
+        });
+
         searchInput.addEventListener('input', () => {
             const q = searchInput.value.trim().toLowerCase();
             if (!q) { searchResults.classList.remove('show'); return; }
-            const matches = content.filter(c =>
-                (c.title || '').toLowerCase().includes(q) ||
-                (c.tags || '').toLowerCase().includes(q) ||
-                (c.category || '').toLowerCase().includes(q)
-            ).slice(0, 12);
+            const matches = content.filter(c => {
+                const text = [
+                    c.title, c.name, c.type, c.category, c.genre,
+                    c.language, c.lang, c.tags, c.description, c.overview,
+                    c.country, c.year
+                ].filter(Boolean).join(' ').toLowerCase();
+                return text.includes(q);
+            }).slice(0, 12);
             searchResults.innerHTML = matches.length ? matches.map(m => `
                     <div class="search-item" onclick="selectSearchResult('${m.id}')">
                         <img src="${m.poster || ''}" alt="" / loading="lazy" decoding="async">
@@ -2372,9 +3117,12 @@
         });
 
         function selectSearchResult(id) {
+            const item = content.find(x => String(x.id) === String(id));
             searchResults.classList.remove('show');
-            searchInput.value = '';
-            openContentById(id);
+            if(item){
+                const q = item.title || item.name || '';
+                openSearchPage(q);
+            }
         }
 
         // ============================================================
@@ -2415,11 +3163,7 @@
         }
 
         function resumeFromContinue(itemId, episodeId) {
-            openContentById(itemId);
-            setTimeout(() => {
-                const item = content.find(c => c.id === itemId);
-                if (item) openPlayback(item);
-            }, 180);
+            openDetailsPage(encodeURIComponent(String(itemId)));
         }
 
         // ============================================================
