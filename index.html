@@ -216,14 +216,15 @@
         .banner-slide::after { content: ''; position: absolute; inset: 0;
             background: linear-gradient(90deg, rgba(10, 10, 15, 0.7), rgba(10, 10, 15, 0.1)); }
 
-        .simple-card { position: relative !important; flex: 0 0 220px !important;
-            width: 220px !important; height: 310px !important; min-height: 0 !important;
+        /* ===== SMALLER SIMPLE CARD ===== */
+        .simple-card { position: relative !important; flex: 0 0 180px !important;
+            width: 180px !important; height: 260px !important; min-height: 0 !important;
             display: block !important; background: #0b0b10 !important;
             border: 1px solid rgba(255, 255, 255, .10) !important;
-            border-radius: 14px !important; overflow: hidden !important;
-            cursor: pointer; box-shadow: 0 10px 28px rgba(0, 0, 0, .45); transition: .22s ease; }
-        .simple-card:hover { transform: translateY(-4px); border-color: #8b5cf6 !important;
-            box-shadow: 0 14px 34px rgba(0, 0, 0, .55), 0 0 20px rgba(139, 92, 246, .16); }
+            border-radius: 12px !important; overflow: hidden !important;
+            cursor: pointer; box-shadow: 0 8px 22px rgba(0, 0, 0, .45); transition: .22s ease; }
+        .simple-card:hover { transform: translateY(-3px); border-color: #8b5cf6 !important;
+            box-shadow: 0 12px 28px rgba(0, 0, 0, .55), 0 0 16px rgba(139, 92, 246, .16); }
         .simple-card-poster { position: absolute !important; inset: 0 !important;
             width: 100% !important; height: 100% !important; background: #16161f; overflow: hidden; }
         .simple-card-poster img { position: absolute !important; inset: 0 !important;
@@ -236,59 +237,60 @@
         .simple-card-poster.no-image::after { content: '▣'; position: absolute; inset: 0;
             display: grid; place-items: center;
             font-family: Arial, "Segoe UI Symbol", sans-serif;
-            font-size: 42px; font-weight: 800; color: var(--accent); background: #171720; }
-        .simple-coming { position: absolute; left: 8px; top: 8px; z-index: 3;
-            padding: 5px 8px; border-radius: 7px; background: #8b5cf6;
-            color: #fff; font-size: 9px; font-weight: 800;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, .3); }
+            font-size: 38px; font-weight: 800; color: var(--accent); background: #171720; }
+        .simple-coming { position: absolute; left: 6px; top: 6px; z-index: 3;
+            padding: 4px 7px; border-radius: 6px; background: #8b5cf6;
+            color: #fff; font-size: 8px; font-weight: 800;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, .3); }
         .simple-card-info { position: absolute !important; z-index: 4; left: 0; right: 0;
-            top: 0; bottom: 0; min-width: 0; padding: 12px !important;
+            top: 0; bottom: 0; min-width: 0; padding: 9px !important;
             display: flex !important; flex-direction: column !important;
-            justify-content: space-between !important; gap: 6px !important; }
+            justify-content: space-between !important; gap: 4px !important; }
         .simple-card-top { display: flex !important; flex-wrap: wrap !important;
-            gap: 7px !important; align-items: flex-start !important; }
-        .simple-date { font-size: 14px !important; padding: 8px 12px !important;
-            border-radius: 9px !important; font-weight: 900 !important; letter-spacing: .2px !important; }
-        .simple-date, .simple-lang { padding: 4px 7px; border-radius: 6px;
+            gap: 4px !important; align-items: flex-start !important; }
+        .simple-date { font-size: 11px !important; padding: 5px 8px !important;
+            border-radius: 7px !important; font-weight: 800 !important; letter-spacing: .2px !important; }
+        .simple-date, .simple-lang { padding: 3px 6px; border-radius: 5px;
             background: rgba(20, 20, 28, .86); backdrop-filter: blur(5px);
-            color: #fff; font-size: 9px; font-weight: 800;
+            color: #fff; font-size: 8px; font-weight: 800;
             border: 1px solid rgba(255, 255, 255, .10); }
         .simple-date { background: linear-gradient(135deg, rgba(124, 58, 237, .95), rgba(168, 85, 247, .78));
-            border-color: rgba(255, 255, 255, .24); box-shadow: 0 4px 14px rgba(124, 58, 237, .28); }
-        .simple-badge { align-self: flex-start; padding: 5px 9px; border-radius: 999px;
+            border-color: rgba(255, 255, 255, .24); box-shadow: 0 4px 12px rgba(124, 58, 237, .28); }
+        .simple-badge { align-self: flex-start; padding: 3px 7px; border-radius: 999px;
             background: linear-gradient(135deg, #22c55e, #16a34a); color: #fff;
-            border: 1px solid rgba(255, 255, 255, .22); font-size: 9px;
-            font-weight: 900; letter-spacing: .2px; box-shadow: 0 5px 14px rgba(34, 197, 94, .24); }
-        .simple-title { font-size: 15px; font-weight: 800; color: #fff; line-height: 1.25;
+            border: 1px solid rgba(255, 255, 255, .22); font-size: 8px;
+            font-weight: 900; letter-spacing: .2px; box-shadow: 0 4px 12px rgba(34, 197, 94, .24); }
+        .simple-title { font-size: 12.5px; font-weight: 800; color: #fff; line-height: 1.25;
             display: -webkit-box; -webkit-line-clamp: 2;
             -webkit-box-orient: vertical; overflow: hidden;
             text-shadow: 0 2px 8px rgba(0, 0, 0, .7); }
-        .simple-booked { font-size: 10px; color: #e5e7eb; font-weight: 700; }
-        .simple-watch { align-self: flex-start; padding: 8px 13px; border-radius: 10px;
+        .simple-booked { font-size: 9px; color: #e5e7eb; font-weight: 700; }
+        .simple-watch { align-self: flex-start; padding: 6px 10px; border-radius: 8px;
             background: linear-gradient(135deg, #7c3aed, #a855f7); color: #fff;
-            font-size: 10px; font-weight: 900; letter-spacing: .2px;
-            box-shadow: 0 8px 20px rgba(124, 58, 237, .28);
+            font-size: 9px; font-weight: 900; letter-spacing: .2px;
+            box-shadow: 0 6px 16px rgba(124, 58, 237, .28);
             border: 1px solid rgba(255, 255, 255, .18); }
-        .simple-views { display: inline-flex; align-items: center; gap: 4px;
-            padding: 4px 7px; border-radius: 6px;
+        .simple-views { display: inline-flex; align-items: center; gap: 3px;
+            padding: 3px 5px; border-radius: 5px;
             background: rgba(20, 20, 28, .86);
-            color: #fff; font-size: 9px; font-weight: 800;
+            color: #fff; font-size: 8px; font-weight: 800;
             border: 1px solid rgba(255, 255, 255, .10); letter-spacing: .2px; }
         .simple-views b { color: #22d3ee; font-weight: 900; }
-        .simple-views .html-icon { font-size: 10px; width: auto; min-width: 0; height: auto; color: #60a5fa; }
+        .simple-views .html-icon { font-size: 9px; width: auto; min-width: 0; height: auto; color: #60a5fa; }
 
         @media(max-width:520px) {
-            .simple-card { flex-basis: 170px !important; width: 170px !important; height: 245px !important; }
-            .simple-card-info { padding: 9px !important; }
-            .simple-title { font-size: 13px; }
-            .simple-date { font-size: 12px !important; padding: 7px 10px !important; }
-            .simple-lang { font-size: 8px; padding: 3px 5px; }
-            .simple-badge { font-size: 8px; padding: 3px 6px; }
-            .simple-views { font-size: 8px; padding: 3px 5px; }
+            .simple-card { flex-basis: 140px !important; width: 140px !important; height: 200px !important; }
+            .simple-card-info { padding: 7px !important; }
+            .simple-title { font-size: 11px; }
+            .simple-date { font-size: 10px !important; padding: 4px 7px !important; }
+            .simple-lang { font-size: 7px; padding: 2px 4px; }
+            .simple-badge { font-size: 7px; padding: 2px 5px; }
+            .simple-views { font-size: 7px; padding: 2px 4px; }
+            .simple-watch { font-size: 8px; padding: 5px 8px; }
         }
 
         #randomFeedSection { margin-bottom: 40px; }
-        .random-feed-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 20px; }
+        .random-feed-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 2px; }
         .random-feed-grid .simple-card { width: 100% !important; flex-basis: auto !important; }
         #randomFeedLoader { min-height: 90px; display: flex; align-items: center;
             justify-content: center; color: var(--text-muted); font-size: 12px; gap: 8px; }
@@ -297,8 +299,8 @@
         #randomFeedLoader .rf-dot:nth-child(2) { animation-delay: .15s; }
         #randomFeedLoader .rf-dot:nth-child(3) { animation-delay: .3s; }
         @keyframes rfPulse { 0%, 100% { transform: scale(.65); opacity: .45; } 50% { transform: scale(1); opacity: 1; } }
-        @media(max-width:700px) { .random-feed-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; } }
-        @media(max-width:380px) { .random-feed-grid { gap: 9px; } }
+        @media(max-width:700px) { .random-feed-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px; } }
+        @media(max-width:380px) { .random-feed-grid { gap: 2px; } }
 
         .section { margin: 32px 0; padding: 0 24px; }
         .section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
@@ -309,8 +311,8 @@
             background: var(--gradient); display: inline-block; }
         .section-head .see-all { font-size: 13px; color: var(--text-muted);
             cursor: pointer; transition: color var(--transition); font-weight: 500; }
-        .row-scroll { display: flex; gap: 16px; overflow-x: auto;
-            padding-bottom: 12px; scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; }
+        .row-scroll { display: flex; gap: 2px; overflow-x: auto;
+            padding-bottom: 10px; scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; }
         .row-scroll::-webkit-scrollbar { height: 4px; }
         .row-scroll::-webkit-scrollbar-thumb { background: #2a2a38; border-radius: 10px; }
         .empty-state { color: var(--text-muted); text-align: center;
@@ -322,7 +324,7 @@
             cursor: pointer; transition: all var(--transition); }
         .tab-btn.active, .tab-btn:hover { background: var(--gradient); color: #fff; border-color: transparent; }
 
-        .card { flex: 0 0 auto; width: 170px; scroll-snap-align: start;
+        .card { flex: 0 0 auto; width: 150px; scroll-snap-align: start;
             cursor: pointer; transition: transform var(--transition); position: relative; }
         .card:hover { transform: translateY(-6px) scale(1.02); }
         .card .poster-wrap { position: relative; border-radius: var(--radius-sm); overflow: hidden;
@@ -339,41 +341,51 @@
             display: flex; align-items: center; justify-content: center;
             font-size: 16px; color: #fff; box-shadow: 0 4px 16px rgba(139, 92, 246, 0.4);
             transition: transform var(--transition); }
-        .card .title { margin-top: 10px; font-size: 14px; font-weight: 600;
+        .card .title { margin-top: 10px; font-size: 13px; font-weight: 600;
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; }
-        .card .meta { font-size: 12px; color: var(--text-muted); margin-top: 2px;
+        .card .meta { font-size: 11px; color: var(--text-muted); margin-top: 2px;
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .cw-progress { position: absolute; bottom: 0; left: 0; right: 0; height: 4px;
             background: rgba(255, 255, 255, 0.12); z-index: 5; }
         .cw-progress i { display: block; height: 100%; background: var(--gradient);
             border-radius: 0 4px 4px 0; transition: width 0.3s ease; }
 
-        .modal-backdrop { position: fixed; inset: 0; background: rgba(2, 4, 7, .94);
+        /* ============================================================
+           FULL-PAGE MODAL / POPUP
+           ============================================================ */
+        .modal-backdrop { position: fixed; inset: 0; background: rgba(2, 4, 7, .97);
             backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-            z-index: 2000; display: flex; align-items: center; justify-content: center;
+            z-index: 2000; display: block;
             opacity: 0; visibility: hidden;
-            transition: opacity .25s ease, visibility .25s ease; padding: 18px; }
+            transition: opacity .25s ease, visibility .25s ease;
+            padding: 0; overflow: hidden; }
         .modal-backdrop.show { opacity: 1; visibility: visible; }
         .modal { position: relative; background: #05070a;
-            border: 1px solid rgba(255, 255, 255, .08); border-radius: 16px;
-            width: min(1180px, 100%); height: min(760px, calc(100vh - 36px));
-            max-width: none; max-height: none; overflow-y: auto;
-            transform: translateY(18px) scale(.985); transition: transform .28s ease;
-            box-shadow: 0 30px 90px rgba(0, 0, 0, .65), 0 0 50px rgba(0, 255, 170, .05); }
-        .modal-backdrop.show .modal { transform: translateY(0) scale(1); }
-        .modal::-webkit-scrollbar { width: 5px; }
+            border: 0; border-radius: 0;
+            width: 100vw; height: 100vh; height: 100dvh;
+            max-width: none; max-height: none;
+            overflow-y: auto; overflow-x: hidden;
+            transform: translateY(14px); transition: transform .28s ease;
+            box-shadow: none; }
+        .modal-backdrop.show .modal { transform: translateY(0); }
+        .modal::-webkit-scrollbar { width: 6px; }
         .modal::-webkit-scrollbar-thumb { background: #252b31; border-radius: 10px; }
-        .modal-close { position: absolute; top: 18px; right: 18px; z-index: 20;
-            width: 42px; height: 42px; border-radius: 12px;
-            background: rgba(8, 11, 14, .82); color: #fff;
+
+        .modal-close { position: fixed; top: 18px; right: 18px; z-index: 2100;
+            width: 44px; height: 44px; border-radius: 12px;
+            background: rgba(8, 11, 14, .88); color: #fff;
             display: flex; align-items: center; justify-content: center;
             cursor: pointer; font-size: 19px;
-            border: 1px solid rgba(255, 255, 255, .1);
-            transition: .2s ease; box-shadow: 0 8px 25px rgba(0, 0, 0, .35); }
+            border: 1px solid rgba(255, 255, 255, .12);
+            transition: .2s ease; box-shadow: 0 8px 25px rgba(0, 0, 0, .45);
+            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
         .modal-close:hover { background: #151b20; transform: rotate(4deg) scale(1.04); }
+
         .modal-hero { display: none; }
+
         .modal-details { display: grid; grid-template-columns: 170px minmax(0, 1fr) 180px;
-            gap: 28px; padding: 42px 42px 20px; align-items: start; }
+            gap: 28px; padding: 68px 42px 20px; align-items: start;
+            max-width: 1320px; margin: 0 auto; width: 100%; }
         .modal-poster-wrap { width: 160px; aspect-ratio: 2/3; border-radius: 14px; overflow: hidden;
             background: #101419; border: 1px solid rgba(255, 255, 255, .08);
             box-shadow: 0 18px 45px rgba(0, 0, 0, .55); }
@@ -408,8 +420,10 @@
         .rating-number { font-size: 40px; line-height: 1; font-weight: 900; color: #f6c84c; }
         .rating-ten { font-size: 14px; color: #8d949b; font-weight: 700; }
         .rating-people { font-size: 11px; color: #707880; margin-top: 8px; }
+
         .modal-social { padding: 2px 42px 30px; display: flex; gap: 9px;
-            align-items: center; flex-wrap: wrap; }
+            align-items: center; flex-wrap: wrap;
+            max-width: 1320px; margin: 0 auto; width: 100%; }
         .social-btn { width: 42px; height: 42px; border-radius: 11px;
             display: grid; place-items: center; color: #fff;
             text-decoration: none; font-size: 17px; font-weight: 900;
@@ -419,7 +433,9 @@
         .social-x { background: #111820; } .social-in { background: #0a66c2; }
         .social-tg { background: #229ed9; } .social-rd { background: #ff4500; }
 
-        .playback-panel { margin: 0 -22px; padding: 14px 0 0; background: #05050a; border: 0; border-radius: 0; }
+        .playback-panel { margin: 0 auto; padding: 14px 42px 48px;
+            background: #05050a; border: 0; border-radius: 0;
+            max-width: 1600px; width: 100%; }
         .watch-page-title { padding: 2px 0 12px; color: #fff; font-size: 14px; font-weight: 600; }
         .watch-main { display: grid; grid-template-columns: minmax(0, 1fr) 250px;
             gap: 18px; align-items: stretch; }
@@ -521,21 +537,28 @@
             .header-right .btn-login { padding: 5px 12px; font-size: 11px; }
             .hero { height: 50vh; min-height: 320px; }
             .section { padding: 0 16px; }
-            .modal-details { grid-template-columns: 145px minmax(0, 1fr); gap: 22px; padding: 34px 28px 18px; }
+            .modal-details { grid-template-columns: 145px minmax(0, 1fr); gap: 22px; padding: 64px 28px 18px; }
+            .modal-social { padding: 2px 28px 30px; }
+            .playback-panel { padding: 14px 28px 44px; }
             .modal-rating { grid-column: 1/-1; border-left: 0;
                 border-top: 1px solid rgba(255, 255, 255, .1);
                 padding: 18px 0 0; min-height: 0;
                 flex-direction: row; align-items: center; gap: 14px; }
         }
         @media (max-width: 620px) {
-            .modal-backdrop { padding: 0; }
-            .modal { width: 100vw; height: 100vh; max-height: none; border-radius: 0; }
             .modal-details { display: block; padding: 62px 18px 18px; }
             .modal-poster-wrap { width: 150px; margin: 0 auto 22px; }
             .modal-info h2 { font-size: 29px; }
             .modal-actions { grid-template-columns: 1fr; }
+            .modal-social { padding: 2px 18px 26px; }
+            .playback-panel { padding: 12px 18px 40px; }
+            .modal-close { top: 12px; right: 12px; width: 40px; height: 40px; font-size: 17px; }
             .watch-main { grid-template-columns: 1fr; }
             .episode-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        @media (max-width: 600px) {
+            .type-row .simple-card { flex-basis: 150px !important; width: 150px !important; height: 225px !important; }
+            .type-row { gap: 2px; }
         }
         @media (max-width: 520px) {
             .header { padding: 0 10px; height: 56px; }
@@ -648,29 +671,29 @@
             gap: 15px; margin-bottom: 18px; }
         .category-head h1 { font-size: clamp(25px, 4vw, 38px); }
         .category-count { color: #8e98a7; font-size: 13px; }
-        .category-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; }
-        .category-grid .simple-card { width: auto !important; min-width: 0 !important; height: 300px !important; }
+        .category-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 2px; }
+        .category-grid .simple-card { width: auto !important; min-width: 0 !important; height: 260px !important; }
         .category-tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 14px; margin-bottom: 5px; }
         .category-tabs button { white-space: nowrap; border: 1px solid #2a3038;
             background: #171b21; color: #cbd2dc; border-radius: 999px; padding: 8px 13px; cursor: pointer; }
         .category-tabs button.active { background: #8b5cf6; border-color: #8b5cf6; color: #fff; }
         .category-empty { padding: 70px 10px; text-align: center; color: #8e98a7; grid-column: 1/-1; }
         @media(max-width:600px) {
-            .category-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-            .category-grid .simple-card { height: 260px !important; }
+            .category-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px; }
+            .category-grid .simple-card { height: 220px !important; }
         }
 
         .home-more { border: 0; background: none; color: #aeb7c6;
             font: 600 13px Poppins, Arial; cursor: pointer; padding: 5px 2px; }
         .type-row-wrap { position: relative; width: 100%; overflow: hidden; }
-        .type-row { display: flex !important; flex-wrap: nowrap !important; gap: 16px;
+        .type-row { display: flex !important; flex-wrap: nowrap !important; gap: 2px;
             overflow-x: auto !important; overflow-y: hidden;
-            padding: 2px 2px 14px; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
+            padding: 2px 2px 12px; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
         .type-row::-webkit-scrollbar { height: 5px; }
         .type-row::-webkit-scrollbar-thumb { background: #3a3a4a; border-radius: 10px; }
-        .type-row .simple-card { flex: 0 0 220px !important; }
+        .type-row .simple-card { flex: 0 0 180px !important; }
         @media(max-width:600px) {
-            .type-row .simple-card { flex-basis: 180px !important; width: 180px !important; height: 270px !important; }
+            .type-row .simple-card { flex-basis: 150px !important; width: 150px !important; height: 225px !important; }
         }
 
         .header-center .search-box {
@@ -704,6 +727,35 @@
             .watch-main { grid-template-columns: 1fr; }
             .server-panel { min-height: auto; padding: 16px; }
             .server-list { flex-direction: row; flex-wrap: wrap; gap: 10px 18px; }
+        }
+
+        /* ============================================================
+           কার্ড ওভারল্যাপ ইফেক্ট (নতুন)
+           ============================================================ */
+        .row-scroll,
+        .type-row {
+            gap: 0 !important;
+        }
+        .random-feed-grid,
+        .category-grid {
+            gap: 0 !important;
+        }
+        .row-scroll .simple-card:not(:first-child),
+        .type-row .simple-card:not(:first-child),
+        .random-feed-grid .simple-card:not(:first-child),
+        .category-grid .simple-card:not(:first-child) {
+            margin-left: -20px;   /* ওভারল্যাপ পরিমাণ: -10px কম, -30px বেশি */
+        }
+        .simple-card:hover {
+            z-index: 10;
+        }
+        @media (max-width: 520px) {
+            .row-scroll .simple-card:not(:first-child),
+            .type-row .simple-card:not(:first-child),
+            .random-feed-grid .simple-card:not(:first-child),
+            .category-grid .simple-card:not(:first-child) {
+                margin-left: -14px;
+            }
         }
     </style>
 </head>
@@ -764,7 +816,7 @@
 <aside class="sidebar" id="sidebar">
     <div class="sidebar-brand">
         <img src="https://cdn.imageurlgenerator.com/uploads/ce68f4a9-a8e6-42f7-9cde-64dd6467ccd1.png" alt="AB Logo" class="logo-img" loading="lazy" decoding="async">
-        <span class="logo-text">Anime Box</span>
+        <span class="logo-text">FBXAnime Box</span>
     </div>
     <div class="sidebar-language">
         <select id="sidebarLang">
@@ -803,7 +855,7 @@
     <div class="header-left">
         <button class="hamburger" id="hamburgerBtn" aria-label="Toggle menu">☰</button>
         <img src="https://cdn.imageurlgenerator.com/uploads/ce68f4a9-a8e6-42f7-9cde-64dd6467ccd1.png" alt="AB Logo" class="logo-img" loading="lazy" decoding="async">
-        <span class="brand-name">Anime Box</span>
+        <span class="brand-name">FBX Anime Box</span>
     </div>
     <div class="header-center">
         <div class="search-wrap" id="searchWrap">
@@ -879,12 +931,12 @@
     <div id="randomFeedSentinel" style="height:1px;"></div>
 </div>
 
-<footer class="footer">© <span id="year"></span> Anime Box — All content is streamed live from Firebase.</footer>
+<footer class="footer">© <span id="year"></span> FBX Anime Box — All content is streamed live from Firebase.</footer>
 
-<!-- ===== MODAL ===== -->
+<!-- ===== FULL-PAGE MODAL ===== -->
 <div class="modal-backdrop" id="modalBackdrop">
+    <button class="modal-close" id="modalClose">✕</button>
     <div class="modal">
-        <button class="modal-close" id="modalClose">✕</button>
         <div class="modal-details" id="modalDetails">
             <div class="modal-poster-wrap"><img id="modalDetailPoster" src="" alt="Movie Poster" loading="lazy" decoding="async"></div>
             <div class="modal-info">
@@ -1010,15 +1062,11 @@
     }
 
     // ============================================================
-    // BASE PATH (works with /, /app/, /animebox/, etc.)
+    // BASE PATH
     // ============================================================
     function getBasePath() {
         const path = window.location.pathname || '/';
-        // If path ends with a file (has extension) or is a "route", strip to root
-        // Otherwise use the path up to the last slash
         if (/\.html?$/i.test(path) || path === '/') return '/';
-        // For Render root deploy: "/" is base
-        // For subfolder: "/app/" → "/app/"
         const lastSlash = path.lastIndexOf('/');
         if (lastSlash <= 0) return '/';
         return path.slice(0, lastSlash + 1);
@@ -1101,7 +1149,6 @@
     function getSearchFromUrl() { return new URLSearchParams(window.location.search).get('search') || ''; }
     function getCategoryFromUrl() { return (new URLSearchParams(window.location.search).get('category') || '').toLowerCase(); }
 
-    // Parse hash: supports "#/watch/slug/Season-1/ep1x1" OR legacy "#slug#Season-1#ep1x1"
     function getWatchUrlState() {
         const raw = String(window.location.hash || '').replace(/^#/, '');
         if (!raw) return { videoSlug: '', seasonSlug: '', episodeSlug: '' };
@@ -1119,7 +1166,6 @@
         };
     }
 
-    // Build: "#/watch/slug/Season-1/ep1x1"
     function buildWatchHash(item, season, episode) {
         if (!item) return '';
         const videoSlug = slugifyWatch(item.title || item.name || item.id);
@@ -1178,18 +1224,17 @@
     }
 
     // ============================================================
-    // NAVIGATION: unified popstate + hashchange
+    // NAVIGATION
     // ============================================================
     function handleNavigationChange() {
         const state = getWatchUrlState();
         const hasSearch = getSearchFromUrl();
         const hasCategory = getCategoryFromUrl();
 
-        // No watch hash → user on home / search / category
         if (!state.videoSlug) {
             const backdrop = $('modalBackdrop');
             if (backdrop && backdrop.classList.contains('show')) {
-                closeModalInternal(); // doesn't push history
+                closeModalInternal();
             }
             openedFromWatchUrl = false;
 
@@ -1197,7 +1242,7 @@
             else if (hasCategory) { renderCategoryPage(); }
             else {
                 document.body.classList.remove('search-mode', 'category-mode');
-                document.title = 'Anime Box';
+                document.title = 'FBX Anime Box';
                 renderAll();
                 renderCustomTypeSections();
                 setupRandomFeed();
@@ -1205,7 +1250,6 @@
             return;
         }
 
-        // Watch hash exists → open item
         if (!content.length) return;
         const wantedSlug = slugifyWatch(state.videoSlug);
         const item = content.find(c => slugifyWatch(c.title || c.name || c.id) === wantedSlug);
@@ -1282,7 +1326,7 @@
         document.body.classList.remove('category-mode');
         const homeLoader = $('loader');
         if (homeLoader) homeLoader.classList.add('hide');
-        document.title = 'Search: ' + query + ' - Anime Box';
+        document.title = 'Search: ' + query + ' - FBXAnime Box';
         const searchInputEl = $('searchInput');
         if (searchInputEl) searchInputEl.value = query;
 
@@ -1355,17 +1399,15 @@
     }
 
     function goHome() {
-        // Clear any query / hash
         const cleanUrl = window.location.pathname;
         if (window.location.search || window.location.hash) {
             history.pushState({}, '', cleanUrl);
         }
-        // Force close any modal (without pushing history again)
         closeModalInternal();
         openedFromWatchUrl = false;
 
         document.body.classList.remove('search-mode', 'category-mode');
-        document.title = 'Anime Box';
+        document.title = 'FBX Anime Box';
         const input = $('searchInput');
         if (input) input.value = '';
         const results = $('searchResults');
@@ -1416,7 +1458,7 @@
         document.body.classList.remove('search-mode');
         const homeLoader = $('loader');
         if (homeLoader) homeLoader.classList.add('hide');
-        document.title = typeDisplayName(type) + ' - Anime Box';
+        document.title = typeDisplayName(type) + ' - FBX Anime Box';
 
         const titleEl = $('categoryTitle');
         const countEl = $('categoryCount');
@@ -1472,7 +1514,6 @@
 
         $('loader').classList.add('hide');
 
-        // If URL has watch hash, open it now that content is loaded
         openWatchFromUrl();
     });
 
@@ -1495,7 +1536,6 @@
     document.querySelectorAll('.sidebar-nav a').forEach(link => {
         link.addEventListener('click', (e) => {
             const target = link.dataset.section;
-            // Home / Movies / TV / Anime handled by inline onclick already
             if (['home', 'movies', 'tvshows', 'anime'].includes(target)) {
                 if (window.innerWidth <= 820) toggleSidebar(false);
                 return;
@@ -2005,6 +2045,7 @@
         $('modalAppBtn').onclick = () => openPlayback(item);
 
         $('modalBackdrop').classList.add('show');
+        document.body.style.overflow = 'hidden';
         if (fromUrl) openPlayback(item, watchState || getWatchUrlState());
     }
 
@@ -2313,12 +2354,12 @@
         const v = $('streamVideo');
         if (v) { v.pause(); v.removeAttribute('src'); v.load(); }
         $('modalBackdrop').classList.remove('show');
+        document.body.style.overflow = '';
         resetPlaybackUI();
         currentPlaybackItem = null;
     }
 
     function closeModal() {
-        // If there's a hash, clear it (which triggers navigation handler)
         if (window.location.hash) {
             history.pushState({}, '', window.location.pathname + window.location.search);
         }
@@ -2341,6 +2382,10 @@
 
     $('modalBackdrop').addEventListener('click', (e) => {
         if (e.target.id === 'modalBackdrop') closeModal();
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && $('modalBackdrop').classList.contains('show')) closeModal();
     });
 
     // ============================================================
@@ -2367,13 +2412,12 @@
     window.addEventListener('load', updateActiveNav);
 
     // ============================================================
-    // INITIAL ROUTE HANDLING (on first load)
+    // INITIAL ROUTE HANDLING
     // ============================================================
     db.ref('content').on('value', () => {
         renderContinueWatching();
     });
 
-    // On page load, if URL has search/category/watch, handle it
     (function initFromUrl() {
         const hasWatch = getWatchUrlState().videoSlug;
         if (getSearchFromUrl()) {
@@ -2387,9 +2431,7 @@
         }
     })();
 
-    // Auto-open on first content load (handled by db.ref('content') listener above via openWatchFromUrl)
-
-    console.log('Anime Box — navigation fix + view count system ✅');
+    console.log('FBX Anime Box — full-page popup + card overlap effect ✅');
 </script>
 
 </body>
