@@ -94,9 +94,9 @@
         .sidebar-bottom .user-info { display: flex; align-items: center; gap: 12px; padding: 8px 4px; }
         .sidebar-bottom .user-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--gradient);
             display: flex; align-items: center; justify-content: center;
-            font-weight: 700; font-size: 15px; color: #fff; flex-shrink: 0; }
-        .sidebar-bottom .user-name { font-size: 14px; font-weight: 600; }
-        .sidebar-bottom .user-email { font-size: 12px; color: var(--text-muted); }
+            font-weight: 700; font-size: 15px; color: #fff; flex-shrink: 0; overflow: hidden; }
+        .sidebar-bottom .user-name { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .sidebar-bottom .user-email { font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .sidebar-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6);
             z-index: 999; opacity: 0; visibility: hidden; transition: all var(--transition); }
         .sidebar-overlay.open { opacity: 1; visibility: visible; }
@@ -216,7 +216,6 @@
         .banner-slide::after { content: ''; position: absolute; inset: 0;
             background: linear-gradient(90deg, rgba(10, 10, 15, 0.7), rgba(10, 10, 15, 0.1)); }
 
-        /* ===== SMALLER SIMPLE CARD ===== */
         .simple-card { position: relative !important; flex: 0 0 180px !important;
             width: 180px !important; height: 260px !important; min-height: 0 !important;
             display: block !important; background: #0b0b10 !important;
@@ -350,9 +349,6 @@
         .cw-progress i { display: block; height: 100%; background: var(--gradient);
             border-radius: 0 4px 4px 0; transition: width 0.3s ease; }
 
-        /* ============================================================
-           FULL-PAGE MODAL / POPUP
-           ============================================================ */
         .modal-backdrop { position: fixed; inset: 0; background: rgba(2, 4, 7, .97);
             backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
             z-index: 2000; display: block;
@@ -570,7 +566,6 @@
             .section { margin: 20px 0; padding: 0 12px; }
         }
 
-        /* ===== VIEW BADGE ===== */
         .search-card-views { position: absolute; left: 6px; bottom: 6px; z-index: 3;
             display: inline-flex; align-items: center; gap: 3px;
             background: rgba(0, 0, 0, .82); color: #fff;
@@ -578,8 +573,7 @@
             font-size: 10px; font-weight: 800; }
         .search-card-views b { color: #22d3ee; }
 
-        /* Search page */
-        body.search-mode > *:not(#searchPage):not(#sidebar):not(#sidebarOverlay):not(#mainHeader):not(#loader) { display: none !important; }
+        body.search-mode > *:not(#searchPage):not(#sidebar):not(#sidebarOverlay):not(#mainHeader):not(#loader):not(#authModalBackdrop) { display: none !important; }
         body.search-mode #sidebar { display: flex !important; }
         body.search-mode #mainHeader { display: flex !important; position: fixed !important;
             top: 0; left: var(--sidebar-width); right: 0; z-index: 500 !important; }
@@ -644,8 +638,7 @@
             background: #121218; color: #fff; border: 1px solid rgba(255, 255, 255, .1);
             border-radius: 9px; padding: 9px 10px; outline: none; }
 
-        /* category page */
-        body.category-mode > *:not(#categoryPage):not(#sidebar):not(#sidebarOverlay):not(#mainHeader):not(#loader) { display: none !important; }
+        body.category-mode > *:not(#categoryPage):not(#sidebar):not(#sidebarOverlay):not(#mainHeader):not(#loader):not(#authModalBackdrop) { display: none !important; }
         #categoryPage { display: none; }
         body.category-mode #categoryPage { display: block; min-height: 100vh;
             background: #090a0d; color: #fff; padding-top: var(--header-height); }
@@ -729,90 +722,39 @@
             .server-list { flex-direction: row; flex-wrap: wrap; gap: 10px 18px; }
         }
 
-        /* ============================================================
-           কার্ড ওভারল্যাপ ইফেক্ট (শুধু মোবাইলের জন্য)
-           ============================================================ */
-        .row-scroll,
-        .type-row {
-            gap: 0 !important;
-        }
-        .random-feed-grid,
-        .category-grid {
-            gap: 0 !important;
-        }
+        .row-scroll, .type-row { gap: 0 !important; }
+        .random-feed-grid, .category-grid { gap: 0 !important; }
         .row-scroll .simple-card:not(:first-child),
         .type-row .simple-card:not(:first-child),
         .random-feed-grid .simple-card:not(:first-child),
-        .category-grid .simple-card:not(:first-child) {
-            margin-left: -20px;
-        }
-        .simple-card:hover {
-            z-index: 10;
-        }
+        .category-grid .simple-card:not(:first-child) { margin-left: -20px; }
+        .simple-card:hover { z-index: 10; }
         @media (max-width: 520px) {
             .row-scroll .simple-card:not(:first-child),
             .type-row .simple-card:not(:first-child),
             .random-feed-grid .simple-card:not(:first-child),
-            .category-grid .simple-card:not(:first-child) {
-                margin-left: -14px;
-            }
+            .category-grid .simple-card:not(:first-child) { margin-left: -14px; }
         }
 
-        /* ============================================================
-           ✅ PC / DESKTOP FIT FIX
-           ============================================================ */
         :root { --content-max: 1600px; }
 
         @media (min-width: 821px) {
-            .section {
-                max-width: var(--content-max);
-                margin-left: auto;
-                margin-right: auto;
-                margin-top: 34px;
-                margin-bottom: 34px;
-            }
-            .banner-strip {
-                max-width: calc(var(--content-max) - 48px);
-                margin-left: auto;
-                margin-right: auto;
-            }
-            .footer {
-                max-width: var(--content-max);
-                margin-left: auto;
-                margin-right: auto;
-            }
-            .hero {
-                max-width: var(--content-max);
-                margin: 0 auto 30px;
-                height: 62vh;
-                min-height: 400px;
-                max-height: 620px;
-            }
-            .hero-content {
-                left: clamp(24px, 4vw, 64px);
-                bottom: 14%;
-                max-width: 620px;
-            }
-            .row-scroll,
-            .type-row { gap: 14px !important; }
+            .section { max-width: var(--content-max); margin-left: auto; margin-right: auto; margin-top: 34px; margin-bottom: 34px; }
+            .banner-strip { max-width: calc(var(--content-max) - 48px); margin-left: auto; margin-right: auto; }
+            .footer { max-width: var(--content-max); margin-left: auto; margin-right: auto; }
+            .hero { max-width: var(--content-max); margin: 0 auto 30px; height: 62vh; min-height: 400px; max-height: 620px; }
+            .hero-content { left: clamp(24px, 4vw, 64px); bottom: 14%; max-width: 620px; }
+            .row-scroll, .type-row { gap: 14px !important; }
             .row-scroll .simple-card:not(:first-child),
             .type-row .simple-card:not(:first-child),
             .random-feed-grid .simple-card:not(:first-child),
-            .category-grid .simple-card:not(:first-child) {
-                margin-left: 0 !important;
-            }
-            .random-feed-grid,
-            .category-grid { gap: 18px !important; }
+            .category-grid .simple-card:not(:first-child) { margin-left: 0 !important; }
+            .random-feed-grid, .category-grid { gap: 18px !important; }
             .random-feed-grid { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
             .category-grid   { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
             .header { padding: 0 28px; }
             .header-center .search-wrap { max-width: 620px; }
-            .modal-details {
-                grid-template-columns: 190px minmax(0, 1fr) 200px;
-                gap: 32px;
-                padding: 72px 48px 22px;
-                max-width: 1400px;
-            }
+            .modal-details { grid-template-columns: 190px minmax(0, 1fr) 200px; gap: 32px; padding: 72px 48px 22px; max-width: 1400px; }
             .modal-poster-wrap { width: 190px; }
             .modal-social { max-width: 1400px; padding: 2px 48px 30px; }
             .playback-panel { max-width: 1400px; padding: 14px 48px 48px; }
@@ -820,11 +762,7 @@
         }
 
         @media (min-width: 1500px) {
-            .simple-card {
-                flex: 0 0 200px !important;
-                width: 200px !important;
-                height: 290px !important;
-            }
+            .simple-card { flex: 0 0 200px !important; width: 200px !important; height: 290px !important; }
             .type-row .simple-card { flex: 0 0 200px !important; }
             .category-grid .simple-card { height: 290px !important; }
             .random-feed-grid .simple-card { height: 290px !important; }
@@ -839,26 +777,12 @@
             font-size: 11px; font-weight: 600; }
         .watch-chip strong { color: #fff; }
 
-        /* ============================================================
-           ✅✅ SEARCH BAR FIX — PC + Mobile Same Look  (NEW)
-           ============================================================ */
-        .header-center {
-            flex: 1 1 auto;
-            min-width: 0;
-            padding: 0 12px;
-            display: flex;
-            justify-content: center;
-        }
-        .header-center .search-wrap {
-            width: 100%;
-            max-width: 620px;
-            margin: 0 auto;
-        }
+        /* SEARCH BAR FIX */
+        .header-center { flex: 1 1 auto; min-width: 0; padding: 0 12px; display: flex; justify-content: center; }
+        .header-center .search-wrap { width: 100%; max-width: 620px; margin: 0 auto; }
         .header-center .search-box {
-            height: 50px !important;
-            min-height: 50px !important;
-            font-size: 15px !important;
-            border-radius: 13px !important;
+            height: 50px !important; min-height: 50px !important;
+            font-size: 15px !important; border-radius: 13px !important;
             padding: 13px 44px 13px 43px !important;
         }
         @media (max-width: 1024px) {
@@ -881,87 +805,131 @@
             .header-center { padding: 0 6px; }
             .header-right { gap: 6px; }
             .header-right .btn-login { padding: 6px 10px; font-size: 11px; }
-            .header-center .search-box {
-                height: 46px !important;
-                min-height: 46px !important;
-                font-size: 14px !important;
-            }
+            .header-center .search-box { height: 46px !important; min-height: 46px !important; font-size: 14px !important; }
         }
 
-        /* ============================================================
-           ✅✅ MOVIE BOX FIX — Mobile Cards Same as PC  (NEW)
-           ============================================================ */
+        /* MOVIE BOX FIX */
         @media (max-width: 600px) {
-            .type-row .simple-card {
-                flex: 0 0 180px !important;
-                width: 180px !important;
-                height: 260px !important;
-            }
+            .type-row .simple-card { flex: 0 0 180px !important; width: 180px !important; height: 260px !important; }
         }
         @media (max-width: 520px) {
-            .simple-card {
-                flex: 0 0 180px !important;
-                width: 180px !important;
-                height: 260px !important;
-                min-height: 0 !important;
-            }
-            .simple-card-info        { padding: 9px !important; }
-            .simple-title            { font-size: 12.5px !important; line-height: 1.25 !important; }
-            .simple-date             { font-size: 11px !important; padding: 5px 8px !important; }
-            .simple-lang             { font-size: 8px  !important; padding: 3px 6px !important; }
-            .simple-badge            { font-size: 8px  !important; padding: 3px 7px !important; }
-            .simple-views            { font-size: 8px  !important; padding: 3px 5px !important; }
-            .simple-views .html-icon { font-size: 9px  !important; }
-            .simple-watch            { font-size: 9px  !important; padding: 6px 10px !important; }
-            .simple-coming           { font-size: 8px  !important; padding: 4px 7px !important; }
-            .simple-booked           { font-size: 9px  !important; }
+            .simple-card { flex: 0 0 180px !important; width: 180px !important; height: 260px !important; min-height: 0 !important; }
+            .simple-card-info { padding: 9px !important; }
+            .simple-title { font-size: 12.5px !important; line-height: 1.25 !important; }
+            .simple-date { font-size: 11px !important; padding: 5px 8px !important; }
+            .simple-lang { font-size: 8px !important; padding: 3px 6px !important; }
+            .simple-badge { font-size: 8px !important; padding: 3px 7px !important; }
+            .simple-views { font-size: 8px !important; padding: 3px 5px !important; }
+            .simple-views .html-icon { font-size: 9px !important; }
+            .simple-watch { font-size: 9px !important; padding: 6px 10px !important; }
+            .simple-coming { font-size: 8px !important; padding: 4px 7px !important; }
+            .simple-booked { font-size: 9px !important; }
             .card { width: 150px !important; }
         }
         @media (max-width: 700px) {
-            .random-feed-grid {
-                display: flex !important;
-                flex-wrap: nowrap !important;
-                grid-template-columns: none !important;
-                overflow-x: auto !important;
-                overflow-y: hidden;
-                gap: 2px !important;
-                padding-bottom: 10px;
-                -webkit-overflow-scrolling: touch;
-            }
-            .random-feed-grid .simple-card {
-                flex: 0 0 180px !important;
-                width: 180px !important;
-                height: 260px !important;
-            }
+            .random-feed-grid { display: flex !important; flex-wrap: nowrap !important; grid-template-columns: none !important;
+                overflow-x: auto !important; overflow-y: hidden; gap: 2px !important;
+                padding-bottom: 10px; -webkit-overflow-scrolling: touch; }
+            .random-feed-grid .simple-card { flex: 0 0 180px !important; width: 180px !important; height: 260px !important; }
         }
         @media (max-width: 600px) {
-            .category-grid {
-                display: flex !important;
-                flex-wrap: nowrap !important;
-                grid-template-columns: none !important;
-                overflow-x: auto !important;
-                overflow-y: hidden;
-                gap: 2px !important;
-                padding-bottom: 10px;
-                -webkit-overflow-scrolling: touch;
-            }
-            .category-grid .simple-card {
-                flex: 0 0 180px !important;
-                width: 180px !important;
-                height: 260px !important;
-                min-width: 0 !important;
-            }
+            .category-grid { display: flex !important; flex-wrap: nowrap !important; grid-template-columns: none !important;
+                overflow-x: auto !important; overflow-y: hidden; gap: 2px !important;
+                padding-bottom: 10px; -webkit-overflow-scrolling: touch; }
+            .category-grid .simple-card { flex: 0 0 180px !important; width: 180px !important; height: 260px !important; min-width: 0 !important; }
         }
         @media (max-width: 520px) {
-            .search-page-grid {
-                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-                gap: 16px 10px !important;
-            }
+            .search-page-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 16px 10px !important; }
             .search-card-title { font-size: 12px !important; height: 35px !important; }
             .search-card-watch { font-size: 11px !important; padding: 8px 5px !important; }
             .search-card-rating { font-size: 11px !important; }
             .search-card-free { font-size: 8px !important; }
         }
+
+        /* ============================================================
+           ✅ AUTH MODAL + USER UI  (NEW)
+           ============================================================ */
+        .auth-modal-backdrop {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            z-index: 5000; display: flex; align-items: center; justify-content: center;
+            opacity: 0; visibility: hidden; transition: .25s; padding: 20px;
+        }
+        .auth-modal-backdrop.show { opacity: 1; visibility: visible; }
+        .auth-modal {
+            background: var(--bg-card); border-radius: 18px; padding: 32px 28px;
+            width: 100%; max-width: 400px; position: relative;
+            border: 1px solid rgba(255,255,255,.08); box-shadow: var(--shadow);
+            transform: scale(.95); transition: .25s;
+            max-height: 92vh; overflow-y: auto;
+        }
+        .auth-modal-backdrop.show .auth-modal { transform: scale(1); }
+        .auth-close {
+            position: absolute; top: 14px; right: 14px; width: 32px; height: 32px;
+            border-radius: 8px; background: rgba(255,255,255,.06); color: #fff;
+            display: grid; place-items: center; font-size: 14px; cursor: pointer;
+            border: 1px solid rgba(255,255,255,.08);
+        }
+        .auth-close:hover { background: rgba(255,255,255,.12); }
+        .auth-title {
+            font-family: 'Poppins',sans-serif; font-size: 22px; font-weight: 800; margin-bottom: 6px;
+            background: var(--gradient); -webkit-background-clip: text; background-clip: text; color: transparent;
+        }
+        .auth-sub { color: var(--text-muted); font-size: 13px; margin-bottom: 18px; }
+        .auth-tabs {
+            display: flex; gap: 6px; margin-bottom: 18px;
+            background: rgba(255,255,255,.05); padding: 4px; border-radius: 10px;
+        }
+        .auth-tab {
+            flex: 1; padding: 9px; border-radius: 8px; font-size: 13px; font-weight: 600;
+            color: var(--text-muted); background: transparent; border: none; cursor: pointer; transition: .2s;
+        }
+        .auth-tab.active { background: var(--gradient); color: #fff; }
+        .auth-body { display: flex; flex-direction: column; gap: 10px; }
+        .auth-input {
+            width: 100%; padding: 12px 14px; border-radius: 10px;
+            background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
+            color: var(--text); font-size: 14px; outline: none; font-family: inherit;
+        }
+        .auth-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(139,92,246,.15); }
+        .auth-submit {
+            padding: 12px; border-radius: 10px; background: var(--gradient); color: #fff;
+            font-weight: 700; font-size: 14px; cursor: pointer; border: none; margin-top: 4px;
+        }
+        .auth-submit:hover { filter: brightness(1.1); }
+        .auth-link {
+            background: none; border: none; color: var(--text-muted); font-size: 12.5px;
+            cursor: pointer; padding: 4px; text-align: center; text-decoration: underline;
+        }
+        .auth-link:hover { color: var(--text); }
+        .auth-divider {
+            display: flex; align-items: center; gap: 10px; margin: 18px 0;
+            color: var(--text-muted); font-size: 11px; font-weight: 600;
+        }
+        .auth-divider::before, .auth-divider::after {
+            content: ''; flex: 1; height: 1px; background: rgba(255,255,255,.08);
+        }
+        .auth-google {
+            width: 100%; padding: 12px; border-radius: 10px; background: #fff; color: #1f1f1f;
+            font-weight: 600; font-size: 14px; cursor: pointer; border: none;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+        }
+        .auth-google:hover { background: #f2f2f2; }
+        .auth-error {
+            color: #ef4444; font-size: 12.5px; text-align: center;
+            margin-top: 12px; min-height: 18px;
+        }
+        .sidebar-auth-btn {
+            width: 100%; padding: 10px; border-radius: 10px; background: var(--gradient);
+            color: #fff; font-weight: 700; font-size: 13px; cursor: pointer;
+            border: none; margin-top: 12px; transition: .2s;
+        }
+        .sidebar-auth-btn:hover { filter: brightness(1.1); }
+        .sidebar-auth-btn.signout {
+            background: rgba(239,68,68,.15); color: #ef4444;
+            border: 1px solid rgba(239,68,68,.3);
+        }
+        .user-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
     </style>
 </head>
 <body>
@@ -1046,12 +1014,13 @@
     </nav>
     <div class="sidebar-bottom">
         <div class="user-info">
-            <div class="user-avatar">U</div>
-            <div>
-                <div class="user-name">Guest</div>
-                <div class="user-email">guest@moviebox</div>
+            <div class="user-avatar" id="sidebarAvatar">U</div>
+            <div style="min-width:0;flex:1">
+                <div class="user-name" id="sidebarUserName">Guest</div>
+                <div class="user-email" id="sidebarUserEmail">Not signed in</div>
             </div>
         </div>
+        <button class="sidebar-auth-btn" id="sidebarAuthBtn">Sign In</button>
     </div>
 </aside>
 
@@ -1072,7 +1041,9 @@
     <div class="header-right">
         <button class="btn-action btn-premium">Go Premium</button>
         <button class="btn-action btn-download">⬇ Download App</button>
-        <button class="btn-action btn-login"><span class="html-icon html-icon-key">◆</span> Login</button>
+        <button class="btn-action btn-login" id="headerLoginBtn">
+            <span class="html-icon html-icon-key">◆</span> Login
+        </button>
     </div>
 </header>
 
@@ -1213,9 +1184,58 @@
     </div>
 </div>
 
+<!-- ===== AUTH MODAL ===== -->
+<div class="auth-modal-backdrop" id="authModalBackdrop">
+  <div class="auth-modal">
+    <button class="auth-close" onclick="closeAuthModal()">✕</button>
+    <h2 class="auth-title" id="authTitle">Welcome Back</h2>
+    <p class="auth-sub" id="authSub">Sign in to sync your watch history</p>
+
+    <div class="auth-tabs" id="authTabs">
+      <button class="auth-tab active" data-auth-tab="login">Login</button>
+      <button class="auth-tab" data-auth-tab="signup">Sign Up</button>
+    </div>
+
+    <div class="auth-body" id="authLoginBody">
+      <input type="email" id="loginEmail" placeholder="Email" class="auth-input" autocomplete="email">
+      <input type="password" id="loginPassword" placeholder="Password" class="auth-input" autocomplete="current-password">
+      <button class="auth-submit" onclick="doEmailLogin()">Login</button>
+      <button class="auth-link" onclick="showForgot()">Forgot password?</button>
+    </div>
+
+    <div class="auth-body" id="authSignupBody" style="display:none">
+      <input type="text" id="signupName" placeholder="Full Name" class="auth-input" autocomplete="name">
+      <input type="email" id="signupEmail" placeholder="Email" class="auth-input" autocomplete="email">
+      <input type="password" id="signupPassword" placeholder="Password (min 6 characters)" class="auth-input" autocomplete="new-password">
+      <button class="auth-submit" onclick="doEmailSignup()">Create Account</button>
+    </div>
+
+    <div class="auth-body" id="authForgotBody" style="display:none">
+      <input type="email" id="forgotEmail" placeholder="Your email address" class="auth-input">
+      <button class="auth-submit" onclick="doForgotPassword()">Send Reset Link</button>
+      <button class="auth-link" onclick="backToLogin()">← Back to login</button>
+    </div>
+
+    <div class="auth-divider" id="authDivider"><span>OR</span></div>
+
+    <button class="auth-google" id="googleBtn" onclick="doGoogleLogin()">
+      <svg width="18" height="18" viewBox="0 0 48 48">
+        <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.3-.4-3.5z"/>
+        <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/>
+        <path fill="#4CAF50" d="M24 44c5.5 0 10.4-2.1 14.1-5.5l-6.5-5.5c-2.1 1.6-4.7 2.5-7.6 2.5-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/>
+        <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4 5.6l6.5 5.5C41.9 35.6 44 30.2 44 24c0-1.3-.1-2.3-.4-3.5z"/>
+      </svg>
+      Continue with Google
+    </button>
+
+    <div class="auth-error" id="authError"></div>
+  </div>
+</div>
+
 <!-- ===== FIREBASE ===== -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 
 <script>
     document.getElementById('year').textContent = new Date().getFullYear();
@@ -2028,13 +2048,28 @@
     function readJSON(key, fallback) { try { return JSON.parse(localStorage.getItem(key) || '') ?? fallback; } catch (e) { return fallback; } }
     function getHistory() { const v = readJSON(SB_KEYS.history, []); return Array.isArray(v) ? v : []; }
     function saveHistory(v) { localStorage.setItem(SB_KEYS.history, JSON.stringify(v.slice(0, 100))); }
+
+    // ✅ UPDATED: cloud sync for logged in users
     function addHistory(item, season, episode) {
         if (!item) return;
         const h = getHistory().filter(x => !(String(x.itemId) === String(item.id) && String(x.episodeId || '') === String(episode?.id || '')));
-        h.unshift({ itemId: item.id, episodeId: episode?.id || '', seasonId: season?.id || '', title: item.title || item.name || '', updatedAt: Date.now() });
+        const entry = {
+            itemId: item.id,
+            episodeId: episode?.id || '',
+            seasonId: season?.id || '',
+            title: item.title || item.name || '',
+            poster: item.poster || item.backdrop || '',
+            updatedAt: Date.now()
+        };
+        h.unshift(entry);
         saveHistory(h);
         renderWatchHistory();
+        if (typeof currentUser !== 'undefined' && currentUser) {
+            const key = (String(item.id) + '::' + String(episode?.id || 'guest')).replace(/[.#$/\[\]]/g, '_');
+            db.ref('users/' + currentUser.uid + '/history/' + key).set(entry).catch(()=>{});
+        }
     }
+
     function getFavorites() { const v = readJSON(SB_KEYS.favorites, []); return Array.isArray(v) ? v : []; }
     function isFavorite(id) { return getFavorites().some(x => String(x) === String(id)); }
     function toggleFavorite(id) {
@@ -2057,7 +2092,13 @@
         row.innerHTML = cards || '<div class="empty" style="width:100%">No watch history yet.</div>';
         section.style.display = h.length ? 'block' : 'none';
     }
-    function clearWatchHistory() { localStorage.removeItem(SB_KEYS.history); renderWatchHistory(); }
+    function clearWatchHistory() {
+        localStorage.removeItem(SB_KEYS.history);
+        if (typeof currentUser !== 'undefined' && currentUser) {
+            db.ref('users/' + currentUser.uid + '/history').remove().catch(()=>{});
+        }
+        renderWatchHistory();
+    }
     function renderMyList() {
         const section = $('myList'), row = $('myListRow');
         if (!section || !row) return;
@@ -2579,7 +2620,196 @@
         }
     })();
 
+    // ============================================================
+    // ✅ AUTH SYSTEM — Google + Email/Password + Forgot Password
+    // ============================================================
+    var currentUser = null;
+    const auth = firebase.auth();
+
+    function openAuthModal(){
+        $('authModalBackdrop').classList.add('show');
+        $('authError').textContent = '';
+        $('authError').style.color = '';
+    }
+    function closeAuthModal(){
+        $('authModalBackdrop').classList.remove('show');
+        backToLogin();
+    }
+    function showForgot(){
+        $('authLoginBody').style.display = 'none';
+        $('authSignupBody').style.display = 'none';
+        $('authForgotBody').style.display = 'flex';
+        $('authTabs').style.display = 'none';
+        $('authDivider').style.display = 'none';
+        $('googleBtn').style.display = 'none';
+        $('authTitle').textContent = 'Reset Password';
+        $('authSub').textContent = 'We will send a reset link to your email';
+        $('authError').textContent = '';
+    }
+    function backToLogin(){
+        $('authLoginBody').style.display = 'flex';
+        $('authSignupBody').style.display = 'none';
+        $('authForgotBody').style.display = 'none';
+        $('authTabs').style.display = 'flex';
+        $('authDivider').style.display = 'flex';
+        $('googleBtn').style.display = 'flex';
+        $('authTitle').textContent = 'Welcome Back';
+        $('authSub').textContent = 'Sign in to sync your watch history';
+        $('authError').textContent = '';
+        $('authError').style.color = '';
+    }
+    function authErr(msg){ $('authError').textContent = msg; $('authError').style.color = ''; }
+
+    document.querySelectorAll('.auth-tab').forEach(tab=>{
+        tab.addEventListener('click',()=>{
+            document.querySelectorAll('.auth-tab').forEach(t=>t.classList.remove('active'));
+            tab.classList.add('active');
+            const mode = tab.dataset.authTab;
+            $('authLoginBody').style.display = mode === 'login' ? 'flex' : 'none';
+            $('authSignupBody').style.display = mode === 'signup' ? 'flex' : 'none';
+            $('authForgotBody').style.display = 'none';
+            $('authTitle').textContent = mode === 'login' ? 'Welcome Back' : 'Create Account';
+            $('authSub').textContent = mode === 'login' ? 'Sign in to sync your watch history' : 'Join to save your watch history';
+            $('authError').textContent = '';
+            $('authError').style.color = '';
+        });
+    });
+
+    async function doEmailLogin(){
+        const email = $('loginEmail').value.trim();
+        const pass = $('loginPassword').value;
+        if(!email || !pass){ authErr('Please enter email and password'); return; }
+        try {
+            await auth.signInWithEmailAndPassword(email, pass);
+            closeAuthModal();
+        } catch(e){ authErr(e.message || 'Login failed'); }
+    }
+
+    async function doEmailSignup(){
+        const name = $('signupName').value.trim();
+        const email = $('signupEmail').value.trim();
+        const pass = $('signupPassword').value;
+        if(!name || !email || !pass){ authErr('Please fill all fields'); return; }
+        if(pass.length < 6){ authErr('Password must be at least 6 characters'); return; }
+        try {
+            const cred = await auth.createUserWithEmailAndPassword(email, pass);
+            await cred.user.updateProfile({ displayName: name });
+            await db.ref('users/' + cred.user.uid).set({
+                uid: cred.user.uid,
+                name: name,
+                email: email,
+                photoURL: '',
+                createdAt: Date.now(),
+                lastLogin: Date.now()
+            });
+            closeAuthModal();
+        } catch(e){ authErr(e.message || 'Signup failed'); }
+    }
+
+    async function doForgotPassword(){
+        const email = $('forgotEmail').value.trim();
+        if(!email){ authErr('Enter your email address'); return; }
+        try {
+            await auth.sendPasswordResetEmail(email);
+            $('authError').style.color = '#22c55e';
+            $('authError').textContent = '✓ Reset link sent to ' + email;
+            setTimeout(()=>{ backToLogin(); }, 3000);
+        } catch(e){ authErr(e.message || 'Failed to send reset email'); }
+    }
+
+    async function doGoogleLogin(){
+        try {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            const res = await auth.signInWithPopup(provider);
+            const user = res.user;
+            const ref = db.ref('users/' + user.uid);
+            const snap = await ref.once('value');
+            if(!snap.exists()){
+                await ref.set({
+                    uid: user.uid,
+                    name: user.displayName || 'User',
+                    email: user.email || '',
+                    photoURL: user.photoURL || '',
+                    createdAt: Date.now(),
+                    lastLogin: Date.now()
+                });
+            } else {
+                await ref.update({ lastLogin: Date.now() });
+            }
+            closeAuthModal();
+        } catch(e){ authErr(e.message || 'Google sign-in failed'); }
+    }
+
+    async function doSignOut(){
+        if(!confirm('Sign out?')) return;
+        try { await auth.signOut(); } catch(e){}
+    }
+
+    async function syncHistoryFromCloud(uid){
+        try {
+            const snap = await db.ref('users/' + uid + '/history').once('value');
+            const cloudHistory = snap.val() || {};
+            const local = getHistory();
+            const merged = {};
+            [...local, ...Object.values(cloudHistory)].forEach(item=>{
+                if(!item || !item.itemId) return;
+                const key = item.itemId + '::' + (item.episodeId || '');
+                if(!merged[key] || (item.updatedAt || 0) > (merged[key].updatedAt || 0)) merged[key] = item;
+            });
+            const arr = Object.values(merged).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0)).slice(0,100);
+            saveHistory(arr);
+            const updates = {};
+            arr.forEach(item=>{
+                const key = (String(item.itemId) + '::' + String(item.episodeId || 'guest')).replace(/[.#$/\[\]]/g, '_');
+                updates[key] = item;
+            });
+            await db.ref('users/' + uid + '/history').set(updates);
+        } catch(e){ console.warn('History sync failed', e); }
+    }
+
+    auth.onAuthStateChanged(async (user)=>{
+        currentUser = user;
+        const sbName = $('sidebarUserName');
+        const sbEmail = $('sidebarUserEmail');
+        const sbAvatar = $('sidebarAvatar');
+        const sbBtn = $('sidebarAuthBtn');
+        const hBtn = $('headerLoginBtn');
+        if(!sbName) return;
+
+        if(user){
+            const name = user.displayName || (user.email ? user.email.split('@')[0] : 'User');
+            sbName.textContent = name;
+            sbEmail.textContent = user.email || 'Signed in';
+            if(user.photoURL) sbAvatar.innerHTML = `<img src="${user.photoURL}" alt="">`;
+            else { sbAvatar.innerHTML = ''; sbAvatar.textContent = name.charAt(0).toUpperCase(); }
+            sbBtn.textContent = 'Sign Out';
+            sbBtn.classList.add('signout');
+            sbBtn.onclick = doSignOut;
+            if(hBtn){ hBtn.innerHTML = `<span class="html-icon html-icon-key">◆</span> ${name.split(' ')[0]}`; hBtn.onclick = doSignOut; }
+
+            await db.ref('users/' + user.uid + '/lastLogin').set(Date.now()).catch(()=>{});
+            await syncHistoryFromCloud(user.uid);
+            renderWatchHistory();
+            renderContinueWatching();
+        } else {
+            sbName.textContent = 'Guest';
+            sbEmail.textContent = 'Not signed in';
+            sbAvatar.innerHTML = 'U';
+            sbBtn.textContent = 'Sign In';
+            sbBtn.classList.remove('signout');
+            sbBtn.onclick = openAuthModal;
+            if(hBtn){ hBtn.innerHTML = `<span class="html-icon html-icon-key">◆</span> Login`; hBtn.onclick = openAuthModal; }
+        }
+    });
+
+    $('authModalBackdrop').addEventListener('click', (e)=>{
+        if(e.target.id === 'authModalBackdrop') closeAuthModal();
+    });
+    if($('sidebarAuthBtn')) $('sidebarAuthBtn').onclick = openAuthModal;
+    if($('headerLoginBtn')) $('headerLoginBtn').onclick = openAuthModal;
+
     console.log('FBX Anime Box — full-page popup + card overlap effect ✅');
+    console.log('✅ Auth system loaded');
 </script>
 
 </body>
