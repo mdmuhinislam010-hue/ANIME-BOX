@@ -228,6 +228,18 @@
             text-align: center;
             flex-shrink: 0;
         }
+        /* HTML/CSS icons — no emoji rendering */
+        .html-icon, .nav-icon.html-icon {
+            display:inline-flex; align-items:center; justify-content:center;
+            width:24px; min-width:24px; height:24px;
+            font-family:Arial, "Segoe UI Symbol", sans-serif; font-size:18px;
+            line-height:1; font-weight:800; color:var(--accent);
+            filter:drop-shadow(0 0 5px rgba(139,92,246,.25));
+        }
+        .html-icon-fire{color:#f97316}.html-icon-tv{color:#22d3ee}.html-icon-anime{color:#ec4899}
+        .html-icon-time{color:#a78bfa}.html-icon-calendar{color:#38bdf8}.html-icon-theater{color:#c084fc}
+        .html-icon-eye{color:#60a5fa}.html-icon-key{color:#fbbf24}.html-icon-film{color:var(--accent)}
+
         .sidebar-nav a:hover {
             background: rgba(255, 255, 255, 0.06);
             color: var(--text);
@@ -401,8 +413,16 @@
         }
         .header-center .search-wrap {
             width: 100%;
-            max-width: 480px;
+            max-width: 760px;
             position: relative;
+        }
+        /* Search is now the main header control — no Home/Movies/TV/Anime links beside it. */
+        .header-center {
+            padding: 0 18px;
+        }
+        .header-center .search-box {
+            min-height: 42px;
+            font-size: 14px;
         }
         .header-center .search-box {
             width: 100%;
@@ -459,30 +479,33 @@
         }
         .header-center .search-item {
             display: flex;
-            gap: 12px;
-            padding: 10px 14px;
             align-items: center;
+            min-height: 46px;
+            padding: 11px 16px;
             cursor: pointer;
-            transition: background var(--transition);
+            transition: background var(--transition), color var(--transition);
             border-radius: 8px;
+            color: var(--text);
+            font-size: 14px;
+            font-weight: 600;
         }
         .header-center .search-item:hover {
-            background: var(--bg-card-hover);
+            background: rgba(139, 92, 246, 0.14);
+            color: #fff;
         }
-        .header-center .search-item img {
-            width: 38px;
-            height: 54px;
-            object-fit: cover;
-            border-radius: 6px;
-            flex-shrink: 0;
+        .header-center .search-item .si-info {
+            min-width: 0;
+            width: 100%;
         }
         .header-center .search-item .si-info b {
-            font-size: 13px;
+            font-size: 14px;
             display: block;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .header-center .search-item .si-info span {
-            font-size: 11px;
-            color: var(--text-muted);
+            display: none;
         }
         .header-center .search-empty {
             padding: 18px;
@@ -541,6 +564,9 @@
         .header-right .btn-download:hover {
             background: rgba(255, 255, 255, 0.14);
         }
+
+
+        .hero-meta .html-icon,.watch-chip .html-icon,.simple-booked .html-icon,.btn-login .html-icon{width:auto;min-width:0;height:auto;display:inline-flex;vertical-align:middle;font-size:1em;margin-right:4px;}
 
         /* ============================================================
                HERO (preserved)
@@ -936,7 +962,7 @@
         .simple-card-poster{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;background:#16161f;overflow:hidden}
         .simple-card-poster img{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;max-width:none!important;object-fit:cover!important;object-position:center!important;display:block!important}
         .simple-card-poster::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.18) 0%,rgba(0,0,0,.05) 38%,rgba(0,0,0,.72) 72%,rgba(0,0,0,.96) 100%);pointer-events:none}
-        .simple-card-poster.no-image::after{content:'🎬';position:absolute;inset:0;display:grid;place-items:center;font-size:42px;color:#777;background:#171720}
+        .simple-card-poster.no-image::after{content:'▣';position:absolute;inset:0;display:grid;place-items:center;font-family:Arial,"Segoe UI Symbol",sans-serif;font-size:42px;font-weight:800;color:var(--accent);background:#171720}
         .simple-coming{position:absolute;left:8px;top:8px;z-index:3;padding:5px 8px;border-radius:7px;background:#8b5cf6;color:#fff;font-size:9px;font-weight:800;box-shadow:0 4px 12px rgba(0,0,0,.3)}
         .simple-card-info{position:absolute!important;z-index:4;left:0;right:0;top:0;bottom:0;min-width:0;padding:12px!important;display:flex!important;flex-direction:column!important;justify-content:space-between!important;gap:6px!important}
         .simple-card-top{display:flex!important;flex-wrap:wrap!important;gap:7px!important;align-items:flex-start!important}
@@ -1874,6 +1900,19 @@ body.search-mode #searchPage{display:block}
         }
 </style>
 
+
+<style id="five-systems-style">
+/* 5-system upgrade: history, favorites, resume, auto-next, advanced search */
+.user-tools-row{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px;padding:0 24px}
+.user-tool-btn{border:1px solid rgba(139,92,246,.28);background:rgba(255,255,255,.045);color:#fff;border-radius:10px;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer}
+.user-tool-btn:hover,.user-tool-btn.active{background:linear-gradient(135deg,#8b5cf6,#ec4899);border-color:transparent}
+.favorite-badge{position:absolute;top:8px;right:8px;width:30px;height:30px;border-radius:50%;background:rgba(0,0,0,.62);backdrop-filter:blur(5px);display:flex;align-items:center;justify-content:center;color:#fff;z-index:5;font-size:15px;border:1px solid rgba(255,255,255,.12)}
+.favorite-badge.active{color:#ff4f9a;box-shadow:0 0 14px rgba(236,72,153,.3)}
+.history-progress{height:3px;background:#252532;border-radius:4px;overflow:hidden;margin-top:5px}.history-progress i{display:block;height:100%;background:linear-gradient(90deg,#8b5cf6,#22d3ee)}
+.advanced-search-panel{display:none;margin:0 24px 20px;padding:14px;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.025);border-radius:14px}
+.advanced-search-panel.show{display:block}.advanced-search-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}.advanced-search-grid select,.advanced-search-grid input{width:100%;background:#121218;color:#fff;border:1px solid rgba(255,255,255,.1);border-radius:9px;padding:9px 10px;outline:none}
+@media(max-width:700px){.advanced-search-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.user-tools-row{padding:0 12px}.advanced-search-panel{margin-left:12px;margin-right:12px}}
+</style>
 <style id="lite-performance-style">
 /* Lightweight mode: same layout/features, less glow/blur/shadow */
 :root{
@@ -2046,6 +2085,14 @@ body.search-mode #searchPage{display:block}
 
 
 <div id="searchPage">
+  <div class="advanced-search-panel" id="advancedSearchPanel">
+    <div class="advanced-search-grid">
+      <select id="advType"><option value="">All Types</option><option value="movie">Movies</option><option value="tv">TV Shows</option><option value="anime">Anime</option></select>
+      <select id="advCategory"><option value="">All Categories</option></select>
+      <input id="advYear" type="number" min="1900" max="2100" placeholder="Year">
+      <select id="advLanguage"><option value="">All Languages</option></select>
+    </div>
+  </div>
   <div class="search-page-shell">
     <div class="search-page-breadcrumb">
       <button class="search-page-back" type="button" onclick="goSearchBack()">‹ Back</button>
@@ -2117,12 +2164,14 @@ body.search-mode #searchPage{display:block}
 
         <nav class="sidebar-nav">
             <div class="nav-label">Menu</div>
-            <a href="#" class="active" data-section="home"><span class="nav-icon">🏠</span> Home</a>
-            <a href="#" data-section="movies"><span class="nav-icon">🎬</span> Movies</a>
-            <a href="#" data-section="tvshows"><span class="nav-icon">📺</span> TV Shows</a>
-            <a href="#" data-section="anime"><span class="nav-icon">🎌</span> Anime</a>
-            <a href="#" data-section="trending"><span class="nav-icon">🔥</span> Trending</a>
+            <a href="#" class="active" data-section="home"><span class="nav-icon html-icon">⌂</span> Home</a>
+            <a href="#" data-section="movies"><span class="nav-icon html-icon html-icon-film">▣</span> Movies</a>
+            <a href="#" data-section="tvshows"><span class="nav-icon html-icon html-icon-tv">▣</span> TV Shows</a>
+            <a href="#" data-section="anime"><span class="nav-icon html-icon html-icon-anime">◇</span> Anime</a>
+            <a href="#" data-section="trending"><span class="nav-icon html-icon html-icon-fire">◆</span> Trending</a>
             <a href="#" data-section="continueWatching"><span class="nav-icon">⏳</span> Continue Watching</a>
+                <a href="#" data-section="watchHistory"><span class="nav-icon html-icon html-icon-time">◷</span> Watch History</a>
+                <a href="#" data-section="myList"><span class="nav-icon">♥</span> My List</a>
         </nav>
 
         <div class="sidebar-bottom">
@@ -2144,24 +2193,17 @@ body.search-mode #searchPage{display:block}
             <span class="brand-name">Anime Box</span>
         </div>
 
-        <nav class="header-nav" id="headerNav">
-            <a href="#" data-section="home" class="active">Home</a>
-            <a href="#" data-section="movies">Movies</a>
-            <a href="#" data-section="tvshows">TV Shows</a>
-            <a href="#" data-section="anime">Anime</a>
-        </nav>
-
         <div class="header-center">
             <div class="search-wrap" id="searchWrap">
-                <input type="text" class="search-box" id="searchInput" placeholder="Search movies, shows, anime..." autocomplete="off" />
+                <input type="text" class="search-box" id="searchInput" placeholder="Search movies, shows, anime..." autocomplete="off" /><button type="button" id="advancedSearchToggle" class="user-tool-btn" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);padding:6px 9px;"><span class="html-icon">⚙</span></button>
                 <div class="search-results" id="searchResults"></div>
             </div>
         </div>
 
         <div class="header-right">
-            <button class="btn-action btn-premium">⭐ Go Premium</button>
+            <button class="btn-action btn-premium">Go Premium</button>
             <button class="btn-action btn-download">⬇ Download App</button>
-            <button class="btn-action btn-login">🔑 Login</button>
+            <button class="btn-action btn-login"><span class="html-icon html-icon-key">◆</span> Login</button>
         </div>
     </header>
 
@@ -2190,6 +2232,16 @@ body.search-mode #searchPage{display:block}
         </div>
     </div>
 <!-- ===== MOVIES ===== -->
+
+    <div class="section" id="watchHistory" style="display:none;">
+        <div class="section-head"><h2><span class="dot"></span>Watch History</h2><button class="home-more" onclick="clearWatchHistory()">Clear</button></div>
+        <div class="type-row-wrap"><div class="type-row" id="watchHistoryRow"></div></div>
+    </div>
+
+    <div class="section" id="myList" style="display:none;">
+        <div class="section-head"><h2><span class="dot"></span>My List</h2><span class="see-all">Favorites</span></div>
+        <div class="type-row-wrap"><div class="type-row" id="myListRow"></div></div>
+    </div>
     <div class="section" id="movies">
         <div class="section-head">
             <h2><span class="dot"></span>Movies</h2>
@@ -2219,6 +2271,9 @@ body.search-mode #searchPage{display:block}
         <div class="type-row-wrap"><div class="type-row" id="animeGrid"></div></div>
     </div>
 
+
+    <!-- ===== CUSTOM TYPES (ADMIN CONTROLLED) ===== -->
+    <div id="customTypeSections"></div>
 
     <!-- RANDOM ANIME / MOVIE INFINITE FEED -->
     <div class="section" id="randomFeedSection">
@@ -2250,7 +2305,7 @@ body.search-mode #searchPage{display:block}
                     <div class="modal-meta" id="modalMeta"></div>
                     <p class="modal-desc" id="modalDesc"></p>
                     <div class="modal-actions">
-                        <button class="btn btn-primary" id="modalPlayBtn">▶ Watch Online</button>
+                        <button class="btn btn-primary" id="modalPlayBtn">▶ Watch Online</button><button class="btn btn-ghost" id="modalFavBtn">♡ My List</button>
                         <button class="btn btn-app" id="modalAppBtn">⬇ Watch in App</button>
                         <button class="btn btn-tv" id="modalTvBtn">▣ Watch on TV</button>
                     </div>
@@ -2307,7 +2362,7 @@ body.search-mode #searchPage{display:block}
                     </div>
                     <select id="episodeSelect" style="display:none;"></select>
                     <select id="dubSelect" style="display:none;"></select>
-                    <div class="playback-message" id="playbackMessage">Loading playback options…</div>
+                    <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#b8b8c8;margin:8px 0"><input type="checkbox" id="autoNextToggle"> Auto Next Episode</label><div class="playback-message" id="playbackMessage">Loading playback options…</div>
                     <div class="watch-external-note" id="watchExternalNote" style="display:none;"></div>
                     <div class="video-wrap" id="videoWrap"><video id="streamVideo" controls playsinline preload="metadata"></video></div>
                     <div class="quality-row" id="qualityRow" style="display:none;"></div>
@@ -2351,6 +2406,7 @@ body.search-mode #searchPage{display:block}
         let heroSlides = [];
         let banners = [];
         let categories = [];
+        let types = [];
         let content = [];
         let heroIndex = 0,
             bannerIndex = 0;
@@ -2369,6 +2425,17 @@ body.search-mode #searchPage{display:block}
 
         function sortByOrder(arr) {
             return arr.slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+        }
+
+        // Shuffle the Admin cards once per page load.
+        // Every browser refresh gets a new order, while Firebase/admin data stays unchanged.
+        function shuffleForRefresh(arr) {
+            const a = arr.slice();
+            for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [a[i], a[j]] = [a[j], a[i]];
+            }
+            return a;
         }
 
         function onlyEnabled(arr) {
@@ -2397,10 +2464,20 @@ body.search-mode #searchPage{display:block}
             categories = sortByOrder(onlyEnabled(toArray(snap.val())));
             renderCategoryTabs();
             renderGrids();
+            renderWatchHistory(); renderMyList(); renderContinueWatching();
+            const catSel=$('advCategory');
+            if(catSel){ const selected=advancedSearchFilters.category; catSel.innerHTML='<option value="">All Categories</option>'+[...new Set(categories.map(c=>c.name||c.title||c.id).filter(Boolean))].map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join(''); catSel.value=selected; }
+            const langSel=$('advLanguage');
+            if(langSel){ const selected=advancedSearchFilters.language; const langs=[...new Set(content.map(c=>c.language||c.lang||c.audioLanguage).filter(Boolean))]; langSel.innerHTML='<option value="">All Languages</option>'+langs.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join(''); langSel.value=selected; }
         });
 
 
 
+
+        db.ref('types').on('value', snap => {
+            types = sortByOrder(onlyEnabled(toArray(snap.val())));
+            renderCustomTypeSections();
+        });
 
         // ============================================================
         // SAME HTML SEARCH RESULTS PAGE
@@ -2477,6 +2554,7 @@ body.search-mode #searchPage{display:block}
         }
 
         let currentSearchFilter = 'all';
+        let advancedSearchFilters = {type:'', category:'', year:'', language:''};
 
         function renderSearchPage(){
             const query=getSearchFromUrl().trim();
@@ -2532,6 +2610,11 @@ body.search-mode #searchPage{display:block}
             if(currentSearchFilter!=='all'){
                 matches=matches.filter(item=>normalizeType(item.type)===currentSearchFilter);
             }
+            const af=advancedSearchFilters;
+            if(af.type) matches=matches.filter(item=>normalizeType(item.type)===af.type);
+            if(af.category) matches=matches.filter(item=>String(item.category||'').trim().toLowerCase()===af.category.toLowerCase());
+            if(af.year) matches=matches.filter(item=>String(item.year||item.releaseYear||'')===String(af.year));
+            if(af.language) matches=matches.filter(item=>String(item.language||item.lang||item.audioLanguage||'').trim().toLowerCase()===af.language.toLowerCase());
 
             const count=$('searchPageCount');
             const grid=$('searchPageGrid');
@@ -2576,6 +2659,7 @@ body.search-mode #searchPage{display:block}
             if(loader) loader.classList.add('hide');
             updateRandomFeedState();
             renderAll();
+            renderCustomTypeSections();
             setupRandomFeed();
             window.scrollTo({top:0,behavior:'auto'});
         }
@@ -2585,24 +2669,46 @@ body.search-mode #searchPage{display:block}
             if(t==='tvshow' || t==='tv show' || t==='series') return 'tv';
             if(t==='movie' || t==='movies') return 'movie';
             if(t==='anime' || t==='animes') return 'anime';
-            return t;
+            return t.replace(/\s+/g,'-');
+        }
+
+        function typeDisplayName(key){
+            const built={movie:'Movies',tv:'TV Shows',anime:'Anime'};
+            if(built[key]) return built[key];
+            const t=types.find(x=>(x.key||'')===key);
+            return t?.name || key;
+        }
+
+        function renderCustomTypeSections(){
+            const wrap=$('customTypeSections');
+            if(!wrap) return;
+            const custom=types.filter(t=>t.enabled!==false && !['movie','tv','anime'].includes(t.key||normalizeType(t.name)));
+            wrap.innerHTML=custom.map(t=>{
+                const key=t.key||normalizeType(t.name);
+                const items=content.filter(c=>normalizeType(c.type)===key);
+                return `<div class="section custom-type-section" id="type-section-${escapeHtml(key)}">
+                    <div class="section-head"><h2><span class="dot"></span>${escapeHtml(t.name)}</h2>
+                    <button class="home-more" onclick="openCategoryPage('${escapeHtml(key)}')">More ›</button></div>
+                    <div class="type-row-wrap"><div class="type-row">${items.length?items.map(cardHTML).join(''):'<div class="empty-state">No titles found.</div>'}</div></div>
+                </div>`;
+            }).join('');
         }
 
         function renderCategoryPage(){
             const type=normalizeType(getCategoryFromUrl());
-            if(!['anime','movie','tv'].includes(type)) return false;
+            if(!['anime','movie','tv'].includes(type) && !types.some(t=>(t.key||normalizeType(t.name))===type && t.enabled!==false)) return false;
 
             document.body.classList.add('category-mode');
             const homeLoader = $('loader');
             if(homeLoader) homeLoader.classList.add('hide');
-            document.title = (type==='anime'?'Anime':type==='movie'?'Movies':'TV Shows') + ' - Anime Box';
+            document.title = typeDisplayName(type) + ' - Anime Box';
 
             const titleEl=$('categoryTitle');
             const countEl=$('categoryCount');
             const grid=$('categoryGrid');
             const tabs=$('categoryTabs');
 
-            const title = type==='anime' ? 'Anime' : type==='movie' ? 'Movies' : 'TV Shows';
+            const title = typeDisplayName(type);
             titleEl.textContent=title;
 
             let items=content.filter(x=>normalizeType(x.type)===type);
@@ -2668,7 +2774,9 @@ body.search-mode #searchPage{display:block}
         }
 
         db.ref('content').on('value', snap => {
-            content = sortByOrder(onlyEnabled(toArray(snap.val())));
+            // Admin cards are shuffled on every page refresh.
+            // Firebase data/order is never modified.
+            content = shuffleForRefresh(sortByOrder(onlyEnabled(toArray(snap.val()))));
 
             if(renderSearchPage()){
                 return;
@@ -2681,6 +2789,7 @@ body.search-mode #searchPage{display:block}
             // Normal home page.
             updateRandomFeedState();
             renderAll();
+            renderCustomTypeSections();
             setupRandomFeed();
 
             requestAnimationFrame(() => {
@@ -2737,36 +2846,6 @@ body.search-mode #searchPage{display:block}
         });
 
         // ============================================================
-        // HEADER NAVIGATION (scroll to sections)
-        // ============================================================
-        document.querySelectorAll('.header-nav a').forEach(link => {
-            link.addEventListener('click', (e) => {
-                const target = link.dataset.section;
-                if (target) {
-                    e.preventDefault();
-                    if(document.body.classList.contains('search-mode')){
-                        if(target==='home') goHome();
-                        else if(target==='movies') openCategoryPage('movie');
-                        else if(target==='tvshows') openCategoryPage('tv');
-                        else if(target==='anime') openCategoryPage('anime');
-                        return;
-                    }
-                    const el = $(target);
-                    if (el) {
-                        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }
-                    // update active state
-                    document.querySelectorAll('.header-nav a').forEach(l => l.classList.remove('active'));
-                    link.classList.add('active');
-                    document.querySelectorAll('.sidebar-nav a').forEach(l => l.classList.remove('active'));
-                    document.querySelectorAll('.sidebar-nav a').forEach(l => {
-                        if (l.dataset.section === target) l.classList.add('active');
-                    });
-                }
-            });
-        });
-
-        // ============================================================
         // HERO
         // ============================================================
         function renderHero() {
@@ -2781,14 +2860,14 @@ body.search-mode #searchPage{display:block}
             el.innerHTML = heroSlides.map((s, i) => `
                 <div class="hero-slide ${i === heroIndex ? 'active' : ''}" style="background-image:url('${s.image || ''}')">
                     <div class="hero-content">
-                        <div class="hero-badge">🔥 Now Playing</div>
+                        <div class="hero-badge"><span class="html-icon html-icon-fire">◆</span> Now Playing</div>
                         <h1>${s.title || ''}</h1>
                         <div class="hero-meta">
-                            <span>📅 ${s.year || '2025'}</span>
+                            <span><span class="html-icon html-icon-calendar">▦</span> ${s.year || '2025'}</span>
                             <span class="dot-sep">•</span>
-                            <span>⭐ ${s.rating || '8.5'}</span>
+                            <span>${s.rating || '8.5'}</span>
                             <span class="dot-sep">•</span>
-                            <span>🎭 ${s.category || 'Action'}</span>
+                            <span><span class="html-icon html-icon-theater">◇</span> ${s.category || 'Action'}</span>
                         </div>
                         <p>${s.subtitle || ''}</p>
                         <div class="hero-actions">
@@ -2911,7 +2990,7 @@ body.search-mode #searchPage{display:block}
                         </div>
                         <div class="simple-badge">${escapeHtml(badge)}</div>
                         <div class="simple-title">${escapeHtml(title)}</div>
-                        ${booked !== '' ? `<div class="simple-booked">👀 ${escapeHtml(booked)} booked</div>` : ''}
+                        ${booked !== '' ? `<div class="simple-booked"><span class="html-icon html-icon-eye">◉</span> ${escapeHtml(booked)} booked</div>` : ''}
                         <div class="simple-watch">▶ Watch Now</div>
                     </div>
                 </div>
@@ -2921,6 +3000,7 @@ body.search-mode #searchPage{display:block}
         function renderAll() {
             renderTrending();
             renderGrids();
+            renderCustomTypeSections();
             renderContinueWatching();
         }
 
@@ -3091,24 +3171,34 @@ body.search-mode #searchPage{display:block}
             }
         });
 
+        // Search suggestions: show NOTHING when search is clicked/focused.
+        // Only titles/names matching the letters currently typed are shown.
+        searchInput.addEventListener('focus', () => {
+            if(!searchInput.value.trim()) searchResults.classList.remove('show');
+        });
+
         searchInput.addEventListener('input', () => {
             const q = searchInput.value.trim().toLowerCase();
-            if (!q) { searchResults.classList.remove('show'); return; }
+            if (!q) {
+                searchResults.innerHTML = '';
+                searchResults.classList.remove('show');
+                return;
+            }
+
+            // Match ONLY the movie/anime/show name, not category/year/description.
+            // Example: typing "a" shows every name containing the letter "a".
             const matches = content.filter(c => {
-                const text = [
-                    c.title, c.name, c.type, c.category, c.genre,
-                    c.language, c.lang, c.tags, c.description, c.overview,
-                    c.country, c.year
-                ].filter(Boolean).join(' ').toLowerCase();
-                return text.includes(q);
+                const title = String(c.title || c.name || '').trim().toLowerCase();
+                return title && title.includes(q);
             }).slice(0, 12);
-            searchResults.innerHTML = matches.length ? matches.map(m => `
-                    <div class="search-item" onclick="selectSearchResult('${m.id}')">
-                        <img src="${m.poster || ''}" alt="" / loading="lazy" decoding="async">
-                        <div class="si-info"><b>${m.title || ''}</b><span>${m.type || ''} • ${m.year || ''}</span></div>
-                    </div>
-                `).join('') :
-                `<div class="search-empty">No results for "${q}"</div>`;
+
+            searchResults.innerHTML = matches.length ? matches.map(m => {
+                const id = encodeURIComponent(String(m.id));
+                const title = escapeHtml(m.title || m.name || 'Untitled');
+                return `<div class="search-item" onclick="selectSearchResult('${id}')"><div class="si-info"><b>${title}</b></div></div>`;
+            }).join('') :
+                `<div class="search-empty">No results for "${escapeHtml(q)}"</div>`;
+
             searchResults.classList.add('show');
         });
 
@@ -3116,7 +3206,8 @@ body.search-mode #searchPage{display:block}
             if (!$('searchWrap').contains(e.target)) searchResults.classList.remove('show');
         });
 
-        function selectSearchResult(id) {
+        function selectSearchResult(encodedId) {
+            const id = decodeURIComponent(String(encodedId || ''));
             const item = content.find(x => String(x.id) === String(id));
             searchResults.classList.remove('show');
             if(item){
@@ -3162,9 +3253,37 @@ body.search-mode #searchPage{display:block}
             section.style.display = 'block';
         }
 
-        function resumeFromContinue(itemId, episodeId) {
-            openDetailsPage(encodeURIComponent(String(itemId)));
-        }
+        function resumeFromContinue(itemId, episodeId) { const item=content.find(c=>String(c.id)===String(itemId)); if(item){ const ep=episodeId?getHistory().find(x=>String(x.itemId)===String(itemId)&&String(x.episodeId)===String(episodeId)):null; openContentById(item.id,false,ep?{episodeSlug:''}:null); } }
+
+        // ============================================================
+        // FIVE CORE USER SYSTEMS
+        // 1 Continue Watching (existing, upgraded)
+        // 2 Watch History
+        // 3 My List / Favorites
+        // 4 Auto Next Episode
+        // 5 Advanced Search Filters
+        // ============================================================
+        const SB_KEYS = { history:'sb_watch_history_v1', favorites:'sb_favorites_v1', autoNext:'sb_auto_next_v1' };
+        function readJSON(key, fallback){ try{return JSON.parse(localStorage.getItem(key)||'') ?? fallback}catch(e){return fallback} }
+        function getHistory(){ const v=readJSON(SB_KEYS.history,[]); return Array.isArray(v)?v:[]; }
+        function saveHistory(v){ localStorage.setItem(SB_KEYS.history,JSON.stringify(v.slice(0,100))); }
+        function addHistory(item,season,episode){ if(!item)return; const h=getHistory().filter(x=>!(String(x.itemId)===String(item.id)&&String(x.episodeId||'')===String(episode?.id||''))); h.unshift({itemId:item.id,episodeId:episode?.id||'',seasonId:season?.id||'',title:item.title||item.name||'',updatedAt:Date.now()}); saveHistory(h); renderWatchHistory(); }
+        function getFavorites(){ const v=readJSON(SB_KEYS.favorites,[]); return Array.isArray(v)?v:[]; }
+        function isFavorite(id){ return getFavorites().some(x=>String(x)===String(id)); }
+        function toggleFavorite(id){ let a=getFavorites(); const i=a.findIndex(x=>String(x)===String(id)); if(i>=0)a.splice(i,1); else a.unshift(String(id)); localStorage.setItem(SB_KEYS.favorites,JSON.stringify(a)); renderMyList(); refreshFavoriteButtons(id); }
+        function refreshFavoriteButtons(id){ document.querySelectorAll('[data-favorite-id="'+CSS.escape(String(id))+'"]').forEach(b=>{b.classList.toggle('active',isFavorite(id));b.textContent=isFavorite(id)?'♥':'♡';}); }
+        function renderWatchHistory(){ const section=$('watchHistory'),row=$('watchHistoryRow'); if(!section||!row)return; const h=getHistory(); const cards=h.map(e=>{const item=content.find(c=>String(c.id)===String(e.itemId));if(!item)return '';return `<div class="card" onclick="openContentById('${item.id}')"><div class="poster-wrap"><img src="${item.poster||''}" loading="lazy" alt=""><div class="overlay"><div class="play-btn">▶</div></div></div><div class="title">${escapeHtml(item.title||'')}</div><div class="meta">${e.title?'EP • '+escapeHtml(e.title):'Watched'}</div></div>`}).filter(Boolean).join(''); row.innerHTML=cards||'<div class="empty" style="width:100%">No watch history yet.</div>'; section.style.display=h.length?'block':'none'; }
+        function clearWatchHistory(){ localStorage.removeItem(SB_KEYS.history); renderWatchHistory(); }
+        function renderMyList(){ const section=$('myList'),row=$('myListRow'); if(!section||!row)return; const fav=getFavorites(); const cards=fav.map(id=>{const item=content.find(c=>String(c.id)===String(id));if(!item)return '';return `<div class="card" onclick="openContentById('${item.id}')"><div class="poster-wrap"><img src="${item.poster||''}" loading="lazy" alt=""><button class="favorite-badge active" data-favorite-id="${item.id}" onclick="event.stopPropagation();toggleFavorite('${item.id}')">♥</button></div><div class="title">${escapeHtml(item.title||'')}</div><div class="meta">${escapeHtml(item.type||'')}</div></div>`}).filter(Boolean).join(''); row.innerHTML=cards||'<div class="empty" style="width:100%">Your My List is empty.</div>'; section.style.display=fav.length?'block':'none'; }
+        function savePlaybackProgress(){ const v=$('streamVideo'); if(!v||!currentPlaybackItem||!currentPlaybackEpisode||!Number.isFinite(v.duration)||v.duration<=0)return; localStorage.setItem('sb_progress::'+currentPlaybackItem.id+'::'+currentPlaybackEpisode.id,JSON.stringify({itemId:currentPlaybackItem.id,episodeId:currentPlaybackEpisode.id,seasonId:currentPlaybackSeason?.id||'',time:v.currentTime,duration:v.duration,updatedAt:Date.now()})); addHistory(currentPlaybackItem,currentPlaybackSeason,currentPlaybackEpisode); renderContinueWatching(); }
+        function getNextEpisode(){ if(!currentPlaybackEpisode)return null; const i=playbackEpisodes.findIndex(e=>String(e.id)===String(currentPlaybackEpisode.id)); return i>=0?playbackEpisodes[i+1]||null:null; }
+        function playNextEpisode(){ const next=getNextEpisode(); if(!next){ $('playbackMessage').textContent='You reached the end of this season.'; return; } currentPlaybackEpisode=next; updateWatchUrl(currentPlaybackItem,currentPlaybackSeason,next); renderEpisodePills(next.id); handleEpisodeClick(next); }
+        function setAutoNext(v){ localStorage.setItem(SB_KEYS.autoNext,v?'1':'0'); }
+        function autoNextEnabled(){ return localStorage.getItem(SB_KEYS.autoNext)!=='0'; }
+        let firebaseAutoNextSetting=null;
+        db.ref('settings/playback/autoNext').on('value',snap=>{ if(snap.exists()) firebaseAutoNextSetting=snap.val()!==false; });
+        function effectiveAutoNextEnabled(){ return firebaseAutoNextSetting===null ? autoNextEnabled() : firebaseAutoNextSetting; }
+        function applyAdvancedSearch(){ advancedSearchFilters={type:$('advType')?.value||'',category:$('advCategory')?.value||'',year:$('advYear')?.value||'',language:$('advLanguage')?.value||''}; const q=$('searchInput').value.trim(); if(q){ openSearchPage(q); } else { const grid=$('searchPageGrid'); if(grid) drawSearchResults(); }}
 
         // ============================================================
         // CONTENT MODAL / PLAYBACK
@@ -3281,8 +3400,8 @@ body.search-mode #searchPage{display:block}
             const episodeIndex = playbackEpisodes.findIndex(e => String(e.id) === String(episode?.id));
             const epNo = episode ? getEpisodeNumber(episode, episodeIndex >= 0 ? episodeIndex : 0) : '';
             meta.innerHTML = `
-                <span class="watch-chip">🎬 <strong>${escapeHtml(item?.title || 'Video')}</strong></span>
-                ${season ? `<span class="watch-chip">📺 ${escapeHtml(seasonName)}</span>` : ''}
+                <span class="watch-chip"><span class="html-icon html-icon-film">▣</span> <strong>${escapeHtml(item?.title || 'Video')}</strong></span>
+                ${season ? `<span class="watch-chip"><span class="html-icon html-icon-tv">▣</span> ${escapeHtml(seasonName)}</span>` : ''}
                 ${episode ? `<span class="watch-chip">▶ EP ${escapeHtml(epNo)}</span>` : ''}
             `;
         }
@@ -3330,6 +3449,8 @@ body.search-mode #searchPage{display:block}
             $('socialReddit').href = `https://www.reddit.com/submit?url=${shareUrl}&title=${shareTitle}`;
             resetPlaybackUI();
 
+            $('modalFavBtn').onclick = () => toggleFavorite(item.id); $('modalFavBtn').textContent = isFavorite(item.id) ? '♥ My List' : '♡ My List';
+
             $('modalPlayBtn').style.display = 'inline-flex';
             $('modalPlayBtn').onclick = () => openPlayback(item);
             $('modalAppBtn').onclick = () => openPlayback(item);
@@ -3354,10 +3475,11 @@ body.search-mode #searchPage{display:block}
             $('playbackPanel').style.margin = '0';
             $('playbackPanel').style.padding = '18px 28px 28px';
             $('watchPageTitle').textContent = item.title || '';
-            $('watchUrlMeta').innerHTML = `<span class="watch-chip">🎬 <strong>${escapeHtml(item.title || 'Video')}</strong></span>`;
+            $('watchUrlMeta').innerHTML = `<span class="watch-chip"><span class="html-icon html-icon-film">▣</span> <strong>${escapeHtml(item.title || 'Video')}</strong></span>`;
             $('playbackMessage').textContent = 'Loading playback options…';
             currentPlaybackSeason = null;
             currentPlaybackEpisode = null;
+            addHistory(item,null,null);
 
             if (!watchState) {
                 const existing = getWatchUrlState();
@@ -3713,6 +3835,10 @@ body.search-mode #searchPage{display:block}
             }
         });
 
+        $('streamVideo').addEventListener('timeupdate', savePlaybackProgress);
+        $('streamVideo').addEventListener('pause', savePlaybackProgress);
+        $('streamVideo').addEventListener('ended', () => { savePlaybackProgress(); if(effectiveAutoNextEnabled()) setTimeout(playNextEpisode,250); });
+
         $('seasonSelect').addEventListener('change', e => {
             currentPlaybackSeason = playbackSeasons.find(s => String(s.id) === String(e.target.value)) || null;
             updateWatchUrl(currentPlaybackItem, currentPlaybackSeason, null);
@@ -3730,6 +3856,10 @@ body.search-mode #searchPage{display:block}
         // MODAL CLOSE
         // ============================================================
         $('modalClose').addEventListener('click', closeModal);
+        const autoNextToggle=$('autoNextToggle'); if(autoNextToggle){autoNextToggle.checked=autoNextEnabled();autoNextToggle.addEventListener('change',e=>setAutoNext(e.target.checked));}
+        const advToggle=$('advancedSearchToggle'); if(advToggle) advToggle.addEventListener('click',()=>{$('advancedSearchPanel').classList.toggle('show');});
+        ['advType','advCategory','advYear','advLanguage'].forEach(id=>{const el=$(id);if(el)el.addEventListener('change',applyAdvancedSearch);});
+
         $('modalCloseBtn').addEventListener('click', closeModal);
         $('modalBackdrop').addEventListener('click', (e) => {
             if (e.target.id === 'modalBackdrop') closeModal();
@@ -3764,9 +3894,6 @@ body.search-mode #searchPage{display:block}
             document.querySelectorAll('.sidebar-nav a').forEach(link => {
                 link.classList.toggle('active', link.dataset.section === activeId);
             });
-            document.querySelectorAll('.header-nav a').forEach(link => {
-                link.classList.toggle('active', link.dataset.section === activeId);
-            });
         }
 
         window.addEventListener('scroll', updateActiveNav);
@@ -3787,7 +3914,7 @@ body.search-mode #searchPage{display:block}
             }
         });
 
-        console.log('🎬 Anime Box — UI updated with AB branding and modern header.');
+        console.log('Anime Box — UI updated with AB branding and modern header.');
     </script>
 
 
@@ -3798,14 +3925,14 @@ body.search-mode #searchPage{display:block}
 <script>
 (function(){
   const T={
-    en:{home:'Home',movies:'Movies',tv:'TV Shows',anime:'Anime',trending:'Trending',continue:'Continue Watching',menu:'Menu',search:'Search movies, shows, anime...',premium:'⭐ Go Premium',download:'⬇ Download App',login:'🔑 Login',english:'English',spanish:'Spanish',french:'French',german:'German',japanese:'Japanese',chinese:'Chinese',
+    en:{home:'Home',movies:'Movies',tv:'TV Shows',anime:'Anime',trending:'Trending',continue:'Continue Watching',menu:'Menu',search:'Search movies, shows, anime...',premium:'Go Premium',download:'⬇ Download App',login:'Login',english:'English',spanish:'Spanish',french:'French',german:'German',japanese:'Japanese',chinese:'Chinese',
       trendingTitle:'Trending Now',continueTitle:'Continue Watching',moviesTitle:'Movies',tvTitle:'TV Shows',animeTitle:'Anime',watch:'Watch Now',more:'More',rated:'people rated'},
-    fr:{home:'Accueil',movies:'Films',tv:'Séries TV',anime:'Anime',trending:'Tendances',continue:'Continuer à regarder',menu:'Menu',search:'Rechercher des films, séries, anime...',premium:'⭐ Premium',download:'⬇ Télécharger l’application',login:'🔑 Connexion',english:'Anglais',spanish:'Espagnol',french:'Français',german:'Allemand',japanese:'Japonais',chinese:'Chinois',
+    fr:{home:'Accueil',movies:'Films',tv:'Séries TV',anime:'Anime',trending:'Tendances',continue:'Continuer à regarder',menu:'Menu',search:'Rechercher des films, séries, anime...',premium:'Premium',download:'⬇ Télécharger l’application',login:'Connexion',english:'Anglais',spanish:'Espagnol',french:'Français',german:'Allemand',japanese:'Japonais',chinese:'Chinois',
       trendingTitle:'Tendances',continueTitle:'Continuer à regarder',moviesTitle:'Films',tvTitle:'Séries TV',animeTitle:'Anime',watch:'Regarder',more:'Plus',rated:'personnes ont noté'},
-    es:{home:'Inicio',movies:'Películas',tv:'Series',anime:'Anime',trending:'Tendencias',continue:'Seguir viendo',menu:'Menú',search:'Buscar películas, series, anime...',premium:'⭐ Premium',download:'⬇ Descargar App',login:'🔑 Iniciar sesión',english:'Inglés',spanish:'Español',french:'Francés',german:'Alemán',japanese:'Japonés',chinese:'Chino',trendingTitle:'Tendencias',continueTitle:'Seguir viendo',moviesTitle:'Películas',tvTitle:'Series',animeTitle:'Anime',watch:'Ver ahora',more:'Más',rated:'personas calificaron'},
-    de:{home:'Startseite',movies:'Filme',tv:'TV-Serien',anime:'Anime',trending:'Trends',continue:'Weiter ansehen',menu:'Menü',search:'Filme, Serien, Anime suchen...',premium:'⭐ Premium',download:'⬇ App herunterladen',login:'🔑 Anmelden',english:'Englisch',spanish:'Spanisch',french:'Französisch',german:'Deutsch',japanese:'Japanisch',chinese:'Chinesisch',trendingTitle:'Trends',continueTitle:'Weiter ansehen',moviesTitle:'Filme',tvTitle:'TV-Serien',animeTitle:'Anime',watch:'Jetzt ansehen',more:'Mehr',rated:'Personen bewertet'},
-    ja:{home:'ホーム',movies:'映画',tv:'TVシリーズ',anime:'アニメ',trending:'トレンド',continue:'続きを見る',menu:'メニュー',search:'映画・番組・アニメを検索...',premium:'⭐ プレミアム',download:'⬇ アプリをダウンロード',login:'🔑 ログイン',english:'英語',spanish:'スペイン語',french:'フランス語',german:'ドイツ語',japanese:'日本語',chinese:'中国語',trendingTitle:'トレンド',continueTitle:'続きを見る',moviesTitle:'映画',tvTitle:'TVシリーズ',animeTitle:'アニメ',watch:'今すぐ見る',more:'もっと見る',rated:'人が評価'},
-    zh:{home:'首页',movies:'电影',tv:'电视剧',anime:'动漫',trending:'热门',continue:'继续观看',menu:'菜单',search:'搜索电影、剧集、动漫...',premium:'⭐ 高级会员',download:'⬇ 下载应用',login:'🔑 登录',english:'英语',spanish:'西班牙语',french:'法语',german:'德语',japanese:'日语',chinese:'中文',trendingTitle:'热门',continueTitle:'继续观看',moviesTitle:'电影',tvTitle:'电视剧',animeTitle:'动漫',watch:'立即观看',more:'更多',rated:'人评分'}
+    es:{home:'Inicio',movies:'Películas',tv:'Series',anime:'Anime',trending:'Tendencias',continue:'Seguir viendo',menu:'Menú',search:'Buscar películas, series, anime...',premium:'Premium',download:'⬇ Descargar App',login:'Iniciar sesión',english:'Inglés',spanish:'Español',french:'Francés',german:'Alemán',japanese:'Japonés',chinese:'Chino',trendingTitle:'Tendencias',continueTitle:'Seguir viendo',moviesTitle:'Películas',tvTitle:'Series',animeTitle:'Anime',watch:'Ver ahora',more:'Más',rated:'personas calificaron'},
+    de:{home:'Startseite',movies:'Filme',tv:'TV-Serien',anime:'Anime',trending:'Trends',continue:'Weiter ansehen',menu:'Menü',search:'Filme, Serien, Anime suchen...',premium:'Premium',download:'⬇ App herunterladen',login:'Anmelden',english:'Englisch',spanish:'Spanisch',french:'Französisch',german:'Deutsch',japanese:'Japanisch',chinese:'Chinesisch',trendingTitle:'Trends',continueTitle:'Weiter ansehen',moviesTitle:'Filme',tvTitle:'TV-Serien',animeTitle:'Anime',watch:'Jetzt ansehen',more:'Mehr',rated:'Personen bewertet'},
+    ja:{home:'ホーム',movies:'映画',tv:'TVシリーズ',anime:'アニメ',trending:'トレンド',continue:'続きを見る',menu:'メニュー',search:'映画・番組・アニメを検索...',premium:'プレミアム',download:'⬇ アプリをダウンロード',login:'ログイン',english:'英語',spanish:'スペイン語',french:'フランス語',german:'ドイツ語',japanese:'日本語',chinese:'中国語',trendingTitle:'トレンド',continueTitle:'続きを見る',moviesTitle:'映画',tvTitle:'TVシリーズ',animeTitle:'アニメ',watch:'今すぐ見る',more:'もっと見る',rated:'人が評価'},
+    zh:{home:'首页',movies:'电影',tv:'电视剧',anime:'动漫',trending:'热门',continue:'继续观看',menu:'菜单',search:'搜索电影、剧集、动漫...',premium:'高级会员',download:'⬇ 下载应用',login:'登录',english:'英语',spanish:'西班牙语',french:'法语',german:'德语',japanese:'日语',chinese:'中文',trendingTitle:'热门',continueTitle:'继续观看',moviesTitle:'电影',tvTitle:'电视剧',animeTitle:'动漫',watch:'立即观看',more:'更多',rated:'人评分'}
   };
   const $=id=>document.getElementById(id);
   function setText(el,key,t){if(el&&t[key]) el.textContent=t[key];}
