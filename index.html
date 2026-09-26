@@ -239,7 +239,7 @@
         .modal-info h2{font-family:'Poppins',sans-serif;font-size:40px;line-height:1.08;margin:0 0 13px;color:#fff;font-weight:900;letter-spacing:-1px}
         .modal-meta{display:flex;gap:9px;align-items:center;flex-wrap:wrap;color:#b9c0c8;font-size:13px;margin-bottom:18px}
         .modal-meta span{background:transparent;padding:0;border-radius:0;white-space:nowrap}.modal-meta span:not(:last-child)::after{content:'•';margin-left:9px;color:#59616a}
-        .modal-desc{color:#b7bec6;font-size:14px;line-height:1.72;margin:0 0 16px;max-width:760px}.modal-more{color:#fff;font-weight:800;text-decoration:none;margin-left:7px;white-space:nowrap}.modal-more:hover{color:#38d996}
+        .modal-desc{color:#b7bec6;font-size:14px;line-height:1.72;margin:0 0 22px;max-width:760px}.modal-more{color:#fff;font-weight:800;text-decoration:none;margin-left:7px;white-space:nowrap}.modal-more:hover{color:#38d996}
         .modal-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;max-width:760px}
         .modal-actions .btn{min-height:52px;padding:12px 15px;border-radius:12px;font-weight:900;font-size:13px;border:1px solid rgba(255,255,255,.07);display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:.22s ease;white-space:nowrap}
         .modal-actions .btn:hover{transform:translateY(-2px);filter:brightness(1.08)}
@@ -301,65 +301,6 @@
         .subtitle-note{color:#77778c;font-size:11px;margin-top:8px;}
 
         .footer{text-align:center;color:var(--text-muted);font-size:12.5px;padding:30px 24px 16px;border-top:1px solid rgba(255,255,255,0.04);margin-top:20px;}
-
-        /* ================= ADS CONTAINER (below slider) ================= */
-        #homeAdsSlot{
-            margin:0 24px 30px;
-            min-height:90px;
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            background:rgba(255,255,255,0.02);
-            border:1px dashed rgba(255,255,255,0.06);
-            border-radius:14px;
-            overflow:hidden;
-        }
-        #homeAdsSlot:empty{display:none;}
-        @media(max-width:820px){#homeAdsSlot{margin:0 16px 20px;min-height:70px;}}
-        @media(max-width:520px){#homeAdsSlot{margin:0 10px 16px;min-height:60px;}}
-
-        /* ============================================================
-           ✅ MOVIE DETAILS AD SLOT (Description/More এর নিচে, Actions এর উপরে)
-           ============================================================ */
-        .modal-ad-slot{
-            margin:0 0 18px;
-            padding:12px 12px 10px;
-            min-height:90px;
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            background:rgba(255,255,255,0.025);
-            border:1px dashed rgba(139,92,246,.28);
-            border-radius:12px;
-            overflow:hidden;
-            max-width:760px;
-            width:100%;
-            position:relative;
-        }
-        .modal-ad-slot::before{
-            content:'ADVERTISEMENT';
-            position:absolute;
-            top:5px;
-            left:10px;
-            font-size:8px;
-            font-weight:700;
-            letter-spacing:1.2px;
-            color:rgba(255,255,255,.28);
-            pointer-events:none;
-            z-index:1;
-        }
-        .modal-ad-slot > *{
-            max-width:100% !important;
-            max-height:280px;
-        }
-        .modal-ad-slot:empty{display:none;}
-        @media(max-width:900px){
-            .modal-ad-slot{margin:0 0 16px;padding:10px;min-height:80px;border-radius:11px;}
-        }
-        @media(max-width:620px){
-            .modal-ad-slot{margin:0 0 14px;padding:8px;min-height:70px;border-radius:10px;}
-            .modal-ad-slot::before{font-size:7px;top:4px;left:8px;}
-        }
 
         @media (max-width: 1024px){.header-center .search-wrap{max-width:100%;}.header-right .btn-download{display:none;}}
         @media (max-width: 820px){
@@ -863,6 +804,7 @@
         </div>
     </aside>
 
+    <!-- ===== HEADER ===== -->
     <header class="header" id="mainHeader">
         <div class="header-left">
             <button class="hamburger" id="hamburgerBtn" aria-label="Toggle menu">☰</button>
@@ -884,23 +826,6 @@
 
     <section class="hero" id="heroSection"></section>
     <div class="banner-strip" id="bannerStrip"></div>
-
-    <!-- ================= ADS SLOT (BELOW SLIDER - existing) ================= -->
-    <div id="homeAdsSlot">
-        <script>
-        (function(byhc){
-        var d = document,
-            s = d.createElement('script'),
-            l = d.currentScript || d.scripts[d.scripts.length - 1];
-        s.settings = byhc || {};
-        s.src = "\/\/unfoldedtrade.com\/bQX.VEs\/dkGJl\/0\/YbW\/cc\/DeUma9\/u-ZEUvlekyPJTIck0mN\/jCI\/0hM\/TucctZNQzrQ_2mMwjSQayxMGQm";
-        s.async = true;
-        s.referrerPolicy = 'no-referrer-when-downgrade';
-        l.parentNode.insertBefore(s, l);
-        })({})
-        </script>
-    </div>
-    <!-- ================= END ADS SLOT ================= -->
 
     <div class="section" id="trending">
         <div class="section-head">
@@ -985,17 +910,6 @@
                     <h2 id="modalTitle"></h2>
                     <div class="modal-meta" id="modalMeta"></div>
                     <p class="modal-desc" id="modalDesc"></p>
-
-                    <!-- ============================================================
-                         ✅ MOVIE DETAILS AD SLOT
-                         Description / Genre / More › এর নিচে, Buttons এর উপরে
-                         Zone: 287231
-                         ============================================================ -->
-                    <div class="modal-ad-slot" id="modalAdSlot">
-                        <script src="https://quge5.com/88/tag.min.js" data-zone="287231" async data-cfasync="false"></script>
-                    </div>
-                    <!-- ============================================================ -->
-
                     <div class="modal-actions">
                         <button class="btn btn-primary" id="modalPlayBtn">▶ Watch Online</button><button class="btn btn-ghost" id="modalFavBtn">♡ My List</button>
                         <button class="btn btn-app" id="modalAppBtn">⬇ Watch in App</button>
@@ -2228,7 +2142,7 @@
 
         db.ref('content').on('value', () => renderContinueWatching());
 
-        console.log('Anime Box — UI updated. Movie Details ad slot added (zone 287231).');
+        console.log('Anime Box — UI updated. Badges on poster + random view counts.');
     </script>
 
 <div id="websitePopup" class="website-popup"><div class="website-popup-box"><div class="popup-header"><span id="popupTitle">Episode</span><button onclick="closeWebsitePopup()">✕</button></div><iframe id="popupFrame" allowfullscreen referrerpolicy="no-referrer"></iframe></div></div>
@@ -2267,6 +2181,30 @@
   if(langSelect){langSelect.addEventListener('change',()=>translate(langSelect.value)); const saved=localStorage.getItem('siteLanguage')||'en'; langSelect.value=saved; translate(saved);}
 })();
 </script>
+
+<!-- ================= HOME ADS SCRIPT (Zone: existing) ================= -->
+<script>
+(function(byhc){
+var d = document,
+    s = d.createElement('script'),
+    l = d.currentScript || d.scripts[d.scripts.length - 1];
+s.settings = byhc || {};
+s.src = "\/\/unfoldedtrade.com\/bQX.VEs\/dkGJl\/0\/YbW\/cc\/DeUma9\/u-ZEUvlekyPJTIck0mN\/jCI\/0hM\/TucctZNQzrQ_2mMwjSQayxMGQm";
+s.async = true;
+s.referrerPolicy = 'no-referrer-when-downgrade';
+l.parentNode.insertBefore(s, l);
+})({})
+</script>
+<!-- ================= END HOME ADS SCRIPT ================= -->
+
+<!-- ================= HOME BANNER POPUP ADS (Zone: 11899968) ================= -->
+<script>
+(function(s){
+    s.dataset.zone='11899968';
+    s.src='https://nap5k.com/tag.min.js';
+})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')));
+</script>
+<!-- ================= END HOME BANNER POPUP ADS ================= -->
 
 </body>
 </html>
