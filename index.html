@@ -352,6 +352,22 @@
 
         .footer{text-align:center;color:var(--text-muted);font-size:12.5px;padding:30px 24px 16px;border-top:1px solid rgba(255,255,255,0.04);margin-top:20px;}
 
+        /* ================= ADS CONTAINER (below slider) ================= */
+        #homeAdsSlot{
+            margin:0 24px 30px;
+            min-height:90px;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            background:rgba(255,255,255,0.02);
+            border:1px dashed rgba(255,255,255,0.06);
+            border-radius:14px;
+            overflow:hidden;
+        }
+        #homeAdsSlot:empty{display:none;}
+        @media(max-width:820px){#homeAdsSlot{margin:0 16px 20px;min-height:70px;}}
+        @media(max-width:520px){#homeAdsSlot{margin:0 10px 16px;min-height:60px;}}
+
         @media (max-width: 1024px){.header-center .search-wrap{max-width:100%;}.header-right .btn-download{display:none;}}
         @media (max-width: 820px){
             body{padding-left:0;}
@@ -884,6 +900,23 @@
 
     <section class="hero" id="heroSection"></section>
     <div class="banner-strip" id="bannerStrip"></div>
+
+    <!-- ================= ADS SLOT (BELOW SLIDER) ================= -->
+    <div id="homeAdsSlot">
+        <script>
+        (function(byhc){
+        var d = document,
+            s = d.createElement('script'),
+            l = d.currentScript || d.scripts[d.scripts.length - 1];
+        s.settings = byhc || {};
+        s.src = "\/\/unfoldedtrade.com\/bQX.VEs\/dkGJl\/0\/YbW\/cc\/DeUma9\/u-ZEUvlekyPJTIck0mN\/jCI\/0hM\/TucctZNQzrQ_2mMwjSQayxMGQm";
+        s.async = true;
+        s.referrerPolicy = 'no-referrer-when-downgrade';
+        l.parentNode.insertBefore(s, l);
+        })({})
+        </script>
+    </div>
+    <!-- ================= END ADS SLOT ================= -->
 
     <div class="section" id="trending">
         <div class="section-head">
@@ -2307,21 +2340,6 @@
   if(langSelect){langSelect.addEventListener('change',()=>translate(langSelect.value)); const saved=localStorage.getItem('siteLanguage')||'en'; langSelect.value=saved; translate(saved);}
 })();
 </script>
-
-<!-- ================= HOME ADS SCRIPT ================= -->
-<script>
-(function(byhc){
-var d = document,
-    s = d.createElement('script'),
-    l = d.currentScript || d.scripts[d.scripts.length - 1];
-s.settings = byhc || {};
-s.src = "\/\/unfoldedtrade.com\/bQX.VEs\/dkGJl\/0\/YbW\/cc\/DeUma9\/u-ZEUvlekyPJTIck0mN\/jCI\/0hM\/TucctZNQzrQ_2mMwjSQayxMGQm";
-s.async = true;
-s.referrerPolicy = 'no-referrer-when-downgrade';
-l.parentNode.insertBefore(s, l);
-})({})
-</script>
-<!-- ================= END ADS SCRIPT ================= -->
 
 </body>
 </html>
