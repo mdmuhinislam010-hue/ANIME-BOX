@@ -248,6 +248,31 @@
         .modal-rating{border-left:1px solid rgba(255,255,255,.11);min-height:170px;padding:16px 0 0 26px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center}
         .rating-star{font-size:27px;color:#f6c84c;line-height:1;margin-bottom:9px;text-shadow:0 0 18px rgba(246,200,76,.2)}
         .rating-line{display:flex;align-items:baseline;gap:5px}.rating-number{font-size:40px;line-height:1;font-weight:900;color:#f6c84c}.rating-ten{font-size:14px;color:#8d949b;font-weight:700}.rating-people{font-size:11px;color:#707880;margin-top:8px}
+        .modal-details-ad{
+            width:100%;
+            min-height:50px;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            padding:4px 42px 22px;
+            overflow:hidden;
+            background:transparent;
+        }
+        .modal-details-ad iframe{
+            width:320px!important;
+            height:50px!important;
+            max-width:100%;
+            border:0!important;
+            display:block!important;
+        }
+        @media(max-width:900px){
+            .modal-details-ad{padding-left:28px;padding-right:28px;}
+        }
+        @media(max-width:620px){
+            .modal-details-ad{padding-left:18px;padding-right:18px;padding-bottom:18px;}
+            .modal-details-ad iframe{width:min(320px,100%)!important;height:50px!important;}
+        }
+
         .modal-social{padding:2px 42px 30px;display:flex;gap:9px;align-items:center;flex-wrap:wrap}.social-btn{width:42px;height:42px;border-radius:11px;display:grid;place-items:center;color:#fff;text-decoration:none;font-size:17px;font-weight:900;border:1px solid rgba(255,255,255,.08);transition:.2s ease;box-shadow:0 7px 20px rgba(0,0,0,.22)}.social-btn:hover{transform:translateY(-3px);filter:brightness(1.12)}.social-ext{background:#303840}.social-fb{background:#1877f2}.social-x{background:#111820}.social-in{background:#0a66c2}.social-tg{background:#229ed9}.social-rd{background:#ff4500}
         @media(max-width:900px){.modal-details{grid-template-columns:145px minmax(0,1fr);gap:22px;padding:34px 28px 18px}.modal-poster-wrap{width:145px}.modal-rating{grid-column:1/-1;border-left:0;border-top:1px solid rgba(255,255,255,.1);padding:18px 0 0;min-height:0;flex-direction:row;align-items:center;gap:14px}.rating-star{margin:0}.rating-people{margin:0}.modal-social{padding-left:28px;padding-right:28px}}
         @media(max-width:620px){.modal-backdrop{padding:0}.modal{width:100vw;height:100vh;max-height:none;border-radius:0;border-left:0;border-right:0}.modal-close{top:12px;right:12px}.modal-details{display:block;padding:62px 18px 18px}.modal-poster-wrap{width:150px;margin:0 auto 22px}.modal-info h2{font-size:29px;letter-spacing:-.5px}.modal-meta{font-size:12px;margin-bottom:15px}.modal-desc{font-size:13px}.modal-actions{grid-template-columns:1fr;max-width:none}.modal-actions .btn{width:100%}.modal-rating{margin-top:22px;padding:18px 0;justify-content:center;border-top:1px solid rgba(255,255,255,.1)}.modal-social{padding:2px 18px 24px;justify-content:center}.social-btn{width:44px;height:44px}}
@@ -727,6 +752,28 @@
             color:#6b6b7d; font-weight:700; pointer-events:none;
             z-index:2;
         }
+        .native-slider-banner{
+            width:100%;
+            min-height:50px;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            margin-top:2px;
+            overflow:hidden;
+        }
+        .native-slider-banner iframe{
+            width:320px!important;
+            height:50px!important;
+            max-width:100%;
+            border:0;
+            display:block;
+        }
+        @media(max-width:520px){
+            .native-slider-banner iframe{
+                width:min(320px,100%)!important;
+                height:50px!important;
+            }
+        }
         .home-banner-ad-inner{
             width:100%;
             display:flex;
@@ -896,6 +943,20 @@
     <div class="home-banner-ad" id="homeBannerAd">
         <div class="home-banner-ad-inner">
             <!-- এখানে আপনার banner ad code / script paste করুন -->
+            <!-- ===== ADDED 320x50 BANNER UNDER HOME SLIDER ===== -->
+            <div class="native-slider-banner" aria-label="Advertisement">
+                <script>
+                  atOptions = {
+                    'key' : 'de5fb4fa4ec9f9ded1209291c951e70d',
+                    'format' : 'iframe',
+                    'height' : 50,
+                    'width' : 320,
+                    'params' : {}
+                  };
+                </script>
+                <script src="https://www.highrevenueformat.com/de5fb4fa4ec9f9ded1209291c951e70d/invoke.js"></script>
+            </div>
+            <!-- ===== END ADDED 320x50 BANNER ===== -->
             <script>(function(s){s.dataset.zone='11903513',s.src='https://n6wxm.com/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
         </div>
     </div>
@@ -1006,6 +1067,21 @@
                 <a class="social-btn social-tg" id="socialTelegram" href="#" target="_blank" rel="noopener" title="Telegram">➤</a>
                 <a class="social-btn social-rd" id="socialReddit" href="#" target="_blank" rel="noopener" title="Reddit">r/</a>
             </div>
+
+            <!-- ===== CARD DETAILS 320x50 AD (ADDED - EXISTING CODE PRESERVED) ===== -->
+            <div class="modal-details-ad" aria-label="Advertisement">
+                <script>
+                  atOptions = {
+                    'key' : 'de5fb4fa4ec9f9ded1209291c951e70d',
+                    'format' : 'iframe',
+                    'height' : 50,
+                    'width' : 320,
+                    'params' : {}
+                  };
+                </script>
+                <script src="https://www.highrevenueformat.com/de5fb4fa4ec9f9ded1209291c951e70d/invoke.js"></script>
+            </div>
+            <!-- ===== END CARD DETAILS AD ===== -->
 
             <div class="playback-panel" id="playbackPanel" style="display:none;">
                     <div class="watch-page-title" id="watchPageTitle"></div>
