@@ -789,12 +789,4 @@ body.search-mode #searchPage{display:block}
 #homeNoticePopupAd .hnpa-ad>*{max-width:100%}
 @media(max-width:380px){#homeNoticePopupAd .hnpa-box{padding:12px 10px 14px}.hnpa-ad{transform:scale(.94);transform-origin:center}}
 
-@media (max-width:820px){
-  *,*::before,*::after{animation:none!important;transition:none!important}
-  .hero-slide,.banner-slide,.card .poster-wrap img,.simple-card-poster img{transform:none!important}
-  .header,.sidebar,.modal-backdrop{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
-  .hero,.banner-strip{box-shadow:none!important}
-  .card:hover,.simple-card:hover,.media-card:hover{transform:none!important;box-shadow:none!important}
-  .row-scroll,.content-card-row,.type-row{scroll-behavior:auto!important}
-  img{image-rendering:auto}
-}
+.website-popup{position:fixed;inset:0;background:rgba(0,0,0,.88);display:none;justify-content:center;align-items:center;z-index:999999}.website-popup.show{display:flex}.website-popup-box{width:95%;height:92%;background:#111;border-radius:14px;overflow:hidden}.popup-header{height:52px;display:flex;justify-content:space-between;align-items:center;padding:0 16px;background:#181818;color:#fff}.popup-header button{background:none;border:none;color:#fff;font-size:24px;cursor:pointer}#popupFrame{width:100%;height:calc(100% - 52px);border:none;background:#000}
