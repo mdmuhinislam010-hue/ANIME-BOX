@@ -373,7 +373,36 @@ l.parentNode.insertBefore(s, l);
     </div>
   </div>
 </div>
+<script>
+(function(){
+  function isHome(){
+    var p=window.location.pathname || '';
+    var q=window.location.search || '';
+    var h=window.location.hash || '';
+    return !q && !h && !document.getElementById('searchPage')?.classList.contains('active') && !document.getElementById('categoryPage')?.classList.contains('active');
+  }
+  function openHomeNoticePopup(){
+    var p=document.getElementById('homeNoticePopupAd');
+    if(!p) return;
+    p.classList.add('show');
+    p.setAttribute('aria-hidden','false');
+  }
+  function closeHomeNoticePopup(){
+    var p=document.getElementById('homeNoticePopupAd');
+    if(!p) return;
+    p.classList.remove('show');
+    p.setAttribute('aria-hidden','true');
+  }
+  var c=document.getElementById('homeNoticePopupAdClose');
+  if(c) c.addEventListener('click',closeHomeNoticePopup);
+  var p=document.getElementById('homeNoticePopupAd');
+  if(p) p.addEventListener('click',function(e){if(e.target===p) closeHomeNoticePopup();});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape') closeHomeNoticePopup();});
+  window.addEventListener('load',function(){setTimeout(function(){if(isHome()) openHomeNoticePopup();},900);});
+})();
+</script>
 <!-- ===== END HOME NOTICE POPUP AD ===== -->
 
 </body>
+</html>
 </html>
