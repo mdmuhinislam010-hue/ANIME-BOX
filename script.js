@@ -551,7 +551,7 @@ function randomShuffle(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){con
 
 function getRandomFeedPool(){
     return content.filter(item => {
-        const type = String(item.type || '').trim().toLowerCase().replace(/[_-]+/g,' ').replace(/\\s+/g,' ');
+        const type = String(item.type || '').trim().toLowerCase().replace(/[_-]+/g,' ').replace(/\s+/g,' ');
         return ['anime','movie','tv','tv show','tvshow','series'].includes(type);
     });
 }
@@ -1192,35 +1192,80 @@ console.log('Anime Box — UI updated. Badges on poster + random view counts.');
   if(langSelect){langSelect.addEventListener('change',()=>translate(langSelect.value)); const saved=localStorage.getItem('siteLanguage')||'en'; langSelect.value=saved; translate(saved);}
 })();
 
-// ================== POPUP SCRIPT ==================
-function openWebsitePopup(url,title){document.getElementById('popupTitle').textContent=title;document.getElementById('popupFrame').src=url;document.getElementById('websitePopup').classList.add('show')}
-function closeWebsitePopup(){document.getElementById('popupFrame').src='';document.getElementById('websitePopup').classList.remove('show')}
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeWebsitePopup()});
+// ================== WEBSITE POPUP SCRIPT ==================
+function openWebsitePopup(url, title) {
+    document.getElementById('popupTitle').textContent = title;
+    document.getElementById('popupFrame').src = url;
+    document.getElementById('websitePopup').classList.add('show');
+}
+function closeWebsitePopup() {
+    document.getElementById('popupFrame').src = '';
+    document.getElementById('websitePopup').classList.remove('show');
+}
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closeWebsitePopup();
+});
 
-// ===== HOME NOTICE POPUP AD SCRIPT =====
-(function(){
-  function isHome(){
-    var p=window.location.pathname || '';
-    var q=window.location.search || '';
-    var h=window.location.hash || '';
-    return !q && !h && !document.getElementById('searchPage')?.classList.contains('active') && !document.getElementById('categoryPage')?.classList.contains('active');
-  }
-  function openHomeNoticePopup(){
-    var p=document.getElementById('homeNoticePopupAd');
-    if(!p) return;
-    p.classList.add('show');
-    p.setAttribute('aria-hidden','false');
-  }
-  function closeHomeNoticePopup(){
-    var p=document.getElementById('homeNoticePopupAd');
-    if(!p) return;
-    p.classList.remove('show');
-    p.setAttribute('aria-hidden','true');
-  }
-  var c=document.getElementById('homeNoticePopupAdClose');
-  if(c) c.addEventListener('click',closeHomeNoticePopup);
-  var p=document.getElementById('homeNoticePopupAd');
-  if(p) p.addEventListener('click',function(e){if(e.target===p) closeHomeNoticePopup();});
-  document.addEventListener('keydown',function(e){if(e.key==='Escape') closeHomeNoticePopup();});
-  window.addEventListener('load',function(){setTimeout(function(){if(isHome()) openHomeNoticePopup();},900);});
+// ===== HOME NOTICE POPUP AD SCRIPT (FIXED) =====
+(function () {
+    function isHomePage() {
+        var q = window.location.search || '';
+        var h = window.location.hash || '';
+        var body = document.body;
+        return !q && !h &&
+            !body.classList.contains('search-mode') &&
+            !body.classList.contains('category-mode') &&
+            !body.classList.contains('detail-mode');
+    }
+
+    function openHomeNoticePopup() {
+        var p = document.getElementById('homeNoticePopupAd');
+        if (!p) return;
+        p.classList.add('show');
+        p.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeHomeNoticePopup() {
+        var p = document.getElementById('homeNoticePopupAd');
+        if (!p) return;
+        p.classList.remove('show');
+        p.setAttribute('aria-hidden', 'true');
+    }
+
+    window.openHomeNoticePopup = openHomeNoticePopup;
+    window.closeHomeNoticePopup = closeHomeNoticePopup;
+
+    function initHomeNoticePopup() {
+        var popup = document.getElementById('homeNoticePopupAd');
+        var closeBtn = document.getElementById('homeNoticePopupAdClose');
+        if (!popup) return;
+
+        if (closeBtn) {
+            closeBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                closeHomeNoticePopup();
+            });
+        }
+
+        popup.addEventListener('click', function (e) {
+            if (e.target === popup) closeHomeNoticePopup();
+        });
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') closeHomeNoticePopup();
+        });
+
+        window.addEventListener('load', function () {
+            setTimeout(function () {
+                if (isHomePage()) openHomeNoticePopup();
+            }, 900);
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initHomeNoticePopup);
+    } else {
+        initHomeNoticePopup();
+    }
 })();
