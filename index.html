@@ -7,7 +7,7 @@
     <link rel="icon" type="image/png" href="https://cdn.imageurlgenerator.com/uploads/ce68f4a9-a8e6-42f7-9cde-64dd6467ccd1.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
 
@@ -133,6 +133,7 @@
     <!-- ===== HOME SLIDER NICHE BANNER AD START ===== -->
     <div class="home-banner-ad" id="homeBannerAd">
         <div class="home-banner-ad-inner">
+            <!-- এখানে আপনার banner ad code / script paste করুন -->
             <!-- ===== ADDED 320x50 BANNER UNDER HOME SLIDER ===== -->
             <div class="native-slider-banner" aria-label="Advertisement">
                 <script>
@@ -258,7 +259,7 @@
                 <a class="social-btn social-rd" id="socialReddit" href="#" target="_blank" rel="noopener" title="Reddit">r/</a>
             </div>
 
-            <!-- ===== CARD DETAILS 320x50 AD ===== -->
+            <!-- ===== CARD DETAILS 320x50 AD (ADDED - EXISTING CODE PRESERVED) ===== -->
             <div class="modal-details-ad" aria-label="Advertisement">
                 <script>
                   atOptions = {
@@ -320,34 +321,14 @@
         </div>
     </div>
 
-    <!-- ===== HOME NOTICE POPUP AD (এখন script.js এর আগে, তাই ঠিকমতো কাজ করবে) ===== -->
-    <div id="homeNoticePopupAd" aria-hidden="true">
-      <div class="hnpa-box" role="dialog" aria-modal="true" aria-label="Advertisement">
-        <button class="hnpa-close" id="homeNoticePopupAdClose" type="button" aria-label="Close advertisement">×</button>
-        <div class="hnpa-title">Advertisement</div>
-        <div class="hnpa-ad" id="homeNoticePopupAdSlot">
-          <script>
-            atOptions = {
-              'key' : '21e63514a862d5497ef3f1b2aef716c0',
-              'format' : 'iframe',
-              'height' : 250,
-              'width' : 300,
-              'params' : {}
-            };
-          </script>
-          <script src="https://www.highrevenueformat.com/21e63514a862d5497ef3f1b2aef716c0/invoke.js"></script>
-        </div>
-      </div>
-    </div>
-    <!-- ===== END HOME NOTICE POPUP AD ===== -->
-
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
     <script src="script.js"></script>
 
 <div id="websitePopup" class="website-popup"><div class="website-popup-box"><div class="popup-header"><span id="popupTitle">Episode</span><button onclick="closeWebsitePopup()">✕</button></div><iframe id="popupFrame" allowfullscreen referrerpolicy="no-referrer"></iframe></div></div>
 
-<!-- ================= HOME ADS SCRIPT ================= -->
+<!-- ================= HOME ADS SCRIPT (Zone: existing) ================= -->
 <script>
 (function(byhc){
 var d = document,
@@ -362,7 +343,7 @@ l.parentNode.insertBefore(s, l);
 </script>
 <!-- ================= END HOME ADS SCRIPT ================= -->
 
-<!-- ================= HOME BANNER POPUP ADS ================= -->
+<!-- ================= HOME BANNER POPUP ADS (Zone: 11899968) ================= -->
 <script>
 (function(s){
     s.dataset.zone='11899968';
@@ -370,6 +351,29 @@ l.parentNode.insertBefore(s, l);
 })([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')));
 </script>
 <!-- ================= END HOME BANNER POPUP ADS ================= -->
+
+
+
+<!-- ===== HOME NOTICE POPUP AD (ADDED - EXISTING CODE PRESERVED) ===== -->
+<div id="homeNoticePopupAd" aria-hidden="true">
+  <div class="hnpa-box" role="dialog" aria-modal="true" aria-label="Advertisement">
+    <button class="hnpa-close" id="homeNoticePopupAdClose" type="button" aria-label="Close advertisement">×</button>
+    <div class="hnpa-title">Advertisement</div>
+    <div class="hnpa-ad" id="homeNoticePopupAdSlot">
+      <script>
+        atOptions = {
+          'key' : '21e63514a862d5497ef3f1b2aef716c0',
+          'format' : 'iframe',
+          'height' : 250,
+          'width' : 300,
+          'params' : {}
+        };
+      </script>
+      <script src="https://www.highrevenueformat.com/21e63514a862d5497ef3f1b2aef716c0/invoke.js"></script>
+    </div>
+  </div>
+</div>
+<!-- ===== END HOME NOTICE POPUP AD ===== -->
 
 </body>
 </html>
