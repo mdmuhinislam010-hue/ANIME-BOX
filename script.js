@@ -13,6 +13,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
+/* ===== GLOBAL STATE ===== */
 let heroSlides = [];
 let banners = [];
 let categories = [];
@@ -24,6 +25,7 @@ let activeMovieCat = 'all', activeTvCat = 'all', activeAnimeCat = 'all';
 
 const $ = (id) => document.getElementById(id);
 
+/* ===== HELPERS ===== */
 function toArray(snapVal){ if(!snapVal) return []; return Object.keys(snapVal).map(key => ({ id: key, ...snapVal[key] })); }
 function sortByOrder(arr){ return arr.slice().sort((a,b)=>(a.order??0)-(b.order??0)); }
 function shuffleForRefresh(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
@@ -89,6 +91,7 @@ function isTypeValid(key){
     return types.some(t => typeKeyOf(t) === key && t.enabled !== false);
 }
 
+/* ===== FIREBASE LISTENERS ===== */
 db.ref('heroSlides').on('value', snap => {
     heroSlides = sortByOrder(onlyEnabled(toArray(snap.val())));
     renderHero();
@@ -116,6 +119,7 @@ db.ref('types').on('value', snap => {
     renderCustomTypeMenuItems();
 });
 
+/* ===== CUSTOM TYPE MENU ===== */
 function renderCustomTypeMenuItems(){
     const wrap = $('customTypeMenuItems');
     if(!wrap) return;
@@ -127,6 +131,7 @@ function renderCustomTypeMenuItems(){
     }).join('');
 }
 
+/* ===== URL HELPERS ===== */
 function getSearchFromUrl(){ return new URLSearchParams(window.location.search).get('search') || ''; }
 function getCategoryFromUrl(){ return (new URLSearchParams(window.location.search).get('category') || '').toLowerCase(); }
 
@@ -145,6 +150,7 @@ window.addEventListener('popstate', () => {
     if (item) openContentById(item.id, true, state);
 });
 
+/* ===== SEARCH PAGE ===== */
 function openSearchPage(query){
     query=String(query||'').trim();
     if(!query) return;
@@ -246,6 +252,7 @@ function drawSearchResults(){
     grid.innerHTML=matches.length ? matches.map(searchCardHTML).join('') : '<div class="search-page-empty">No results found for "'+escapeHtml(query)+'".</div>';
 }
 
+/* ===== CATEGORY PAGE ===== */
 function openCategoryPage(type){
     const clean = String(type || '').toLowerCase().trim();
     if(!clean) return;
@@ -337,6 +344,7 @@ function renderCategoryPage(){
     return true;
 }
 
+/* ===== SINGLE DETAIL ===== */
 function getDetailIdFromUrl(){ return ""; }
 function loadSingleDetailIfNeeded(){ const detailId=getDetailIdFromUrl(); if(!detailId) return false; document.body.classList.remove('detail-mode'); document.title='Loading...'; return true; }
 
@@ -346,6 +354,7 @@ if(getSearchFromUrl() || getCategoryFromUrl() || getDetailIdFromUrl()){
     if(homeLoader) homeLoader.classList.add('hide');
 }
 
+/* ===== CONTENT LISTENER ===== */
 db.ref('content').on('value', snap => {
     content = shuffleForRefresh(sortByOrder(onlyEnabled(toArray(snap.val()))));
     if(renderSearchPage()) return;
@@ -366,6 +375,7 @@ db.ref('content').on('value', snap => {
     openWatchFromUrl();
 });
 
+/* ===== SIDEBAR ===== */
 const sidebar = $('sidebar');
 const overlay = $('sidebarOverlay');
 const hamburger = $('hamburgerBtn');
@@ -414,6 +424,7 @@ if(sidebarNavEl){
     });
 }
 
+/* ===== HERO ===== */
 function renderHero(){
     const el = $('heroSection');
     if(!heroSlides.length){ el.innerHTML = `<div class="empty-state" style="padding-top:80px;">No hero slides published yet.</div>`; return; }
@@ -448,6 +459,7 @@ function heroNav(dir){ heroGo((heroIndex + dir + heroSlides.length) % heroSlides
 function heroGo(i){ heroIndex = i; renderHero(); }
 function restartHeroTimer(){ clearInterval(heroTimer); if(heroSlides.length > 1) heroTimer = setInterval(() => heroNav(1), 6000); }
 
+/* ===== BANNERS ===== */
 function renderBanner(){
     const el = $('bannerStrip');
     if(!banners.length){ el.style.display = 'none'; return; }
@@ -462,6 +474,7 @@ function renderBanner(){
     }
 }
 
+/* ===== CATEGORY TABS ===== */
 function renderCategoryTabs(){
     const catNames = categories.map(c => c.name);
     buildTabs('movieCatTabs', catNames, activeMovieCat, (c)=>{ activeMovieCat = c; renderGrids(); });
@@ -476,6 +489,7 @@ function buildTabs(containerId, catNames, active, onClick){
     el.querySelectorAll('.tab-btn').forEach(btn => { btn.addEventListener('click', () => onClick(btn.dataset.cat)); });
 }
 
+/* ===== CARD HTML ===== */
 function formatReleaseDate(value){
     if(!value) return '';
     const raw = String(value).trim();
@@ -521,6 +535,7 @@ function cardHTML(item){
     `;
 }
 
+/* ===== RENDER GRIDS ===== */
 function renderAll(){ renderTrending(); renderGrids(); renderCustomTypeSections(); renderContinueWatching(); }
 function renderTrending(){
     const row = $('trendingRow');
@@ -540,6 +555,7 @@ function renderTypeGrid(type, gridId, cat){
     el.innerHTML = items.length ? items.map(cardHTML).join('') : `<div class="empty-state">No titles found.</div>`;
 }
 
+/* ===== RANDOM FEED ===== */
 let randomFeedUsed = new Set();
 let randomFeedLoading = false;
 let randomFeedFinished = false;
@@ -551,7 +567,7 @@ function randomShuffle(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){con
 
 function getRandomFeedPool(){
     return content.filter(item => {
-        const type = String(item.type || '').trim().toLowerCase().replace(/[_-]+/g,' ').replace(/\s+/g,' ');
+        const type = String(item.type || '').trim().toLowerCase().replace(/[_-]+/g,' ').replace(/\\s+/g,' ');
         return ['anime','movie','tv','tv show','tvshow','series'].includes(type);
     });
 }
@@ -610,6 +626,7 @@ function setupRandomFeed(){
     loadRandomFeed();
 }
 
+/* ===== SEARCH INPUT ===== */
 const searchInput = $('searchInput');
 const searchResults = $('searchResults');
 
@@ -648,6 +665,7 @@ function selectSearchResult(encodedId){
     if(item){ const q = item.title || item.name || ''; openSearchPage(q); }
 }
 
+/* ===== CONTINUE WATCHING ===== */
 function renderContinueWatching(){
     const section = $('continueWatching'), row = $('continueWatchingRow');
     if(!content.length){ section.style.display = 'none'; return; }
@@ -681,6 +699,7 @@ function resumeFromContinue(itemId, episodeId){
     if(item){ const ep=episodeId?getHistory().find(x=>String(x.itemId)===String(itemId)&&String(x.episodeId)===String(episodeId)):null; openContentById(item.id,false,ep?{episodeSlug:''}:null); }
 }
 
+/* ===== HISTORY / FAVORITES ===== */
 const SB_KEYS = { history:'sb_watch_history_v1', favorites:'sb_favorites_v1', autoNext:'sb_auto_next_v1' };
 function readJSON(key, fallback){ try{return JSON.parse(localStorage.getItem(key)||'') ?? fallback}catch(e){return fallback} }
 function getHistory(){ const v=readJSON(SB_KEYS.history,[]); return Array.isArray(v)?v:[]; }
@@ -693,6 +712,8 @@ function refreshFavoriteButtons(id){ document.querySelectorAll('[data-favorite-i
 function renderWatchHistory(){ const section=$('watchHistory'),row=$('watchHistoryRow'); if(!section||!row)return; const h=getHistory(); const cards=h.map(e=>{const item=content.find(c=>String(c.id)===String(e.itemId));if(!item)return '';return `<div class="card" onclick="openContentById('${item.id}')"><div class="poster-wrap"><img src="${item.poster||''}" loading="lazy" alt=""><div class="overlay"><div class="play-btn">▶</div></div></div><div class="title">${escapeHtml(item.title||'')}</div><div class="meta">${e.title?'EP • '+escapeHtml(e.title):'Watched'}</div></div>`}).filter(Boolean).join(''); row.innerHTML=cards||'<div class="empty" style="width:100%">No watch history yet.</div>'; section.style.display=h.length?'block':'none'; }
 function clearWatchHistory(){ localStorage.removeItem(SB_KEYS.history); renderWatchHistory(); }
 function renderMyList(){ const section=$('myList'),row=$('myListRow'); if(!section||!row)return; const fav=getFavorites(); const cards=fav.map(id=>{const item=content.find(c=>String(c.id)===String(id));if(!item)return '';return `<div class="card" onclick="openContentById('${item.id}')"><div class="poster-wrap"><img src="${item.poster||''}" loading="lazy" alt=""><button class="favorite-badge active" data-favorite-id="${item.id}" onclick="event.stopPropagation();toggleFavorite('${item.id}')">♥</button></div><div class="title">${escapeHtml(item.title||'')}</div><div class="meta">${escapeHtml(item.type||'')}</div></div>`}).filter(Boolean).join(''); row.innerHTML=cards||'<div class="empty" style="width:100%">Your My List is empty.</div>'; section.style.display=fav.length?'block':'none'; }
+
+/* ===== PLAYBACK PROGRESS ===== */
 function savePlaybackProgress(){ const v=$('streamVideo'); if(!v||!currentPlaybackItem||!currentPlaybackEpisode||!Number.isFinite(v.duration)||v.duration<=0)return; localStorage.setItem('sb_progress::'+currentPlaybackItem.id+'::'+currentPlaybackEpisode.id,JSON.stringify({itemId:currentPlaybackItem.id,episodeId:currentPlaybackEpisode.id,seasonId:currentPlaybackSeason?.id||'',time:v.currentTime,duration:v.duration,updatedAt:Date.now()})); addHistory(currentPlaybackItem,currentPlaybackSeason,currentPlaybackEpisode); renderContinueWatching(); }
 function getNextEpisode(){ if(!currentPlaybackEpisode)return null; const i=playbackEpisodes.findIndex(e=>String(e.id)===String(currentPlaybackEpisode.id)); return i>=0?playbackEpisodes[i+1]||null:null; }
 function playNextEpisode(){ const next=getNextEpisode(); if(!next){ $('playbackMessage').textContent='You reached the end of this season.'; return; } currentPlaybackEpisode=next; updateWatchUrl(currentPlaybackItem,currentPlaybackSeason,next); renderEpisodePills(next.id); handleEpisodeClick(next); }
@@ -703,6 +724,7 @@ db.ref('settings/playback/autoNext').on('value',snap=>{ if(snap.exists()) fireba
 function effectiveAutoNextEnabled(){ return firebaseAutoNextSetting===null ? autoNextEnabled() : firebaseAutoNextSetting; }
 function applyAdvancedSearch(){ advancedSearchFilters={type:$('advType')?.value||'',category:$('advCategory')?.value||'',year:$('advYear')?.value||'',language:$('advLanguage')?.value||''}; const q=$('searchInput').value.trim(); if(q){ openSearchPage(q); } else { const grid=$('searchPageGrid'); if(grid) drawSearchResults(); }}
 
+/* ===== PLAYBACK STATE ===== */
 let currentPlaybackItem = null;
 let playbackSeasons = [];
 let playbackEpisodes = [];
@@ -747,6 +769,7 @@ function resetPlaybackUI(){
     playbackSources = {};
 }
 
+/* ===== WATCH URL ===== */
 function slugifyWatch(value){ return String(value || '').trim().toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); }
 function getSeasonNumber(season, index = 0){ const n = season?.number ?? String(season?.name || '').match(/\d+/)?.[0]; return Number(n) || (index + 1); }
 function getEpisodeNumber(episode, index = 0){ const n = episode?.episodeNumber ?? episode?.number ?? String(episode?.title || episode?.name || '').match(/\d+/)?.[0]; return Number(n) || (index + 1); }
@@ -800,6 +823,7 @@ function openWatchFromUrl(){
     openContentById(item.id, true, state);
 }
 
+/* ===== OPEN CONTENT MODAL ===== */
 function openContentById(id, fromUrl = false, watchState = null){
     if(!id) return;
     const item = content.find(c => c.id === id);
@@ -976,6 +1000,7 @@ function renderEpisodePills(activeEpisodeId = ''){
     });
 }
 
+/* ===== VIDEO PLAYER ===== */
 let hlsInstance = null;
 function handleEpisodeClick(episode){ currentPlaybackEpisode = episode; $('playbackMessage').textContent = 'Loading video…'; resetPlayerOnly(); loadDubsForEpisode(episode.id); }
 function resetPlayerOnly(){
@@ -1137,6 +1162,7 @@ function closeModal(){
     currentPlaybackItem = null;
 }
 
+/* ===== ACTIVE NAV ===== */
 const sections = ['home', 'trending', 'continueWatching', 'movies', 'tvshows', 'anime'];
 function updateActiveNav(){
     const scrollY = window.scrollY + 120;
@@ -1159,3 +1185,68 @@ window.addEventListener('load', updateActiveNav);
 db.ref('content').on('value', () => renderContinueWatching());
 
 console.log('Anime Box — UI updated. Badges on poster + random view counts.');
+
+/* ===== WEBSITE POPUP ===== */
+function openWebsitePopup(url,title){document.getElementById('popupTitle').textContent=title;document.getElementById('popupFrame').src=url;document.getElementById('websitePopup').classList.add('show')}
+function closeWebsitePopup(){document.getElementById('popupFrame').src='';document.getElementById('websitePopup').classList.remove('show')}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeWebsitePopup()});
+
+/* ===== LANGUAGE TRANSLATION ===== */
+(function(){
+  const T={
+    en:{home:'Home',movies:'Movies',tv:'TV Shows',anime:'Anime',trending:'Trending',continue:'Continue Watching',menu:'Menu',search:'Search movies, shows, anime...',download:'⬇ Download App',trendingTitle:'Trending Now',continueTitle:'Continue Watching',moviesTitle:'Movies',tvTitle:'TV Shows',animeTitle:'Anime',watch:'Watch Now',more:'More',rated:'people rated'},
+    fr:{home:'Accueil',movies:'Films',tv:'Séries TV',anime:'Anime',trending:'Tendances',continue:'Continuer à regarder',menu:'Menu',search:'Rechercher des films, séries, anime...',download:'⬇ Télécharger l’application',trendingTitle:'Tendances',continueTitle:'Continuer à regarder',moviesTitle:'Films',tvTitle:'Séries TV',animeTitle:'Anime',watch:'Regarder',more:'Plus',rated:'personnes ont noté'},
+    es:{home:'Inicio',movies:'Películas',tv:'Series',anime:'Anime',trending:'Tendencias',continue:'Seguir viendo',menu:'Menú',search:'Buscar películas, series, anime...',download:'⬇ Descargar App',trendingTitle:'Tendencias',continueTitle:'Seguir viendo',moviesTitle:'Películas',tvTitle:'Series',animeTitle:'Anime',watch:'Ver ahora',more:'Más',rated:'personas calificaron'},
+    de:{home:'Startseite',movies:'Filme',tv:'TV-Serien',anime:'Anime',trending:'Trends',continue:'Weiter ansehen',menu:'Menü',search:'Filme, Serien, Anime suchen...',download:'⬇ App herunterladen',trendingTitle:'Trends',continueTitle:'Weiter ansehen',moviesTitle:'Filme',tvTitle:'TV-Serien',animeTitle:'Anime',watch:'Jetzt ansehen',more:'Mehr',rated:'Personen bewertet'},
+    ja:{home:'ホーム',movies:'映画',tv:'TVシリーズ',anime:'アニメ',trending:'トレンド',continue:'続きを見る',menu:'メニュー',search:'映画・番組・アニメを検索...',download:'⬇ アプリをダウンロード',trendingTitle:'トレンド',continueTitle:'続きを見る',moviesTitle:'映画',tvTitle:'TVシリーズ',animeTitle:'アニメ',watch:'今すぐ見る',more:'もっと見る',rated:'人が評価'},
+    zh:{home:'首页',movies:'电影',tv:'电视剧',anime:'动漫',trending:'热门',continue:'继续观看',menu:'菜单',search:'搜索电影、剧集、动漫...',download:'⬇ 下载应用',trendingTitle:'热门',continueTitle:'继续观看',moviesTitle:'电影',tvTitle:'电视剧',animeTitle:'动漫',watch:'立即观看',more:'更多',rated:'人评分'}
+  };
+  const $=id=>document.getElementById(id);
+  function setText(el,key,t){if(el&&t[key]) el.textContent=t[key];}
+  function translate(lang){
+    const t=T[lang]||T.en;
+    document.documentElement.lang=lang;
+    document.querySelectorAll('[data-section="home"]').forEach(e=>{const n=e.querySelector('.nav-icon'); e.textContent=''; if(n)e.appendChild(n); e.append(' '+t.home);});
+    document.querySelectorAll('[data-section="movies"]').forEach(e=>{const n=e.querySelector('.nav-icon'); if(n){e.textContent='';e.appendChild(n);e.append(' '+t.movies)}else e.textContent=t.movies});
+    document.querySelectorAll('[data-section="tvshows"]').forEach(e=>{const n=e.querySelector('.nav-icon'); if(n){e.textContent='';e.appendChild(n);e.append(' '+t.tv)}else e.textContent=t.tv});
+    document.querySelectorAll('[data-section="anime"]').forEach(e=>{const n=e.querySelector('.nav-icon'); if(n){e.textContent='';e.appendChild(n);e.append(' '+t.anime)}else e.textContent=t.anime});
+    document.querySelectorAll('[data-section="trending"]').forEach(e=>{const n=e.querySelector('.nav-icon'); if(n){e.textContent='';e.appendChild(n);e.append(' '+t.trending)}else e.textContent=t.trending});
+    document.querySelectorAll('[data-section="continueWatching"]').forEach(e=>{const n=e.querySelector('.nav-icon'); if(n){e.textContent='';e.appendChild(n);e.append(' '+t.continue)}else e.textContent=t.continue});
+    const label=document.querySelector('.nav-label'); setText(label,'menu',t);
+    const search=$('searchInput'); if(search) search.placeholder=t.search;
+    const download=document.querySelector('.btn-download'); setText(download,'download',t);
+    const headings={trending:'trendingTitle',continueWatching:'continueTitle',movies:'moviesTitle',tvshows:'tvTitle',anime:'animeTitle'};
+    Object.entries(headings).forEach(([id,key])=>{const h=document.querySelector('#'+id+' .section-head h2'); if(h){const dot=h.querySelector('.dot'); h.textContent=''; if(dot)h.appendChild(dot); h.append(' '+t[key]);}});
+    localStorage.setItem('siteLanguage',lang);
+  }
+  const langSelect=$('sidebarLang');
+  if(langSelect){langSelect.addEventListener('change',()=>translate(langSelect.value)); const saved=localStorage.getItem('siteLanguage')||'en'; langSelect.value=saved; translate(saved);}
+})();
+
+/* ===== HOME NOTICE POPUP AD ===== */
+(function(){
+  function isHome(){
+    var p=window.location.pathname || '';
+    var q=window.location.search || '';
+    var h=window.location.hash || '';
+    return !q && !h && !document.getElementById('searchPage')?.classList.contains('active') && !document.getElementById('categoryPage')?.classList.contains('active');
+  }
+  function openHomeNoticePopup(){
+    var p=document.getElementById('homeNoticePopupAd');
+    if(!p) return;
+    p.classList.add('show');
+    p.setAttribute('aria-hidden','false');
+  }
+  function closeHomeNoticePopup(){
+    var p=document.getElementById('homeNoticePopupAd');
+    if(!p) return;
+    p.classList.remove('show');
+    p.setAttribute('aria-hidden','true');
+  }
+  var c=document.getElementById('homeNoticePopupAdClose');
+  if(c) c.addEventListener('click',closeHomeNoticePopup);
+  var p=document.getElementById('homeNoticePopupAd');
+  if(p) p.addEventListener('click',function(e){if(e.target===p) closeHomeNoticePopup();});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape') closeHomeNoticePopup();});
+  window.addEventListener('load',function(){setTimeout(function(){if(isHome()) openHomeNoticePopup();},900);});
+})();
