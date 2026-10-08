@@ -24,6 +24,74 @@ let activeMovieCat = 'all', activeTvCat = 'all', activeAnimeCat = 'all';
 
 const $ = (id) => document.getElementById(id);
 
+/* ===== LIVE ADMIN THEME ===== */
+const DEFAULT_SITE_THEME = {
+    bg:'#0a0a0f',
+    bgSoft:'#111118',
+    card:'#16161f',
+    cardHover:'#1e1e2a',
+    text:'#f2f2f5',
+    muted:'#8e8e9e',
+    accent:'#8b5cf6',
+    accent2:'#ec4899',
+    cardBorder:'rgba(255,255,255,.10)',
+    badge:'#22d3ee',
+    badgeText:'#22d3ee',
+    badgeLang:'#22d3ee',
+    badgeYear:'#22d3ee',
+    quality:'#ffc400',
+    rating:'#f5c400',
+    typeBadge:'#ef4444',
+    cardTitle:'#ffffff'
+};
+
+function applySiteTheme(theme){
+    const t = Object.assign({}, DEFAULT_SITE_THEME, theme || {});
+    const root = document.documentElement;
+
+    root.style.setProperty('--bg', t.bg);
+    root.style.setProperty('--bg-soft', t.bgSoft);
+    root.style.setProperty('--bg-card', t.card);
+    root.style.setProperty('--bg-card-hover', t.cardHover);
+    root.style.setProperty('--text', t.text);
+    root.style.setProperty('--text-muted', t.muted);
+    root.style.setProperty('--accent', t.accent);
+    root.style.setProperty('--accent2', t.accent2);
+    root.style.setProperty('--theme-card-bg', t.card);
+    root.style.setProperty('--theme-card-border', t.cardBorder);
+    root.style.setProperty('--theme-badge', t.badge);
+    root.style.setProperty('--theme-badge-text', t.badgeText || t.badge);
+    root.style.setProperty('--theme-badge-lang', t.badgeLang);
+    root.style.setProperty('--theme-badge-year', t.badgeYear);
+    root.style.setProperty('--theme-quality', t.quality || '#ffc400');
+    root.style.setProperty('--theme-rating', t.rating);
+    root.style.setProperty('--theme-type', t.typeBadge);
+    root.style.setProperty('--theme-card-title', t.cardTitle);
+
+    root.style.setProperty('--gradient',
+        `linear-gradient(135deg, ${t.accent}, ${t.accent2})`);
+
+    try {
+        localStorage.setItem('streambox_theme', JSON.stringify(t));
+    } catch(e){}
+}
+
+try {
+    applySiteTheme(JSON.parse(localStorage.getItem('streambox_theme') || 'null'));
+} catch(e) {
+    applySiteTheme(DEFAULT_SITE_THEME);
+}
+
+/* Same Firebase project as Admin: settings/theme is the shared source. */
+db.ref('settings/theme').on('value', snap => {
+    if(snap.exists()) {
+        applySiteTheme(snap.val());
+    } else {
+        applySiteTheme(DEFAULT_SITE_THEME);
+    }
+});
+
+
 function toArray(snapVal){ if(!snapVal) return []; return Object.keys(snapVal).map(key => ({ id: key, ...snapVal[key] })); }
 function sortByOrder(arr){ return arr.slice().sort((a,b)=>(a.order??0)-(b.order??0)); }
 function shuffleForRefresh(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
@@ -527,11 +595,20 @@ function formatReleaseDate(value){
     if(!Number.isNaN(d.getTime())) return d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
     return raw;
 }
+
+// ===== MOVIE CARD DESIGN =====
 function cardHTML(item){
-    const release = formatReleaseDate(item.releaseDate || item.release || item.date || '');
     const language = item.language || item.lang || item.audioLanguage || 'Hindi';
-    const badge = item.badge || (item.limitedFree ? 'Limited Free' : 'Free');
-    const booked = item.bookedCount ?? item.booked ?? '';
+    const releaseRaw = item.year || item.releaseYear || item.releaseDate || item.release || item.date || '';
+    const yearMatch = String(releaseRaw).match(/\b(19|20)\d{2}\b/);
+    const year = yearMatch ? yearMatch[0] : '';
+    const badge = item.badge || (item.limitedFree ? 'Limited Free' : 'DUAL AUDIO');
+    const quality = item.quality || item.resolution || item.videoQuality || 'HD';
+    const ratingRaw = item.rating ?? item.score ?? '';
+    const rating = ratingRaw !== '' && !Number.isNaN(Number(ratingRaw)) ? Number(ratingRaw).toFixed(1) : '';
+    const typeRaw = String(item.type || 'movie').trim().toLowerCase();
+    const typeLabel = (typeRaw === 'tv' || typeRaw === 'tv show' || typeRaw === 'tvshow' || typeRaw === 'series')
+        ? 'TV' : (typeRaw ? typeRaw.charAt(0).toUpperCase() + typeRaw.slice(1) : 'Movie');
     const coming = item.comingSoon === true || String(item.comingSoon).toLowerCase() === 'true';
     const poster = item.poster || item.backdrop || '';
     const title = item.title || item.name || 'Untitled';
@@ -540,26 +617,31 @@ function cardHTML(item){
     return `
         <div class="simple-card" onclick="openSearchResultPlayer('${encodeURIComponent(String(item.id))}')">
             <div class="simple-card-poster">
-                <img src="${escapeHtml(poster)}" loading="lazy" alt="${escapeHtml(title)}" onerror="this.style.display='none';this.parentElement.classList.add('no-image')">
+                <img src="${escapeHtml(poster)}" loading="lazy" alt="${escapeHtml(title)}"
+                     onerror="this.style.display='none';this.parentElement.classList.add('no-image')">
+
                 <div class="simple-badges-on-poster">
-                    <span class="simple-badge">${escapeHtml(badge)}</span>
-                    ${release ? `<span class="simple-badge badge-date">${escapeHtml(release)}</span>` : ''}
+                    ${badge ? `<span class="simple-badge badge-main">${escapeHtml(badge)}</span>` : ''}
                     ${language ? `<span class="simple-badge badge-lang">${escapeHtml(language)}</span>` : ''}
+                    ${year ? `<span class="simple-badge badge-date">${escapeHtml(year)}</span>` : ''}
                 </div>
-                ${coming ? '<span class="simple-coming">Coming Soon</span>' : ''}
-                <button type="button" class="simple-view-btn" title="Views" onclick="event.stopPropagation();incrementView(this)">
-                    <span class="html-icon" style="width:auto;min-width:0;height:auto;font-size:10px;color:#fff;filter:none;">◉</span>
+
+                <span class="simple-quality">${escapeHtml(quality)}</span>
+
+                <button type="button" class="simple-view-btn" title="Views"
+                        onclick="event.stopPropagation();incrementView(this)">
+                    <span class="html-icon" style="width:auto;min-width:0;height:auto;font-size:9px;color:#fff;filter:none;">◉</span>
                     <span class="view-count">${escapeHtml(views)}</span>
                 </button>
+
+                ${coming ? '<span class="simple-coming">Coming Soon</span>' : ''}
+
+                ${rating ? `<span class="simple-rating">★ ${escapeHtml(rating)}</span>` : ''}
+                <span class="simple-type">${escapeHtml(typeLabel)}</span>
             </div>
+
             <div class="simple-card-info">
-                <div class="simple-card-top">
-                    ${release ? `<span class="simple-date">${escapeHtml(release)}</span>` : ''}
-                    ${language ? `<span class="simple-lang">${escapeHtml(language)}</span>` : ''}
-                </div>
                 <div class="simple-title">${escapeHtml(title)}</div>
-                ${booked !== '' ? `<div class="simple-booked"><span class="html-icon html-icon-eye">◉</span> ${escapeHtml(booked)} booked</div>` : ''}
-                <div class="simple-watch">▶ Watch Now</div>
             </div>
         </div>
     `;
