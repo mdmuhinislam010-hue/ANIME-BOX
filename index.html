@@ -7,19 +7,7 @@
     <link rel="icon" type="image/png" href="https://cdn.imageurlgenerator.com/uploads/ce68f4a9-a8e6-42f7-9cde-64dd6467ccd1.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css">
-    
-    
-
-    
-    
-
-    
-
-    
-
-
-
+    <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
 
@@ -297,18 +285,45 @@
         </div>
     </div>
 
-    <script src="script.js"></script>
-    
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
-    
+    <script src="script.js"></script>
 
 <div id="websitePopup" class="website-popup"><div class="website-popup-box"><div class="popup-header"><span id="popupTitle">Episode</span><button onclick="closeWebsitePopup()">✕</button></div><iframe id="popupFrame" allowfullscreen referrerpolicy="no-referrer"></iframe></div></div>
 
-
-
-
-
-
+<script>
+(function(){
+  const T={
+    en:{home:'Home',movies:'Movies',tv:'TV Shows',anime:'Anime',trending:'Trending',continue:'Continue Watching',menu:'Menu',search:'Search movies, shows, anime...',download:'⬇ Download App',trendingTitle:'Trending Now',continueTitle:'Continue Watching',moviesTitle:'Movies',tvTitle:'TV Shows',animeTitle:'Anime',watch:'Watch Now',more:'More',rated:'people rated'},
+    fr:{home:'Accueil',movies:'Films',tv:'Séries TV',anime:'Anime',trending:'Tendances',continue:'Continuer à regarder',menu:'Menu',search:'Rechercher des films, séries, anime...',download:'⬇ Télécharger l’application',trendingTitle:'Tendances',continueTitle:'Continuer à regarder',moviesTitle:'Films',tvTitle:'Séries TV',animeTitle:'Anime',watch:'Regarder',more:'Plus',rated:'personnes ont noté'},
+    es:{home:'Inicio',movies:'Películas',tv:'Series',anime:'Anime',trending:'Tendencias',continue:'Seguir viendo',menu:'Menú',search:'Buscar películas, series, anime...',download:'⬇ Descargar App',trendingTitle:'Tendencias',continueTitle:'Seguir viendo',moviesTitle:'Películas',tvTitle:'Series',animeTitle:'Anime',watch:'Ver ahora',more:'Más',rated:'personas calificaron'},
+    de:{home:'Startseite',movies:'Filme',tv:'TV-Serien',anime:'Anime',trending:'Trends',continue:'Weiter ansehen',menu:'Menü',search:'Filme, Serien, Anime suchen...',download:'⬇ App herunterladen',trendingTitle:'Trends',continueTitle:'Weiter ansehen',moviesTitle:'Filme',tvTitle:'TV-Serien',animeTitle:'Anime',watch:'Jetzt ansehen',more:'Mehr',rated:'Personen bewertet'},
+    ja:{home:'ホーム',movies:'映画',tv:'TVシリーズ',anime:'アニメ',trending:'トレンド',continue:'続きを見る',menu:'メニュー',search:'映画・番組・アニメを検索...',download:'⬇ アプリをダウンロード',trendingTitle:'トレンド',continueTitle:'続きを見る',moviesTitle:'映画',tvTitle:'TVシリーズ',animeTitle:'アニメ',watch:'今すぐ見る',more:'もっと見る',rated:'人が評価'},
+    zh:{home:'首页',movies:'电影',tv:'电视剧',anime:'动漫',trending:'热门',continue:'继续观看',menu:'菜单',search:'搜索电影、剧集、动漫...',download:'⬇ 下载应用',trendingTitle:'热门',continueTitle:'继续观看',moviesTitle:'电影',tvTitle:'电视剧',animeTitle:'动漫',watch:'立即观看',more:'更多',rated:'人评分'}
+  };
+  const $=id=>document.getElementById(id);
+  function setText(el,key,t){if(el&&t[key]) el.textContent=t[key];}
+  function translate(lang){
+    const t=T[lang]||T.en;
+    document.documentElement.lang=lang;
+    document.querySelectorAll('[data-section="home"]').forEach(e=>{const n=e.querySelector('.nav-icon'); e.textContent=''; if(n)e.appendChild(n); e.append(' '+t.home);});
+    document.querySelectorAll('[data-section="movies"]').forEach(e=>{const n=e.querySelector('.nav-icon'); if(n){e.textContent='';e.appendChild(n);e.append(' '+t.movies)}else e.textContent=t.movies});
+    document.querySelectorAll('[data-section="tvshows"]').forEach(e=>{const n=e.querySelector('.nav-icon'); if(n){e.textContent='';e.appendChild(n);e.append(' '+t.tv)}else e.textContent=t.tv});
+    document.querySelectorAll('[data-section="anime"]').forEach(e=>{const n=e.querySelector('.nav-icon'); if(n){e.textContent='';e.appendChild(n);e.append(' '+t.anime)}else e.textContent=t.anime});
+    document.querySelectorAll('[data-section="trending"]').forEach(e=>{const n=e.querySelector('.nav-icon'); if(n){e.textContent='';e.appendChild(n);e.append(' '+t.trending)}else e.textContent=t.trending});
+    document.querySelectorAll('[data-section="continueWatching"]').forEach(e=>{const n=e.querySelector('.nav-icon'); if(n){e.textContent='';e.appendChild(n);e.append(' '+t.continue)}else e.textContent=t.continue});
+    const label=document.querySelector('.nav-label'); setText(label,'menu',t);
+    const search=$('searchInput'); if(search) search.placeholder=t.search;
+    const download=document.querySelector('.btn-download'); setText(download,'download',t);
+    const headings={trending:'trendingTitle',continueWatching:'continueTitle',movies:'moviesTitle',tvshows:'tvTitle',anime:'animeTitle'};
+    Object.entries(headings).forEach(([id,key])=>{const h=document.querySelector('#'+id+' .section-head h2'); if(h){const dot=h.querySelector('.dot'); h.textContent=''; if(dot)h.appendChild(dot); h.append(' '+t[key]);}});
+    localStorage.setItem('siteLanguage',lang);
+  }
+  const langSelect=$('sidebarLang');
+  if(langSelect){langSelect.addEventListener('change',()=>translate(langSelect.value)); const saved=localStorage.getItem('siteLanguage')||'en'; langSelect.value=saved; translate(saved);}
+})();
+</script>
 
 </body>
 </html>
