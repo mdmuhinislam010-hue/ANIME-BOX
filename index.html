@@ -108,7 +108,6 @@
         </div>
     </aside>
 
-    <!-- ===== HEADER ===== -->
     <header class="header" id="mainHeader">
         <div class="header-left">
             <button class="hamburger" id="hamburgerBtn" aria-label="Toggle menu">☰</button>
@@ -129,7 +128,6 @@
     </header>
 
     <section class="hero" id="heroSection"></section>
-
 
     <div class="banner-strip" id="bannerStrip"></div>
 
@@ -237,11 +235,12 @@
                 <a class="social-btn social-rd" id="socialReddit" href="#" target="_blank" rel="noopener" title="Reddit">r/</a>
             </div>
 
-
             <div class="playback-panel" id="playbackPanel" style="display:none;">
-                    <div class="watch-page-title" id="watchPageTitle"></div>
-                    <div class="watch-url-meta" id="watchUrlMeta"></div>
-                    <div class="watch-main">
+                <div class="watch-page-title" id="watchPageTitle"></div>
+                <div class="watch-url-meta" id="watchUrlMeta"></div>
+                
+                <div class="watch-main">
+                    <div class="watch-player-column">
                         <div class="watch-player">
                             <div class="video-stage" id="videoStage">
                                 <iframe id="episodeFrame" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen referrerpolicy="no-referrer"></iframe>
@@ -251,37 +250,49 @@
                                     <span>Start watching</span>
                                 </div>
                             </div>
-                            <div class="player-controls-bar"><span>◀</span><span>▶</span></div>
                         </div>
-                        <aside class="server-panel" id="dubField">
-                            <div class="server-heading">OPTIONS</div>
-                            <div class="select-server">Select Server</div>
-                            <div class="server-list" id="dubPills"></div>
-                        </aside>
-                    </div>
-                    <div class="season-bar">
-                        <div class="season-left">Seasons</div>
-                        <div class="season-nav"><span>◀</span><span>▶</span></div>
-                    </div>
-                    <div class="choose-season" id="seasonField" style="display:none;">
-                        <div class="choose-season-label">CHOOSE SEASON</div>
-                        <div class="season-heading-row">
-                            <strong id="seasonCountLabel">Seasons</strong>
-                            <select class="watch-season-select" id="seasonSelect"></select>
+
+                        <div class="random-card-scroll-section" id="randomCardScrollSection">
+                            <h4>You May Also Like</h4>
+                            <div class="random-card-scroll-wrap" id="randomCardScrollWrap"></div>
                         </div>
                     </div>
-                    <div class="watch-choice" id="episodeField" style="display:none;">
-                        <div class="episode-grid" id="episodePills"></div>
-                    </div>
-                    <select id="episodeSelect" style="display:none;"></select>
-                    <select id="dubSelect" style="display:none;"></select>
-                    <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#b8b8c8;margin:8px 0"><input type="checkbox" id="autoNextToggle"> Auto Next Episode</label><div class="playback-message" id="playbackMessage">Loading playback options…</div>
-                    <div class="watch-external-note" id="watchExternalNote" style="display:none;"></div>
-                    <div class="video-wrap" id="videoWrap"><video id="streamVideo" controls playsinline preload="metadata"></video></div>
-                    <div class="quality-row" id="qualityRow" style="display:none;"></div>
-                    <div class="subtitle-note" id="subtitleNote" style="display:none;"></div>
+                    
+                    <aside class="server-panel" id="dubField">
+                        <div class="server-list" id="dubPills"></div>
+
+                        <div class="season-bar">
+                            <div class="season-left">Seasons</div>
+                            <div class="season-nav"><span>◀</span><span>▶</span></div>
+                        </div>
+                        <div class="choose-season" id="seasonField" style="display:none;">
+                            <div class="choose-season-label">CHOOSE SEASON</div>
+                            <div class="season-heading-row">
+                                <strong id="seasonCountLabel">Seasons</strong>
+                                <select class="watch-season-select" id="seasonSelect" style="display:none;"></select>
+                            </div>
+                            <div class="season-grid" id="seasonPills"></div>
+                        </div>
+
+                        <div class="watch-choice" id="episodeField" style="display:none;">
+                            <div class="episode-grid" id="episodePills"></div>
+                        </div>
+                    </aside>
                 </div>
+
+                <select id="episodeSelect" style="display:none;"></select>
+                <select id="dubSelect" style="display:none;"></select>
+                
+                <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#a89040;margin:8px 0">
+                    <input type="checkbox" id="autoNextToggle"> Auto Next Episode
+                </label>
+                <div class="playback-message" id="playbackMessage">Loading playback options…</div>
+                <div class="watch-external-note" id="watchExternalNote" style="display:none;"></div>
+                <div class="video-wrap" id="videoWrap"><video id="streamVideo" controls playsinline preload="metadata"></video></div>
+                <div class="quality-row" id="qualityRow" style="display:none;"></div>
+                <div class="subtitle-note" id="subtitleNote" style="display:none;"></div>
             </div>
+
         </div>
     </div>
 
@@ -318,10 +329,10 @@
     const download=document.querySelector('.btn-download'); setText(download,'download',t);
     const headings={trending:'trendingTitle',continueWatching:'continueTitle',movies:'moviesTitle',tvshows:'tvTitle',anime:'animeTitle'};
     Object.entries(headings).forEach(([id,key])=>{const h=document.querySelector('#'+id+' .section-head h2'); if(h){const dot=h.querySelector('.dot'); h.textContent=''; if(dot)h.appendChild(dot); h.append(' '+t[key]);}});
-    localStorage.setItem('siteLanguage',lang);
+    safeStorage.setItem('siteLanguage',lang);
   }
   const langSelect=$('sidebarLang');
-  if(langSelect){langSelect.addEventListener('change',()=>translate(langSelect.value)); const saved=localStorage.getItem('siteLanguage')||'en'; langSelect.value=saved; translate(saved);}
+  if(langSelect){langSelect.addEventListener('change',()=>translate(langSelect.value)); const saved=safeStorage.getItem('siteLanguage')||'en'; langSelect.value=saved; translate(saved);}
 })();
 </script>
 
