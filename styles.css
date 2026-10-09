@@ -992,6 +992,7 @@ body{background:#07090b!important;color:#f4f7f6!important}
   .simple-badges-on-poster .simple-badge,
   .simple-quality,.simple-rating,.simple-type{font-size:7px!important}
 }
+
 /* ===== FINAL MOVIE CARD BADGE STYLE — screenshot inspired ===== */
 .simple-badges-on-poster{
   position:absolute!important;left:7px!important;top:7px!important;z-index:8!important;
