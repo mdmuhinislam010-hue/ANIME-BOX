@@ -195,17 +195,27 @@ function renderCustomTypeMenuItems(){
     }).join('');
 }
 
-function getSearchFromUrl(){ return new URLSearchParams(window.location.search).get('search') || ''; }
-function getCategoryFromUrl(){ return (new URLSearchParams(window.location.search).get('category') || '').toLowerCase(); }
+if(!window.location.hash){ history.replaceState({}, '', '#/'); }
+
+function getHashRoute(){
+    const raw = (window.location.hash || '#/').slice(1);
+    const qIndex = raw.indexOf('?');
+    return { path: (qIndex >= 0 ? raw.slice(0, qIndex) : raw) || '/', query: qIndex >= 0 ? raw.slice(qIndex + 1) : '' };
+}
+function getRouteParams(){ return new URLSearchParams(getHashRoute().query); }
+function getSearchFromUrl(){ return getRouteParams().get('search') || ''; }
+function getCategoryFromUrl(){ return (getRouteParams().get('category') || '').toLowerCase(); }
 
 function parseAppRoute(){
-    const path = window.location.pathname.replace(/\/+$/, '') || '/';
+    const path = getHashRoute().path.replace(/\/+$/, '') || '/';
     const parts = path.split('/').filter(Boolean);
     const homeIndex = parts.indexOf('home');
     if(homeIndex < 0) return {type:'home'};
     const rest = parts.slice(homeIndex + 1);
     if(rest[0] !== 'detail' || !rest[1]) return {type:'home'};
-    const route = {type:'detail', slug:decodeURIComponent(rest[1]), seasonSlug:'', episodeSlug:''};
+    let slug = rest[1];
+    try { slug = decodeURIComponent(slug); } catch (_) {}
+    const route = {type:'detail', slug, seasonSlug:'', episodeSlug:''};
     if(rest[2] === 'season' && rest[3]) route.seasonSlug = decodeURIComponent(rest[3]);
     if(rest[4] === 'ep' && rest[5]) route.episodeSlug = decodeURIComponent(rest[5]);
     return route;
@@ -218,7 +228,7 @@ function findContentByRouteSlug(slug){
 
 function buildDetailPath(item, seasonNo='', episodeNo=''){
     const slug = slugifyWatch(item?.title || item?.name || item?.id);
-    let path = '/home/detail/' + encodeURIComponent(slug);
+    let path = '#/home/detail/' + encodeURIComponent(slug);
     if(seasonNo !== '' && seasonNo != null) path += '/season/' + encodeURIComponent(String(seasonNo));
     if(episodeNo !== '' && episodeNo != null) path += '/ep/' + encodeURIComponent(String(episodeNo));
     return path;
@@ -227,7 +237,7 @@ function buildDetailPath(item, seasonNo='', episodeNo=''){
 function updateAppRoute(item, seasonNo='', episodeNo='', replace=false){
     if(!item) return;
     const path = buildDetailPath(item, seasonNo, episodeNo);
-    if(window.location.pathname !== path || window.location.search){
+    if(window.location.hash !== path){
         (replace ? history.replaceState : history.pushState).call(history, {}, '', path);
     }
 }
@@ -246,13 +256,14 @@ function handleAppRoute(){
 }
 
 window.addEventListener('popstate', handleAppRoute);
+window.addEventListener('hashchange', handleAppRoute);
 
 function openSearchPage(query){
     query=String(query||'').trim();
     if(!query) return;
     const encoded=encodeURIComponent(query);
-    const url=window.location.pathname+'?search='+encoded;
-    if(window.location.search !== '?search='+encoded) history.pushState({},'',url);
+    const url='#/home?search='+encoded;
+    if(window.location.hash !== url) history.pushState({},'',url);
     currentSearchFilter='all';
     const tabs=$('searchPageTabs');
     if(tabs) tabs.querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.filter==='all'));
@@ -354,8 +365,8 @@ function openCategoryPage(type){
     const norm = normalizeType(clean);
     if(!isTypeValid(norm)) return;
 
-    const url = window.location.pathname + '?category=' + encodeURIComponent(norm);
-    if(window.location.search !== '?category=' + encodeURIComponent(norm)) history.pushState({}, '', url);
+    const url = '#/home?category=' + encodeURIComponent(norm);
+    if(window.location.hash !== url) history.pushState({}, '', url);
 
     const input = $('searchInput');
     if(input) input.value = '';
@@ -367,7 +378,7 @@ function openCategoryPage(type){
 }
 
 function goHome(){
-    history.pushState({},'',window.location.pathname);
+    history.pushState({},'', '#/');
     document.body.classList.remove('search-mode','category-mode','detail-mode');
     document.title='Anime Box';
     const input=$('searchInput');
@@ -468,6 +479,7 @@ db.ref('content').on('value', snap => {
     renderAll();
     renderCustomTypeSections();
     setupRandomFeed();
+    if(parseAppRoute().type === 'detail') handleAppRoute();
 
     requestAnimationFrame(() => {
         const sentinel = $('randomFeedSentinel');
@@ -1218,7 +1230,7 @@ function closeModal(updateRoute = true){
     resetPlaybackUI();
     currentPlaybackItem = null;
     if(updateRoute && (parseAppRoute().type === 'detail' || document.body.classList.contains('modal-page'))){
-        history.pushState({},'', '/home');
+        history.pushState({},'', '#/');
     }
 }
 
@@ -1244,3 +1256,37 @@ window.addEventListener('load', updateActiveNav);
 db.ref('content').on('value', () => renderContinueWatching());
 
 console.log('Anime Box — UI updated. Badges on poster + random view counts.');
+
+/* ============================================================
+   LANGUAGE TRANSLATION SCRIPT
+   ============================================================ */
+(function(){
+  const T={
+    en:{home:'Home',movies:'Movies',tv:'TV Shows',anime:'Anime',trending:'Trending',continue:'Continue Watching',menu:'Menu',search:'Search movies, shows, anime...',download:'⬇ Download App',trendingTitle:'Trending Now',continueTitle:'Continue Watching',moviesTitle:'Movies',tvTitle:'TV Shows',animeTitle:'Anime',watch:'Watch Now',more:'More',rated:'people rated'},
+    fr:{home:'Accueil',movies:'Films',tv:'Séries TV',anime:'Anime',trending:'Tendances',continue:'Continuer à regarder',menu:'Menu',search:'Rechercher des films, séries, anime...',download:'⬇ Télécharger l’application',trendingTitle:'Tendances',continueTitle:'Continuer à regarder',moviesTitle:'Films',tvTitle:'Séries TV',animeTitle:'Anime',watch:'Regarder',more:'Plus',rated:'personnes ont noté'},
+    es:{home:'Inicio',movies:'Películas',tv:'Series',anime:'Anime',trending:'Tendencias',continue:'Seguir viendo',menu:'Menú',search:'Buscar películas, series, anime...',download:'⬇ Descargar App',trendingTitle:'Tendencias',continueTitle:'Seguir viendo',moviesTitle:'Películas',tvTitle:'Series',animeTitle:'Anime',watch:'Ver ahora',more:'Más',rated:'personas calificaron'},
+    de:{home:'Startseite',movies:'Filme',tv:'TV-Serien',anime:'Anime',trending:'Trends',continue:'Weiter ansehen',menu:'Menü',search:'Filme, Serien, Anime suchen...',download:'⬇ App herunterladen',trendingTitle:'Trends',continueTitle:'Weiter ansehen',moviesTitle:'Filme',tvTitle:'TV-Serien',animeTitle:'Anime',watch:'Jetzt ansehen',more:'Mehr',rated:'Personen bewertet'},
+    ja:{home:'ホーム',movies:'映画',tv:'TVシリーズ',anime:'アニメ',trending:'トレンド',continue:'続きを見る',menu:'メニュー',search:'映画・番組・アニメを検索...',download:'⬇ アプリをダウンロード',trendingTitle:'トレンド',continueTitle:'続きを見る',moviesTitle:'映画',tvTitle:'TVシリーズ',animeTitle:'アニメ',watch:'今すぐ見る',more:'もっと見る',rated:'人が評価'},
+    zh:{home:'首页',movies:'电影',tv:'电视剧',anime:'动漫',trending:'热门',continue:'继续观看',menu:'菜单',search:'搜索电影、剧集、动漫...',download:'⬇ 下载应用',trendingTitle:'热门',continueTitle:'继续观看',moviesTitle:'电影',tvTitle:'电视剧',animeTitle:'动漫',watch:'立即观看',more:'更多',rated:'人评分'}
+  };
+  const $=id=>document.getElementById(id);
+  function setText(el,key,t){if(el&&t[key]) el.textContent=t[key];}
+  function translate(lang){
+    const t=T[lang]||T.en;
+    document.documentElement.lang=lang;
+    document.querySelectorAll('[data-section="home"]').forEach(e=>{const n=e.querySelector('.nav-icon'); e.textContent=''; if(n)e.appendChild(n); e.append(' '+t.home);});
+    document.querySelectorAll('[data-section="movies"]').forEach(e=>{const n=e.querySelector('.nav-icon'); if(n){e.textContent='';e.appendChild(n);e.append(' '+t.movies)}else e.textContent=t.movies});
+    document.querySelectorAll('[data-section="tvshows"]').forEach(e=>{const n=e.querySelector('.nav-icon'); if(n){e.textContent='';e.appendChild(n);e.append(' '+t.tv)}else e.textContent=t.tv});
+    document.querySelectorAll('[data-section="anime"]').forEach(e=>{const n=e.querySelector('.nav-icon'); if(n){e.textContent='';e.appendChild(n);e.append(' '+t.anime)}else e.textContent=t.anime});
+    document.querySelectorAll('[data-section="trending"]').forEach(e=>{const n=e.querySelector('.nav-icon'); if(n){e.textContent='';e.appendChild(n);e.append(' '+t.trending)}else e.textContent=t.trending});
+    document.querySelectorAll('[data-section="continueWatching"]').forEach(e=>{const n=e.querySelector('.nav-icon'); if(n){e.textContent='';e.appendChild(n);e.append(' '+t.continue)}else e.textContent=t.continue});
+    const label=document.querySelector('.nav-label'); setText(label,'menu',t);
+    const search=$('searchInput'); if(search) search.placeholder=t.search;
+    const download=document.querySelector('.btn-download'); setText(download,'download',t);
+    const headings={trending:'trendingTitle',continueWatching:'continueTitle',movies:'moviesTitle',tvshows:'tvTitle',anime:'animeTitle'};
+    Object.entries(headings).forEach(([id,key])=>{const h=document.querySelector('#'+id+' .section-head h2'); if(h){const dot=h.querySelector('.dot'); h.textContent=''; if(dot)h.appendChild(dot); h.append(' '+t[key]);}});
+    localStorage.setItem('siteLanguage',lang);
+  }
+  const langSelect=$('sidebarLang');
+  if(langSelect){langSelect.addEventListener('change',()=>translate(langSelect.value)); const saved=localStorage.getItem('siteLanguage')||'en'; langSelect.value=saved; translate(saved);}
+})();
