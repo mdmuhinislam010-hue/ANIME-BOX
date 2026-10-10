@@ -6,7 +6,12 @@
     <title>Anime Box</title>
     <link rel="icon" type="image/png" href="https://cdn.imageurlgenerator.com/uploads/ce68f4a9-a8e6-42f7-9cde-64dd6467ccd1.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://ttttt-9bee0-default-rtdb.firebaseio.com" crossorigin />
+    <link rel="preconnect" href="https://cdn.imageurlgenerator.com" crossorigin />
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" /></noscript>
     <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -69,7 +74,7 @@
 
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-brand">
-            <img src="https://cdn.imageurlgenerator.com/uploads/ce68f4a9-a8e6-42f7-9cde-64dd6467ccd1.png" alt="AB Logo" class="logo-img" / loading="lazy" decoding="async">
+            <img fetchpriority="high" loading="eager" decoding="async" src="https://cdn.imageurlgenerator.com/uploads/ce68f4a9-a8e6-42f7-9cde-64dd6467ccd1.png" alt="AB Logo" class="logo-img" />
             <span class="logo-text">Anime Box</span>
         </div>
 
@@ -111,7 +116,7 @@
     <header class="header" id="mainHeader">
         <div class="header-left">
             <button class="hamburger" id="hamburgerBtn" aria-label="Toggle menu">☰</button>
-            <img src="https://cdn.imageurlgenerator.com/uploads/ce68f4a9-a8e6-42f7-9cde-64dd6467ccd1.png" alt="AB Logo" class="logo-img" / loading="lazy" decoding="async">
+            <img fetchpriority="high" loading="eager" decoding="async" src="https://cdn.imageurlgenerator.com/uploads/ce68f4a9-a8e6-42f7-9cde-64dd6467ccd1.png" alt="AB Logo" class="logo-img" />
         </div>
 
         <div class="header-center">
@@ -206,7 +211,7 @@
         <div class="modal">
             <button class="modal-close" id="modalClose">✕</button>
             <div class="modal-hero" id="modalHero">
-                <img id="modalHeroImage" src="" alt="Poster" / loading="lazy" decoding="async">
+                <img id="modalHeroImage" src="" alt="Poster" loading="lazy" decoding="async">
             </div>
             <div class="modal-details" id="modalDetails">
                 <div class="modal-poster-wrap"><img id="modalDetailPoster" src="" alt="Movie Poster" loading="lazy" decoding="async"></div>
