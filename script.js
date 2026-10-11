@@ -198,6 +198,19 @@ const safeStorage = (() => {
 
         function goSearchBack(){ if(window.history.length>1) history.back(); else goHome(); }
 
+        function openBrowseYearPage(){
+            document.body.classList.add('search-mode');
+            const title=$('searchPageTitle'), crumb=$('searchPageCrumb'), count=$('searchPageCount'), tabs=$('searchPageTabs'), grid=$('searchPageGrid');
+            if(title) title.textContent='Browse by Year'; if(crumb) crumb.textContent='Browse by Year'; if(count) count.textContent='';
+            if(tabs) tabs.style.display='none';
+            if(grid){ grid.classList.add('year-browse-layout'); grid.innerHTML='<div class="year-page-controls"><label for="dedicatedYearSelect">Release Year</label><select id="dedicatedYearSelect"><option value="">Select year...</option></select></div><div id="dedicatedYearResults" class="search-page-grid"></div>'; }
+            const select=$('dedicatedYearSelect');
+            const years=[...new Set(content.map(x=>Number(x.year||x.releaseYear)).filter(y=>y>=1900&&y<=2100))].sort((a,b)=>b-a);
+            select.innerHTML='<option value="">Select year...</option>'+years.map(y=>`<option value="${y}">${y}</option>`).join('');
+            select.onchange=()=>{const year=select.value;const items=content.filter(x=>String(x.year||x.releaseYear||'')===year);const out=$('dedicatedYearResults');if(out)out.innerHTML=year?(items.length?items.map(searchCardHTML).join(''):`<div class="year-browse-placeholder">No titles found for ${year}.</div>`):'<div class="year-browse-placeholder">Select a year to see its movies, series and anime.</div>';const c=$('searchPageCount');if(c)c.textContent=year?items.length+' titles':'';};
+            window.scrollTo({top:0,behavior:'auto'});
+        }
+
         function openSearchResultPlayer(encodedId){
             const id = decodeURIComponent(String(encodedId || ''));
             const item = content.find(c => String(c.id) === String(id));
@@ -229,6 +242,7 @@ const safeStorage = (() => {
 
         function renderSearchPage(){
             const query=getSearchFromUrl().trim(); if(!query) return false;
+            const searchGrid=$('searchPageGrid'); if(searchGrid) searchGrid.classList.remove('year-browse-layout');
             document.body.classList.add('search-mode');
             const homeLoader = $('loader'); if(homeLoader) homeLoader.classList.add('hide');
             document.title='Search: '+query+' - Anime Box';
@@ -254,7 +268,8 @@ const safeStorage = (() => {
         function drawSearchResults(){
             const query=getSearchFromUrl().trim(); if(!query) return;
             const q=query.toLowerCase();
-            let matches=content.filter(item=>{ const text=[item.title,item.name,item.type,item.category,item.genre,item.language,item.lang,item.tags,item.description,item.overview,item.country,item.year].filter(Boolean).join(' ').toLowerCase(); return text.includes(q); });
+            let matches=content.filter(item=>{ const text=[item.title,item.name,item.type,item.category,item.genre,item.language,item.lang,item.tags,item.description,item.overview,item.country,item.year,item.releaseYear,item.cast,item.actors].filter(Boolean).join(' ').toLowerCase(); return text.includes(q); });
+            matches.sort((a,b)=>{const at=String(a.title||a.name||'').toLowerCase(),bt=String(b.title||b.name||'').toLowerCase();return (at===q?-3:at.startsWith(q)?-2:at.includes(q)?-1:0)-(bt===q?-3:bt.startsWith(q)?-2:bt.includes(q)?-1:0);});
             if(currentSearchFilter!=='all') matches=matches.filter(item=>normalizeType(item.type)===currentSearchFilter);
             const af=advancedSearchFilters;
             if(af.type) matches=matches.filter(item=>normalizeType(item.type)===af.type);
@@ -329,6 +344,7 @@ const safeStorage = (() => {
 
         db.ref('content').on('value', snap => {
             content = shuffleForRefresh(sortByOrder(onlyEnabled(toArray(snap.val()))));
+            if(typeof heroSlides !== 'undefined' && heroSlides.length && typeof renderHero === 'function') renderHero();
             if(renderSearchPage()) return;
             if(renderCategoryPage()) return;
             updateRandomFeedState(); renderAll(); renderCustomTypeSections(); setupRandomFeed();
@@ -358,6 +374,7 @@ const safeStorage = (() => {
                 else if(target === 'movies'){ openCategoryPage('movie'); }
                 else if(target === 'tvshows'){ openCategoryPage('tv'); }
                 else if(target === 'anime'){ openCategoryPage('anime'); }
+                else if(target === 'browseYear'){ openBrowseYearPage(); }
                 else if(['trending','continueWatching','watchHistory','myList'].includes(target)){ goHome(); setTimeout(() => { const el = $(target); if(el) el.scrollIntoView({behavior:'smooth', block:'start'}); }, 80); }
                 else { openCategoryPage(target); }
                 if(window.innerWidth <= 820) toggleSidebar(false);
@@ -368,17 +385,23 @@ const safeStorage = (() => {
             const el = $('heroSection');
             if(!heroSlides.length){ el.innerHTML = `<div class="empty-state" style="padding-top:80px;">No hero slides published yet.</div>`; return; }
             if(heroIndex >= heroSlides.length) heroIndex = 0;
+            // Give the currently visible hero artwork a high-priority fetch after Firebase returns it.
             const activeHeroImage = heroSlides[heroIndex] && heroSlides[heroIndex].image;
             if(activeHeroImage && /^https?:\/\//i.test(activeHeroImage)) {
                 let heroPreload = document.querySelector('link[data-hero-preload]');
                 if(!heroPreload) { heroPreload = document.createElement('link'); heroPreload.rel = 'preload'; heroPreload.as = 'image'; heroPreload.setAttribute('data-hero-preload', ''); document.head.appendChild(heroPreload); }
                 if(heroPreload.href !== activeHeroImage) heroPreload.href = activeHeroImage;
             }
-            el.innerHTML = heroSlides.map((s, i) => `
+            el.innerHTML = heroSlides.map((s, i) => {
+                const linkedCard = content.find(c => String(c.id) === String(s.link || ''));
+                const linkedPoster = linkedCard && (linkedCard.poster || linkedCard.image || linkedCard.thumbnail || linkedCard.backdrop);
+                const posterToShow = linkedPoster || s.linkedPoster || s.poster || s.image || '';
+                const posterTitle = (linkedCard && (linkedCard.title || linkedCard.name)) || s.linkedTitle || s.title || 'Poster';
+                return `
                 <div class="hero-slide ${i === heroIndex ? 'active' : ''}" style="${i === heroIndex ? 'background-image:url(' + (s.image || '') + ')' : ''}">
                     <div class="hero-content">
                         <div class="hero-poster-card">
-                            <img src="${s.image || s.poster || ''}" alt="${s.title || 'Poster'}" loading="${i === heroIndex ? 'eager' : 'lazy'}" fetchpriority="${i === heroIndex ? 'high' : 'low'}" decoding="async" onerror="this.style.opacity='.4'">
+                            <img src="${posterToShow}" alt="${posterTitle}" loading="${i === heroIndex ? 'eager' : 'lazy'}" fetchpriority="${i === heroIndex ? 'high' : 'low'}" decoding="async" onerror="this.style.opacity='.4'">
                         </div>
                         <div class="hero-text-block">
                             <div class="hero-badge"><span class="html-icon html-icon-fire">◆</span> Now Playing</div>
@@ -399,7 +422,8 @@ const safeStorage = (() => {
                         </div>
                     </div>
                 </div>
-            `).join('') + `
+            `;
+            }).join('') + `
                 <button class="hero-arrow left" onclick="heroNav(-1)">‹</button>
                 <button class="hero-arrow right" onclick="heroNav(1)">›</button>
                 <div class="hero-dots">${heroSlides.map((_, i) => `<div class="hero-dot ${i === heroIndex ? 'active' : ''}" onclick="heroGo(${i})"></div>`).join('')}</div>
@@ -475,7 +499,26 @@ const safeStorage = (() => {
             `;
         }
 
-        function renderAll(){ renderTrending(); renderGrids(); renderCustomTypeSections(); renderContinueWatching(); }
+        function getContentYear(item){ const raw=String(item?.year ?? item?.releaseYear ?? item?.release_date ?? item?.first_air_date ?? '').trim(); const match=raw.match(/(?:19|20|21)\d{2}/); return match ? match[0] : ''; }
+        function renderYearBrowse(){
+            const select=$('homeYearSelect'), grid=$('homeYearGrid'), count=$('yearBrowseCount');
+            if(!select||!grid||!count)return;
+            const years=[...new Set(content.map(getContentYear).filter(Boolean))].sort((a,b)=>Number(b)-Number(a));
+            const selected=select.value;
+            const options='<option value="">Select year...</option>'+years.map(y=>`<option value="${y}">${y}</option>`).join('');
+            if(select.dataset.years!==years.join(',')){select.innerHTML=options;select.dataset.years=years.join(',');if(years.includes(selected))select.value=selected;}
+            const year=select.value;
+            if(!year){count.textContent=content.length+' titles available';grid.innerHTML='<div class="year-browse-placeholder">Choose a release year above to show matching movies, series and anime.</div>';return;}
+            const items=content.filter(item=>getContentYear(item)===year);
+            count.textContent=items.length+' title'+(items.length===1?'':'s')+' • '+year;
+            grid.innerHTML=items.length?items.map(searchCardHTML).join(''):`<div class="year-browse-placeholder">No titles found for ${escapeHtml(year)}.</div>`;
+        }
+        const homeYearSelect=$('homeYearSelect');
+        if(homeYearSelect)homeYearSelect.addEventListener('change',renderYearBrowse);
+        const clearHomeYear=$('clearHomeYear');
+        if(clearHomeYear)clearHomeYear.addEventListener('click',()=>{if(homeYearSelect)homeYearSelect.value='';renderYearBrowse();});
+
+        function renderAll(){ renderTrending(); renderGrids(); renderCustomTypeSections(); renderContinueWatching(); renderYearBrowse(); }
         function renderTrending(){ const row = $('trendingRow'); const items = content.filter(c => c.trending); row.innerHTML = items.length ? items.map(cardHTML).join('') : `<div class="empty-state">No trending titles right now.</div>`; }
         function renderGrids(){ renderTypeGrid('movie', 'moviesGrid', activeMovieCat); renderTypeGrid('tv', 'tvGrid', activeTvCat); renderTypeGrid('anime', 'animeGrid', activeAnimeCat); }
         function renderTypeGrid(type, gridId, cat){ let items = content.filter(c => c.type === type); if(cat && cat !== 'all') items = items.filter(c => c.category === cat); const el = $(gridId); if(!el) return; el.innerHTML = items.length ? items.map(cardHTML).join('') : `<div class="empty-state">No titles found.</div>`; }
@@ -508,8 +551,15 @@ const safeStorage = (() => {
         searchInput.addEventListener('input', () => {
             const q = searchInput.value.trim().toLowerCase();
             if(!q){ searchResults.innerHTML = ''; searchResults.classList.remove('show'); return; }
-            const matches = content.filter(c => { const title = String(c.title || c.name || '').trim().toLowerCase(); return title && title.includes(q); }).slice(0, 12);
-            searchResults.innerHTML = matches.length ? matches.map(m => { const id = encodeURIComponent(String(m.id)); const title = escapeHtml(m.title || m.name || 'Untitled'); return `<div class="search-item" onclick="selectSearchResult('${id}')"><div class="si-info"><b>${title}</b></div></div>`; }).join('') : `<div class="search-empty">No results for "${escapeHtml(q)}"</div>`;
+            const matches = content.filter(c => {
+                const title = String(c.title || c.name || '').trim().toLowerCase();
+                const meta = [c.year,c.releaseYear,c.category,c.type,c.language,c.lang,c.genre,c.tags].filter(Boolean).join(' ').toLowerCase();
+                return title && (title.includes(q) || meta.includes(q));
+            }).sort((a,b) => {
+                const at=String(a.title||a.name||'').toLowerCase(), bt=String(b.title||b.name||'').toLowerCase();
+                return (at===q?-2:at.startsWith(q)?-1:0)-(bt===q?-2:bt.startsWith(q)?-1:0);
+            }).slice(0, 20);
+            searchResults.innerHTML = matches.length ? matches.map(m => { const id = encodeURIComponent(String(m.id)); const title = escapeHtml(m.title || m.name || 'Untitled'); const meta=[m.year||m.releaseYear,m.category||m.type,m.language||m.lang].filter(Boolean).map(escapeHtml).join(' • '); return `<div class="search-item" onclick="selectSearchResult('${id}')"><div class="si-info"><b>${title}</b><span>${meta}</span></div></div>`; }).join('') + `<div class="search-item" onclick="openSearchPage(decodeURIComponent('${encodeURIComponent(searchInput.value.trim())}'))"><div class="si-info"><b>See all results for “${escapeHtml(searchInput.value.trim())}” →</b></div></div>` : `<div class="search-empty">No results for "${escapeHtml(q)}"</div>`;
             searchResults.classList.add('show');
         });
         document.addEventListener('click', (e) => { if(!$('searchWrap').contains(e.target)) searchResults.classList.remove('show'); });
@@ -586,6 +636,33 @@ const safeStorage = (() => {
                 ${genre ? `<span>${escapeHtml(genre)}</span>` : ''}
             `;
             $('modalDesc').innerHTML = `${escapeHtml(item.description || 'No description available.')} <a href="#" class="modal-more" onclick="return false">More ›</a>`;
+            const trailerUrl = String(item.trailerUrl || item.trailer || '').trim();
+            const trailerWrap = $('modalTrailerWrap'), trailerBtn = $('modalTrailerBtn'), trailerPlayer = $('modalTrailerPlayer');
+            if (trailerWrap && trailerBtn && trailerPlayer) {
+                trailerWrap.style.display = trailerUrl ? 'block' : 'none'; trailerBtn.href = trailerUrl || '#'; trailerPlayer.innerHTML = '';
+                if (trailerUrl) {
+                    let embed = '';
+                    try { const u = new URL(trailerUrl); let vid='';
+                      if (u.hostname.includes('youtu.be')) vid=u.pathname.split('/').filter(Boolean)[0]||'';
+                      else if (u.hostname.includes('youtube.com')) { vid=u.searchParams.get('v')||''; if(!vid){const m=u.pathname.match(/\/(?:embed|shorts|live)\/([^/?]+)/);if(m)vid=m[1];} }
+                      if(vid) embed='https://www.youtube-nocookie.com/embed/'+encodeURIComponent(vid)+'?rel=0';
+                    } catch(e) {}
+                    if(embed) trailerPlayer.innerHTML=`<iframe src="${embed}" title="Official trailer" style="width:100%;height:100%;border:0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy"></iframe>`;
+                    else if (/\.(mp4|webm|ogg)(\?.*)?$/i.test(trailerUrl)) trailerPlayer.innerHTML=`<video src="${trailerUrl.replace(/"/g,'%22')}" controls playsinline style="width:100%;height:100%;object-fit:contain"></video>`;
+                    else trailerPlayer.innerHTML='<div style="height:100%;display:grid;place-items:center;color:#ddd;font-size:13px">Use “Open Trailer” to watch</div>';
+                }
+            }
+            const castWrap = $('modalCastWrap'), castGrid = $('modalCastGrid');
+            const castList = Array.isArray(item.cast) ? item.cast : [];
+            if (castWrap && castGrid) {
+                castGrid.innerHTML = castList.length ? castList.map(person => {
+                    const name = escapeHtml(person.name || 'Unknown');
+                    const character = escapeHtml(person.character || '');
+                    const photo = String(person.photo || person.image || '').trim();
+                    return `<div style="flex:0 0 92px;width:92px;text-align:center;">${photo ? `<img src="${escapeHtml(photo)}" alt="${name}" loading="lazy" style="width:76px;height:76px;object-fit:cover;border-radius:50%;background:#222;" onerror="this.style.display='none'">` : `<div style="width:76px;height:76px;margin:auto;border-radius:50%;display:grid;place-items:center;background:#242424;font-size:24px;">👤</div>`}<div style="font-size:12px;font-weight:700;margin-top:6px;overflow-wrap:anywhere;">${name}</div>${character ? `<div style="font-size:11px;opacity:.7;overflow-wrap:anywhere;">${character}</div>` : ''}</div>`;
+                }).join('') : '';
+                castWrap.style.display = castList.length ? 'block' : 'none';
+            }
             const score = parseFloat(item.rating);
             $('modalRatingNumber').textContent = Number.isFinite(score) ? score.toFixed(1) : '6.4';
             $('modalRatingPeople').textContent = `${item.ratingCount || item.votes || 0} people rated`;
