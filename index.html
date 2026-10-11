@@ -100,6 +100,7 @@
             <a href="#" data-section="continueWatching"><span class="nav-icon">⏳</span> Continue Watching</a>
             <a href="#" data-section="watchHistory"><span class="nav-icon html-icon html-icon-time">◷</span> Watch History</a>
             <a href="#" data-section="myList"><span class="nav-icon">♥</span> My List</a>
+            <a href="#" data-section="browseYear"><span class="nav-icon html-icon html-icon-calendar">▦</span> Browse by Year</a>
         </nav>
 
         <div class="sidebar-bottom">
@@ -135,6 +136,8 @@
     <section class="hero" id="heroSection"></section>
 
     <div class="banner-strip" id="bannerStrip"></div>
+
+
 
     <div class="section" id="trending">
         <div class="section-head">
@@ -219,6 +222,8 @@
                     <h2 id="modalTitle"></h2>
                     <div class="modal-meta" id="modalMeta"></div>
                     <p class="modal-desc" id="modalDesc"></p>
+                    <div id="modalTrailerWrap" style="display:none;margin:14px 0;padding:10px;border:1px solid rgba(255,255,255,.12);border-radius:12px;background:rgba(0,0,0,.18);max-width:440px"><div style="font-size:12px;font-weight:700;margin-bottom:8px;letter-spacing:.04em">▶ OFFICIAL TRAILER</div><div id="modalTrailerPlayer" style="width:100%;aspect-ratio:16/9;background:#080b12;border-radius:8px;overflow:hidden"></div><a id="modalTrailerBtn" class="btn btn-ghost" href="#" target="_blank" rel="noopener noreferrer" style="margin-top:8px">Open Trailer</a></div>
+                    <div id="modalCastWrap" style="display:none;margin:16px 0 8px;"><h3 style="margin:0 0 10px;font-size:16px;">Cast & Crew</h3><div id="modalCastGrid" style="display:flex;gap:10px;overflow-x:auto;padding:2px 0 10px;"></div></div>
                     <div class="modal-actions">
                         <button class="btn btn-primary" id="modalPlayBtn">▶ Watch Online</button><button class="btn btn-ghost" id="modalFavBtn">♡ My List</button>
                         <button class="btn btn-app" id="modalAppBtn">⬇ Watch in App</button>
