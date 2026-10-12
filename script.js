@@ -44,12 +44,85 @@ const safeStorage = (() => {
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
+        // ===== Admin Web Manager live sync (Firebase Realtime Database) =====
+        // Admin panel saves to: settings/webManager
+        (function initWebManagerLiveSync() {
+            const webManagerRef = db.ref('settings/webManager');
+            let configuredTabTitle = '';
+
+            function applyWebManagerSettings(settings) {
+                if (!settings || typeof settings !== 'object') return;
+
+                const title = typeof settings.tabTitle === 'string' ? settings.tabTitle.trim() : '';
+                if (title) {
+                    configuredTabTitle = title;
+                    if (document.title !== configuredTabTitle) document.title = configuredTabTitle;
+                }
+
+                const faviconUrl = typeof settings.faviconUrl === 'string' ? settings.faviconUrl.trim() : '';
+                if (faviconUrl) {
+                    let iconLinks = Array.from(document.querySelectorAll('link[rel~="icon"]'));
+                    if (!iconLinks.length) {
+                        const link = document.createElement('link');
+                        link.rel = 'icon';
+                        document.head.appendChild(link);
+                        iconLinks = [link];
+                    }
+                    iconLinks.forEach(link => {
+                        link.href = faviconUrl;
+                        link.type = 'image/png';
+                    });
+                }
+
+                const homeName = typeof settings.homeName === 'string' ? settings.homeName.trim() : '';
+                if (homeName) {
+                    document.querySelectorAll('.sidebar-brand .logo-text').forEach(el => {
+                        el.textContent = homeName;
+                    });
+                    // Keep the website name in the sidebar and accessible logo labels in sync.
+                    document.querySelectorAll('.sidebar-brand .logo-img, .header-left .logo-img').forEach(img => {
+                        img.alt = homeName + ' Logo';
+                    });
+                }
+
+                const homeLogoUrl = typeof settings.homeLogoUrl === 'string' ? settings.homeLogoUrl.trim() : '';
+                if (homeLogoUrl) {
+                    document.querySelectorAll('.sidebar-brand .logo-img, .header-left .logo-img').forEach(img => {
+                        img.src = homeLogoUrl;
+                    });
+                }
+
+                if (typeof settings.showHomeLogo === 'boolean') {
+                    document.querySelectorAll('.sidebar-brand .logo-img, .header-left .logo-img').forEach(img => {
+                        img.style.display = settings.showHomeLogo ? '' : 'none';
+                    });
+                }
+            }
+
+            // If app navigation changes document.title, keep the Admin-selected tab title active.
+            const titleObserver = new MutationObserver(() => {
+                if (configuredTabTitle && document.title !== configuredTabTitle) {
+                    document.title = configuredTabTitle;
+                }
+            });
+            titleObserver.observe(document.querySelector('title'), { childList: true, characterData: true, subtree: true });
+
+            webManagerRef.on('value', snapshot => {
+                applyWebManagerSettings(snapshot.val());
+            }, error => {
+                console.warn('Web Manager settings could not be loaded:', error.message || error);
+            });
+        })();
+        // ===== End Web Manager live sync =====
+
+
         let heroSlides = [];
         let banners = [];
         let categories = [];
         let types = [];
         let content = [];
         let heroIndex = 0, bannerIndex = 0;
+        let heroRandomized = false;
         let heroTimer = null, bannerTimer = null;
         let activeMovieCat = 'all', activeTvCat = 'all', activeAnimeCat = 'all';
 
@@ -125,7 +198,16 @@ const safeStorage = (() => {
         function isBuiltInType(key){ return ['movie','tv','anime'].includes(key); }
         function isTypeValid(key){ if(!key) return false; if(isBuiltInType(key)) return true; return types.some(t => typeKeyOf(t) === key && t.enabled !== false); }
 
-        db.ref('heroSlides').on('value', snap => { heroSlides = sortByOrder(onlyEnabled(toArray(snap.val()))); renderHero(); });
+        db.ref('heroSlides').on('value', snap => {
+            heroSlides = sortByOrder(onlyEnabled(toArray(snap.val())));
+            // Choose a random starting hero once when the slider data first arrives.
+            // Later Firebase updates keep the current slide instead of jumping randomly.
+            if (!heroRandomized && heroSlides.length > 0) {
+                heroIndex = heroSlides.length > 1 ? Math.floor(Math.random() * heroSlides.length) : 0;
+                heroRandomized = true;
+            }
+            renderHero();
+        });
         db.ref('banners').on('value', snap => { banners = sortByOrder(onlyEnabled(toArray(snap.val()))); renderBanner(); });
         db.ref('categories').on('value', snap => {
             categories = sortByOrder(onlyEnabled(toArray(snap.val())));
@@ -358,9 +440,29 @@ const safeStorage = (() => {
         });
 
         const sidebar = $('sidebar'); const overlay = $('sidebarOverlay'); const hamburger = $('hamburgerBtn');
-        function toggleSidebar(open){ const shouldOpen = open !== undefined ? open : !sidebar.classList.contains('open'); sidebar.classList.toggle('open', shouldOpen); overlay.classList.toggle('open', shouldOpen); document.body.style.overflow = shouldOpen ? 'hidden' : ''; }
-        hamburger.addEventListener('click', () => toggleSidebar());
-        overlay.addEventListener('click', () => toggleSidebar(false));
+        function toggleSidebar(open){
+            // Desktop: persistently hide/show the side menu and reclaim page width.
+            // Mobile: keep the existing slide-in drawer and overlay behavior.
+            if(window.innerWidth > 820){
+                const shouldHide = open !== undefined ? !open : !document.body.classList.contains('sidebar-collapsed');
+                document.body.classList.toggle('sidebar-collapsed', shouldHide);
+                sidebar.classList.remove('open');
+                overlay.classList.remove('open');
+                document.body.style.overflow = '';
+                if(hamburger) hamburger.setAttribute('aria-expanded', String(!shouldHide));
+                return;
+            }
+            const shouldOpen = open !== undefined ? open : !sidebar.classList.contains('open');
+            sidebar.classList.toggle('open', shouldOpen);
+            overlay.classList.toggle('open', shouldOpen);
+            document.body.style.overflow = shouldOpen ? 'hidden' : '';
+            if(hamburger) hamburger.setAttribute('aria-expanded', String(shouldOpen));
+        }
+        if(hamburger) hamburger.addEventListener('click', () => toggleSidebar());
+        if(overlay) overlay.addEventListener('click', () => toggleSidebar(false));
+        window.addEventListener('resize', () => {
+            if(window.innerWidth > 820){ sidebar.classList.remove('open'); overlay.classList.remove('open'); document.body.style.overflow=''; }
+        });
 
         const sidebarNavEl = $('sidebarNav');
         if(sidebarNavEl){
@@ -757,8 +859,8 @@ const safeStorage = (() => {
             const grid = $('seasonPills'); if (!grid) return;
             grid.innerHTML = playbackSeasons.length ? playbackSeasons.map((s, i) => {
                 const seasonNo = getSeasonNumber(s, i);
-                const seasonLabel = 'S' + String(seasonNo).padStart(2, '0');
-                return `<div class="season-card ${String(s.id) === String(activeSeasonId || playbackSeasons[0]?.id) ? 'active' : ''}" data-season-id="${escapeHtml(s.id)}"><span class="season-number">${seasonLabel}</span><span class="season-name"></span></div>`;
+                const seasonLabel = 'Season ' + seasonNo;
+                return `<div class="season-card ${String(s.id) === String(activeSeasonId || playbackSeasons[0]?.id) ? 'active' : ''}" data-season-id="${escapeHtml(s.id)}"><span class="season-number">${seasonLabel}</span><span class="season-name">${escapeHtml(s.name || s.title || seasonLabel)}</span></div>`;
             }).join('') : '<div class="episode-empty">No seasons</div>';
             grid.querySelectorAll('.season-card').forEach(card => {
                 card.addEventListener('click', () => {
@@ -777,6 +879,10 @@ const safeStorage = (() => {
             playbackEpisodes = []; playbackDubs = []; playbackSources = {};
             $('videoWrap').classList.remove('show'); $('qualityRow').style.display = 'none'; $('subtitleNote').style.display = 'none';
             if(!seasonId) return;
+            const selectedSeason = playbackSeasons.find(s => String(s.id) === String(seasonId));
+            const selectedSeasonNo = selectedSeason ? getSeasonNumber(selectedSeason, playbackSeasons.indexOf(selectedSeason)) : '';
+            const episodeSeasonLabel = $('episodeSeasonLabel');
+            if (episodeSeasonLabel) episodeSeasonLabel.textContent = selectedSeasonNo ? `Season ${selectedSeasonNo} • Select an episode` : 'Select an episode';
             db.ref(`episodes/${currentPlaybackItem.id}`).once('value').then(snap => {
                 const all = toArray(snap.val());
                 playbackEpisodes = sortByOrder(onlyEnabled(all.filter(e => String(e.seasonId || e.season) === String(seasonId))));
@@ -795,8 +901,9 @@ const safeStorage = (() => {
             const row = $('episodePills');
             row.innerHTML = playbackEpisodes.length ? playbackEpisodes.map((e, i) => {
                 let epNum = e.episodeNumber ?? e.number ?? (i + 1);
-                const epLabel = 'EP' + String(epNum).padStart(2, '0');
-                return `<div class="episode-card ${String(e.id) === String(activeEpisodeId || playbackEpisodes[0]?.id) ? 'active' : ''}" data-episode-id="${escapeHtml(e.id)}"><span class="episode-number">${epLabel}</span><span class="episode-name"></span></div>`;
+                const epLabel = 'Episode ' + epNum;
+                const epName = e.title || e.name || e.episodeName || ('Episode ' + epNum);
+                return `<div class="episode-card ${String(e.id) === String(activeEpisodeId || playbackEpisodes[0]?.id) ? 'active' : ''}" data-episode-id="${escapeHtml(e.id)}"><span class="episode-number">${epLabel}</span><span class="episode-name">${escapeHtml(epName)}</span></div>`;
             }).join('') : '<div class="episode-empty">No episodes</div>';
             row.querySelectorAll('.episode-card').forEach(card => {
                 card.addEventListener('click', () => {
