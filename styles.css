@@ -66,6 +66,13 @@ button{cursor:pointer;font-family:inherit;border:none;background:none;color:inhe
 .sidebar-bottom .user-email{font-size:12px;color:var(--text-muted);}
 .sidebar-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:999;opacity:0;visibility:hidden;transition:all var(--transition);}
 .sidebar-overlay.open{opacity:1;visibility:visible;}
+/* Desktop menu on/off toggle */
+@media (min-width:821px){
+    body.sidebar-collapsed{padding-left:0!important;}
+    body.sidebar-collapsed .sidebar{transform:translateX(-100%);}
+    .header-left .hamburger{display:block!important;width:36px;height:36px;border-radius:9px;}
+    .header-left .hamburger:hover{background:rgba(251,191,36,.12);}
+}
 
 .header{position:sticky;top:0;z-index:500;display:flex;align-items:center;gap:8px;padding:0 20px;height:var(--header-height);background:var(--bg-header);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-bottom:1px solid rgba(251,191,36,0.15);flex-shrink:0;box-shadow:0 4px 30px rgba(251,191,36,0.05);}
 .header-left{display:flex;align-items:center;gap:10px;flex-shrink:0;}
@@ -817,6 +824,46 @@ html { scroll-behavior: auto; }
     *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
 
+/* ===== NO GLOW OVERRIDES ===== */
+*{text-shadow:none!important;filter:none!important}
+*,*::before,*::after{box-shadow:none!important}
+.sidebar,.header,.hero,.media-card,.simple-card,.card .poster-wrap,.modal,.modal-close,.btn,.user-tool-btn{box-shadow:none!important}
+.sidebar-nav a:hover,.sidebar-nav a.active,.sidebar-nav a.active::before,.header-center .search-box:focus{box-shadow:none!important}
+.year-page-controls{display:flex;align-items:center;gap:12px;margin:0 0 18px;flex-wrap:wrap;padding:0 0 14px}
+.year-page-controls label{font-size:13px;color:#d4b85a;font-weight:700}
+.year-page-controls select{background:#171200;color:#fbbf24;border:1px solid rgba(251,191,36,.35);border-radius:9px;padding:10px 13px;font:600 13px Inter,Arial;min-width:180px}
+.search-page-grid.year-browse-layout{display:block!important;grid-template-columns:none!important;gap:0!important;width:100%;min-width:0}
+.year-browse-layout > .year-page-controls{width:100%;display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 20px;padding:0 0 16px;border-bottom:1px solid rgba(251,191,36,.12)}
+.year-browse-layout #dedicatedYearResults.search-page-grid{display:grid!important;width:100%;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))!important;gap:22px 16px!important;align-items:start}
+.year-browse-layout #dedicatedYearResults .search-card{width:100%;min-width:0}
+.year-browse-layout #dedicatedYearResults .search-card-poster{width:100%;aspect-ratio:2/3;overflow:hidden}
+.year-browse-layout #dedicatedYearResults .search-card-poster img{width:100%;height:100%;object-fit:cover}
+.year-browse-layout #dedicatedYearResults .search-card-title{font-size:13px;line-height:1.4;height:36px}
+.year-browse-layout #dedicatedYearResults .search-card-watch{margin-top:8px}
+@media(max-width:800px){.year-browse-layout #dedicatedYearResults.search-page-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:18px 12px!important}}
+@media(max-width:520px){.year-browse-layout #dedicatedYearResults.search-page-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:16px 10px!important}.year-browse-layout #dedicatedYearResults .search-card-title{font-size:12px;height:32px}}
+
+/* ===== CLEAR SEASON EPISODE LABELS ===== */
+.episode-section-heading{display:flex;align-items:center;gap:12px;margin:20px 0 12px;padding:12px 14px;border:1px solid rgba(251,191,36,.28);border-radius:12px;background:linear-gradient(135deg,rgba(251,191,36,.12),rgba(245,158,11,.04))}
+.episode-section-icon{width:34px;height:34px;display:grid;place-items:center;border-radius:9px;background:#fbbf24;color:#0a0800;font-size:14px;font-weight:900;flex-shrink:0}
+.episode-section-heading strong{display:block;color:#fbbf24;font-size:13px;letter-spacing:1px}
+.episode-section-heading small{display:block;color:#d4b85a;font-size:11px;margin-top:4px}
+.season-grid{gap:10px!important}
+.season-card{width:auto!important;min-width:104px!important;height:58px!important;padding:8px 12px!important;border-radius:10px!important;background:#171200!important}
+.season-number{font-size:13px!important;line-height:1.2!important;color:#fbbf24!important;white-space:nowrap}
+.season-name{display:block!important;position:static!important;height:auto!important;margin-top:4px!important;font-size:10px!important;color:#c9b56b!important;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.season-card.active .season-name{color:#fff1b8!important}
+.episode-grid{gap:10px!important}
+.episode-card{width:105px!important;min-width:105px!important;height:68px!important;padding:8px!important;border-radius:10px!important;display:flex!important;flex-direction:column!important;align-items:flex-start!important;justify-content:center!important;background:#24100d!important;border:1px solid rgba(239,68,68,.45)!important}
+.episode-card:hover{border-color:#ff5b5b!important;box-shadow:0 0 14px rgba(239,68,68,.2)!important}
+.episode-card.active{background:linear-gradient(135deg,#b91c1c,#7f1d1d)!important;border-color:#ff6565!important;box-shadow:0 0 18px rgba(239,68,68,.35)!important}
+.episode-number{font-size:12px!important;font-weight:800!important;color:#ff7777!important;line-height:1.25!important}
+.episode-card.active .episode-number{color:#fff!important}
+.episode-name{display:block!important;position:static!important;height:auto!important;margin-top:5px!important;font-size:10px!important;color:#e7caca!important;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.episode-card.active .episode-name{color:#fff!important}
+.episode-empty{width:100%;padding:14px;color:#c9b56b;font-size:12px}
+@media(max-width:520px){.season-card{min-width:92px!important;height:54px!important}.episode-card{width:calc(50% - 6px)!important;min-width:calc(50% - 6px)!important;height:64px!important}.episode-grid{display:flex!important;flex-wrap:wrap!important}}
+
 /* ===== WEBSITE POPUP ===== */
 .website-popup{position:fixed;inset:0;background:rgba(0,0,0,.88);display:none;justify-content:center;align-items:center;z-index:999999}.website-popup.show{display:flex}.website-popup-box{width:95%;height:92%;background:#111;border-radius:14px;overflow:hidden}.popup-header{height:52px;display:flex;justify-content:space-between;align-items:center;padding:0 16px;background:#181818;color:#fff}.popup-header button{background:none;border:none;color:#fff;font-size:24px;cursor:pointer}#popupFrame{width:100%;height:calc(100% - 52px);border:none;background:#000}
 
@@ -864,21 +911,20 @@ html { scroll-behavior: auto; }
 .simple-title{flex:1!important;min-width:0!important}
 .simple-card-info::after{content:'☆';flex:0 0 auto;color:#fbbf24;font-size:12px;line-height:1.3;margin-top:1px;text-shadow:0 0 8px rgba(251,191,36,.5)}
 
-/* ===== NO GLOW OVERRIDES ===== */
-*{text-shadow:none!important;filter:none!important}
-*,*::before,*::after{box-shadow:none!important}
-.sidebar,.header,.hero,.media-card,.simple-card,.card .poster-wrap,.modal,.modal-close,.btn,.user-tool-btn{box-shadow:none!important}
-.sidebar-nav a:hover,.sidebar-nav a.active,.sidebar-nav a.active::before,.header-center .search-box:focus{box-shadow:none!important}
-.year-page-controls{display:flex;align-items:center;gap:12px;margin:0 0 18px;flex-wrap:wrap;padding:0 0 14px}
-.year-page-controls label{font-size:13px;color:#d4b85a;font-weight:700}
-.year-page-controls select{background:#171200;color:#fbbf24;border:1px solid rgba(251,191,36,.35);border-radius:9px;padding:10px 13px;font:600 13px Inter,Arial;min-width:180px}
-.search-page-grid.year-browse-layout{display:block!important;grid-template-columns:none!important;gap:0!important;width:100%;min-width:0}
-.year-browse-layout > .year-page-controls{width:100%;display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 20px;padding:0 0 16px;border-bottom:1px solid rgba(251,191,36,.12)}
-.year-browse-layout #dedicatedYearResults.search-page-grid{display:grid!important;width:100%;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))!important;gap:22px 16px!important;align-items:start}
-.year-browse-layout #dedicatedYearResults .search-card{width:100%;min-width:0}
-.year-browse-layout #dedicatedYearResults .search-card-poster{width:100%;aspect-ratio:2/3;overflow:hidden}
-.year-browse-layout #dedicatedYearResults .search-card-poster img{width:100%;height:100%;object-fit:cover}
-.year-browse-layout #dedicatedYearResults .search-card-title{font-size:13px;line-height:1.4;height:36px}
-.year-browse-layout #dedicatedYearResults .search-card-watch{margin-top:8px}
-@media(max-width:800px){.year-browse-layout #dedicatedYearResults.search-page-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:18px 12px!important}}
-@media(max-width:520px){.year-browse-layout #dedicatedYearResults.search-page-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:16px 10px!important}.year-browse-layout #dedicatedYearResults .search-card-title{font-size:12px;height:32px}}
+/* ===== HERO SLIDER IMAGE CLARITY FIX ===== */
+#heroSection .hero-slide {
+  background-size: cover !important;
+  background-position: center center !important;
+  background-repeat: no-repeat !important;
+  image-rendering: auto !important;
+  filter: none !important;
+}
+#heroSection .hero-slide::after {
+  background:
+    linear-gradient(0deg, rgba(10,8,0,.68) 0%, rgba(10,8,0,.24) 45%, rgba(10,8,0,.035) 100%),
+    linear-gradient(90deg, rgba(10,8,0,.36) 0%, rgba(10,8,0,.08) 48%, transparent 72%) !important;
+}
+#heroSection .hero-poster-card img {
+  filter: none !important;
+  image-rendering: auto !important;
+}
