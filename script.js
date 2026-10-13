@@ -1,15 +1,34 @@
-/* Safe storage wrapper */
+/* Safe storage wrapper: sandboxed previews may block window.localStorage.
+   Uses browser storage when available and an in-memory fallback otherwise. */
 const safeStorage = (() => {
   const memory = new Map();
-  const getNative = () => { try { return window.localStorage; } catch (_) { return null; } };
+  const getNative = () => {
+    try { return window.localStorage; } catch (_) { return null; }
+  };
   return {
-    getItem(key) { try { const store = getNative(); if (store) return store.getItem(key); } catch (_) {} return memory.has(String(key)) ? memory.get(String(key)) : null; },
-    setItem(key, value) { key = String(key); value = String(value); try { const store = getNative(); if (store) { store.setItem(key, value); return; } } catch (_) {} memory.set(key, value); },
-    removeItem(key) { key = String(key); try { const store = getNative(); if (store) { store.removeItem(key); } } catch (_) {} memory.delete(key); },
-    keys() { try { const store = getNative(); if (store) return Array.from({ length: store.length }, (_, i) => store.key(i)).filter(Boolean); } catch (_) {} return Array.from(memory.keys()); }
+    getItem(key) {
+      try { const store = getNative(); if (store) return store.getItem(key); } catch (_) {}
+      return memory.has(String(key)) ? memory.get(String(key)) : null;
+    },
+    setItem(key, value) {
+      key = String(key); value = String(value);
+      try { const store = getNative(); if (store) { store.setItem(key, value); return; } } catch (_) {}
+      memory.set(key, value);
+    },
+    removeItem(key) {
+      key = String(key);
+      try { const store = getNative(); if (store) { store.removeItem(key); } } catch (_) {}
+      memory.delete(key);
+    },
+    keys() {
+      try {
+        const store = getNative();
+        if (store) return Array.from({ length: store.length }, (_, i) => store.key(i)).filter(Boolean);
+      } catch (_) {}
+      return Array.from(memory.keys());
+    }
   };
 })();
-
 document.getElementById('year').textContent = new Date().getFullYear();
 
 const firebaseConfig = {
@@ -25,7 +44,8 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-/* Admin Web Manager live sync */
+// ===== Admin Web Manager live sync (Firebase Realtime Database) =====
+// Admin panel saves to: settings/webManager
 (function initWebManagerLiveSync() {
     const webManagerRef = db.ref('settings/webManager');
     let configuredTabTitle = '';
@@ -48,34 +68,50 @@ const db = firebase.database();
                 document.head.appendChild(link);
                 iconLinks = [link];
             }
-            iconLinks.forEach(link => { link.href = faviconUrl; link.type = 'image/png'; });
+            iconLinks.forEach(link => {
+                link.href = faviconUrl;
+                link.type = 'image/png';
+            });
         }
 
         const homeName = typeof settings.homeName === 'string' ? settings.homeName.trim() : '';
         if (homeName) {
-            document.querySelectorAll('.sidebar-brand .logo-text').forEach(el => { el.textContent = homeName; });
-            document.querySelectorAll('.sidebar-brand .logo-img, .header-left .logo-img').forEach(img => { img.alt = homeName + ' Logo'; });
+            document.querySelectorAll('.sidebar-brand .logo-text').forEach(el => {
+                el.textContent = homeName;
+            });
+            document.querySelectorAll('.sidebar-brand .logo-img, .header-left .logo-img').forEach(img => {
+                img.alt = homeName + ' Logo';
+            });
         }
 
         const homeLogoUrl = typeof settings.homeLogoUrl === 'string' ? settings.homeLogoUrl.trim() : '';
         if (homeLogoUrl) {
-            document.querySelectorAll('.sidebar-brand .logo-img, .header-left .logo-img').forEach(img => { img.src = homeLogoUrl; });
+            document.querySelectorAll('.sidebar-brand .logo-img, .header-left .logo-img').forEach(img => {
+                img.src = homeLogoUrl;
+            });
         }
 
         if (typeof settings.showHomeLogo === 'boolean') {
-            document.querySelectorAll('.sidebar-brand .logo-img, .header-left .logo-img').forEach(img => { img.style.display = settings.showHomeLogo ? '' : 'none'; });
+            document.querySelectorAll('.sidebar-brand .logo-img, .header-left .logo-img').forEach(img => {
+                img.style.display = settings.showHomeLogo ? '' : 'none';
+            });
         }
     }
 
     const titleObserver = new MutationObserver(() => {
-        if (configuredTabTitle && document.title !== configuredTabTitle) document.title = configuredTabTitle;
+        if (configuredTabTitle && document.title !== configuredTabTitle) {
+            document.title = configuredTabTitle;
+        }
     });
     titleObserver.observe(document.querySelector('title'), { childList: true, characterData: true, subtree: true });
 
-    webManagerRef.on('value', snapshot => { applyWebManagerSettings(snapshot.val()); }, error => {
+    webManagerRef.on('value', snapshot => {
+        applyWebManagerSettings(snapshot.val());
+    }, error => {
         console.warn('Web Manager settings could not be loaded:', error.message || error);
     });
 })();
+// ===== End Web Manager live sync =====
 
 let heroSlides = [];
 let banners = [];
@@ -90,11 +126,23 @@ let activeMovieCat = 'all', activeTvCat = 'all', activeAnimeCat = 'all';
 const $ = (id) => document.getElementById(id);
 
 const DEFAULT_SITE_THEME = {
-    bg:'#0a0800', bgSoft:'#0f0a00', card:'#1a1400', cardHover:'#2a2000',
-    text:'#fdf6e3', muted:'#a89040', accent:'#fbbf24', accent2:'#f59e0b',
-    cardBorder:'rgba(251,191,36,.2)', badge:'#fbbf24', badgeText:'#fbbf24',
-    badgeLang:'#fcd34d', badgeYear:'#fbbf24', quality:'#fbbf24', rating:'#fbbf24',
-    typeBadge:'#f59e0b', cardTitle:'#fdf6e3'
+    bg:'#0a0800',
+    bgSoft:'#0f0a00',
+    card:'#1a1400',
+    cardHover:'#2a2000',
+    text:'#fdf6e3',
+    muted:'#a89040',
+    accent:'#fbbf24',
+    accent2:'#f59e0b',
+    cardBorder:'rgba(251,191,36,.2)',
+    badge:'#fbbf24',
+    badgeText:'#fbbf24',
+    badgeLang:'#fcd34d',
+    badgeYear:'#fbbf24',
+    quality:'#fbbf24',
+    rating:'#fbbf24',
+    typeBadge:'#f59e0b',
+    cardTitle:'#fdf6e3'
 };
 
 function applySiteTheme(theme){
@@ -142,7 +190,20 @@ function getRandomViewFor(item){ if(!item) return '0'; const seed=String(item.id
 function incrementView(btn){ if(!btn) return; const span=btn.querySelector('.view-count'); if(!span) return; const currentText=String(span.textContent||'0').trim(); let currentNum=0; if(/k$/i.test(currentText)) currentNum=Math.round(parseFloat(currentText)*1000); else if(/m$/i.test(currentText)) currentNum=Math.round(parseFloat(currentText)*1000000); else currentNum=parseInt(currentText,10)||0; currentNum+=1; span.textContent=formatViews(currentNum); }
 
 function normalizeType(t){ t=String(t||'').toLowerCase().trim().replace(/[_-]+/g,' '); if(t==='tvshow'||t==='tv show'||t==='series') return 'tv'; if(t==='movie'||t==='movies') return 'movie'; if(t==='anime'||t==='animes') return 'anime'; return t.replace(/\s+/g,'-'); }
-function typeDisplayName(key){ const built={movie:'Movies',tv:'TV Shows',anime:'Anime'}; if(built[key]) return built[key]; const t=types.find(x=>(x.key||normalizeType(x.name))===key); return t?.name || key; }
+let adminTypeLabels = {movie:'Movie', tv:'TV Show', anime:'Anime'};
+function typeDisplayName(key){ const built={movie:adminTypeLabels.movie||'Movie',tv:adminTypeLabels.tv||'TV Show',anime:adminTypeLabels.anime||'Anime'}; if(built[key]) return built[key]; const t=types.find(x=>(x.key||normalizeType(x.name))===key); return t?.name || key; }
+function applyAdminTypeLabels(labels){
+    adminTypeLabels=Object.assign({movie:'Movie',tv:'TV Show',anime:'Anime'},labels||{});
+    const setNav=(section,label)=>{const a=document.querySelector(`#sidebarNav a[data-section="${section}"]`);if(a){const icon=a.querySelector('.nav-icon');a.textContent='';if(icon)a.appendChild(icon);a.appendChild(document.createTextNode(' '+label));}};
+    setNav('movies',adminTypeLabels.movie+'s');
+    setNav('tvshows',adminTypeLabels.tv==='TV Show'?'TV Shows':adminTypeLabels.tv);
+    setNav('anime',adminTypeLabels.anime);
+    const heading=(id,label)=>{const h=document.querySelector('#'+id+' .section-head h2');if(h){const dot=h.querySelector('.dot');h.textContent='';if(dot)h.appendChild(dot);h.appendChild(document.createTextNode(label));}};
+    heading('movies',adminTypeLabels.movie+'s');heading('tvshows',adminTypeLabels.tv==='TV Show'?'TV Shows':adminTypeLabels.tv);heading('anime',adminTypeLabels.anime);
+    const filterLabels={movie:adminTypeLabels.movie+'s',tv:adminTypeLabels.tv==='TV Show'?'TV Shows':adminTypeLabels.tv,anime:adminTypeLabels.anime};
+    const adv=document.getElementById('advType');if(adv){Array.from(adv.options).forEach(o=>{if(filterLabels[o.value])o.textContent=filterLabels[o.value];});}
+}
+db.ref('settings/typeLabels').on('value',snap=>{applyAdminTypeLabels(snap.val()||{});},err=>console.warn('Type labels could not be loaded:',err?.message||err));
 function typeKeyOf(t){ return t.key || normalizeType(t.name); }
 function isBuiltInType(key){ return ['movie','tv','anime'].includes(key); }
 function isTypeValid(key){ if(!key) return false; if(isBuiltInType(key)) return true; return types.some(t => typeKeyOf(t) === key && t.enabled !== false); }
@@ -695,7 +756,7 @@ function openContentById(id, fromUrl = false, watchState = null){
             } catch(e) {}
             if(embed) trailerPlayer.innerHTML=`<iframe src="${embed}" title="Official trailer" style="width:100%;height:100%;border:0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy"></iframe>`;
             else if (/\.(mp4|webm|ogg)(\?.*)?$/i.test(trailerUrl)) trailerPlayer.innerHTML=`<video src="${trailerUrl.replace(/"/g,'%22')}" controls playsinline style="width:100%;height:100%;object-fit:contain"></video>`;
-            else trailerPlayer.innerHTML='<div style="height:100%;display:grid;place-items:center;color:#ddd;font-size:13px">Use "Open Trailer" to watch</div>';
+            else trailerPlayer.innerHTML='<div style="height:100%;display:grid;place-items:center;color:#ddd;font-size:13px">Use “Open Trailer” to watch</div>';
         }
     }
     const castWrap = $('modalCastWrap'), castGrid = $('modalCastGrid');
