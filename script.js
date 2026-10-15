@@ -600,7 +600,7 @@ const safeStorage = (() => {
                         </div>
                         <span class="simple-quality">${escapeHtml(quality)}</span>
                         <button type="button" class="simple-view-btn" title="Views" onclick="event.stopPropagation();incrementView(this)">
-                            <span class="html-icon" style="width:auto;min-width:0;height:auto;font-size:9px;color:#fbbf24;filter:none;">◉</span>
+                            <span class="html-icon" style="width:auto;min-width:0;height:auto;font-size:9px;color:#60a5fa;filter:none;">◉</span>
                             <span class="view-count">${escapeHtml(views)}</span>
                         </button>
                         ${coming ? '<span class="simple-coming">Coming Soon</span>' : ''}
@@ -1080,4 +1080,19 @@ function openWebsitePopup(url,title){document.getElementById('popupTitle').textC
   }
   const langSelect=$('sidebarLang');
   if(langSelect){langSelect.addEventListener('change',()=>translate(langSelect.value)); const saved=safeStorage.getItem('siteLanguage')||'en'; langSelect.value=saved; translate(saved);}
+})();
+
+
+
+(function(){
+ const backdrop=document.getElementById('appDownloadBackdrop');
+ const openBtn=document.querySelector('.btn-download');
+ const closeBtn=document.getElementById('closeAppDownload');
+ function open(){backdrop.classList.add('open');backdrop.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';}
+ function close(){backdrop.classList.remove('open');backdrop.setAttribute('aria-hidden','true');document.body.style.overflow='';}
+ if(openBtn) openBtn.addEventListener('click',open); if(closeBtn) closeBtn.addEventListener('click',close);
+ backdrop.addEventListener('click',e=>{if(e.target===backdrop)close();}); document.addEventListener('keydown',e=>{if(e.key==='Escape')close();});
+ function renderDownloads(d){d=d||{};['Windows','Mac','Linux','Android'].forEach(os=>{const k=os.toLowerCase(),url=String(d[k+'Url']||'').trim(),status=document.getElementById('download'+os+'Status'),link=document.getElementById('download'+os+'Link');if(url){link.href=url;link.hidden=false;status.textContent=d[k+'Note']||({'Windows':'x86_64 Installer (.exe)','Mac':'Apple Silicon & Intel (.dmg)','Linux':'Debian / Ubuntu (.deb)','Android':'Universal APK (.apk)'}[os]);}else{link.hidden=true;link.removeAttribute('href');status.textContent=d[k+'Note']||({'Windows':'Windows build not yet generated','Mac':'macOS build not yet generated','Linux':'Linux build not yet generated','Android':'Android build not yet generated'}[os]);}});}
+ function init(){if(!window.firebase||!firebase.database)return;firebase.database().ref('settings/appDownloads').on('value',s=>renderDownloads(s.val()),e=>console.warn('Download settings unavailable',e));}
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
