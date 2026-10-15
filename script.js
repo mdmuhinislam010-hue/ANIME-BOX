@@ -1,4 +1,3 @@
-
 /* Safe storage wrapper: sandboxed previews may block window.localStorage.
    Uses browser storage when available and an in-memory fallback otherwise. */
 const safeStorage = (() => {
