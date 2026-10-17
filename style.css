@@ -1827,3 +1827,19 @@
     padding:5px 7px!important;
   }
 }
+
+
+/* You May Also Like: full-width responsive recommendation grid */
+#randomCardScrollSection { display:block!important; width:100%!important; max-width:100%!important; margin-top:22px!important; padding:18px 0 8px!important; border-top:1px solid rgba(251,191,36,.25)!important; overflow:visible!important; box-sizing:border-box!important; }
+#randomCardScrollSection h4 { margin:0 0 14px!important; font-size:14px!important; font-weight:700!important; color:#fbbf24!important; }
+#randomCardScrollWrap { display:grid!important; grid-template-columns:repeat(5,minmax(0,1fr))!important; gap:16px!important; width:100%!important; max-width:100%!important; overflow:visible!important; padding:0 0 10px!important; box-sizing:border-box!important; }
+#randomCardScrollWrap .simple-card { width:100%!important; min-width:0!important; height:auto!important; min-height:0!important; flex:none!important; }
+#randomCardScrollWrap .simple-card-poster { height:auto!important; aspect-ratio:2/3!important; overflow:hidden!important; }
+#randomCardScrollWrap .simple-card-poster img { width:100%!important; height:100%!important; object-fit:cover!important; }
+#randomCardScrollWrap .simple-card-info { min-height:44px!important; }
+#randomCardScrollWrap .simple-title { font-size:12px!important; line-height:1.35!important; display:-webkit-box!important; -webkit-line-clamp:2!important; -webkit-box-orient:vertical!important; overflow:hidden!important; }
+.random-card-scroll-loader { padding:16px 8px!important; text-align:center!important; color:#b8a56b!important; font-size:12px!important; }
+#randomCardScrollSentinel { width:100%; height:2px; }
+@media(max-width:1100px) { #randomCardScrollWrap { grid-template-columns:repeat(4,minmax(0,1fr))!important; gap:13px!important; } }
+@media(max-width:820px) { #randomCardScrollWrap { grid-template-columns:repeat(3,minmax(0,1fr))!important; gap:11px!important; } }
+@media(max-width:520px) { #randomCardScrollWrap { grid-template-columns:repeat(2,minmax(0,1fr))!important; gap:12px 9px!important; } #randomCardScrollWrap .simple-title { font-size:11px!important; } }

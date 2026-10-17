@@ -894,18 +894,62 @@ const safeStorage = (() => {
             loadPlaybackSeasonsFirst(item.id, null);
         }
 
-        function renderRandomCardsInPanel() {
+        let randomRecommendationUsed = new Set();
+        let randomRecommendationObserver = null;
+        let randomRecommendationLoading = false;
+        let randomRecommendationFinished = false;
+
+        function getRandomRecommendationPool() {
+            // All content types added by admin are eligible for recommendations.
+            return content.filter(item => item && item.id != null && (item.title || item.name || item.poster || item.backdrop));
+        }
+
+        function loadMoreRandomRecommendations() {
             const wrap = $('randomCardScrollWrap');
-            if (!wrap) return;
-            const pool = content.filter(c => { const t = String(c.type || '').toLowerCase().trim(); return t === 'movie' || t === 'tv' || t === 'anime'; });
-            const shuffled = randomShuffle(pool).slice(0, 12);
-            if (!shuffled.length) { wrap.innerHTML = '<div style="color:#8a7a3a;font-size:12px;padding:10px;">No titles available.</div>'; return; }
-            wrap.innerHTML = shuffled.map(item => {
+            const loader = $('randomCardScrollLoader');
+            if (!wrap || randomRecommendationLoading || randomRecommendationFinished) return;
+            const available = getRandomRecommendationPool().filter(item => !randomRecommendationUsed.has(String(item.id)));
+            if (!available.length) {
+                randomRecommendationFinished = true;
+                if (loader) loader.textContent = wrap.children.length ? 'All available titles have been shown.' : 'No titles available.';
+                return;
+            }
+            randomRecommendationLoading = true;
+            if (loader) loader.textContent = 'Loading more random titles…';
+            const batch = randomShuffle(available).slice(0, 12);
+            batch.forEach(item => randomRecommendationUsed.add(String(item.id)));
+            const html = batch.map(item => {
                 const poster = item.poster || item.backdrop || '';
                 const title = item.title || item.name || 'Untitled';
                 const year = item.year || '';
-                return `<div class="simple-card" onclick="openSearchResultPlayer('${encodeURIComponent(String(item.id))}')"><div class="simple-card-poster"><img src="${escapeHtml(poster)}" loading="lazy" decoding="async" alt="${escapeHtml(title)}" onerror="this.style.display='none';this.parentElement.classList.add('no-image')"><div class="simple-badges-on-poster">${year ? `<span class="simple-badge badge-date">${escapeHtml(year)}</span>` : ''}</div></div><div class="simple-card-info"><div class="simple-title">${escapeHtml(title)}</div></div></div>`;
+                const safeId = encodeURIComponent(String(item.id));
+                return `<div class="simple-card" onclick="openSearchResultPlayer('${safeId}')"><div class="simple-card-poster"><img src="${escapeHtml(poster)}" loading="lazy" decoding="async" alt="${escapeHtml(title)}" onerror="this.style.display='none';this.parentElement.classList.add('no-image')"><div class="simple-badges-on-poster">${year ? `<span class="simple-badge badge-date">${escapeHtml(year)}</span>` : ''}</div></div><div class="simple-card-info"><div class="simple-title">${escapeHtml(title)}</div></div></div>`;
             }).join('');
+            wrap.insertAdjacentHTML('beforeend', html);
+            randomRecommendationLoading = false;
+            const more = getRandomRecommendationPool().some(item => !randomRecommendationUsed.has(String(item.id)));
+            if (loader) loader.textContent = more ? 'Scroll down to load more' : 'All available titles have been shown.';
+            if (!more) randomRecommendationFinished = true;
+        }
+
+        function renderRandomCardsInPanel() {
+            const wrap = $('randomCardScrollWrap');
+            if (!wrap) return;
+            if (randomRecommendationObserver) { randomRecommendationObserver.disconnect(); randomRecommendationObserver = null; }
+            randomRecommendationUsed = new Set();
+            randomRecommendationLoading = false;
+            randomRecommendationFinished = false;
+            wrap.innerHTML = '';
+            const sentinel = $('randomCardScrollSentinel');
+            const loader = $('randomCardScrollLoader');
+            if (loader) loader.textContent = 'Loading random titles…';
+            if (sentinel && 'IntersectionObserver' in window) {
+                randomRecommendationObserver = new IntersectionObserver(entries => {
+                    if (entries.some(entry => entry.isIntersecting)) loadMoreRandomRecommendations();
+                }, { root: null, rootMargin: '0px 0px 500px 0px', threshold: 0 });
+                randomRecommendationObserver.observe(sentinel);
+            }
+            loadMoreRandomRecommendations();
         }
 
         function loadPlaybackSeasonsFirst(contentId, watchState = null){
