@@ -1273,3 +1273,37 @@ function openWebsitePopup(url,title){document.getElementById('popupTitle').textC
     if(dock) dock.style.display='none';
   };
 })();
+
+
+/* AnimeBox Community Vote System */
+(function(){
+ const root=document.getElementById('animeBoxCommunityVote');
+ if(!root) return;
+ const key='animebox-community-vote-v1:'+location.pathname+location.search;
+ const countKey=key+':counts';
+ let counts={must:0,good:0,average:0}, selected=null;
+ try{counts=Object.assign(counts,JSON.parse(localStorage.getItem(countKey)||'{}'));selected=localStorage.getItem(key)||null;}catch(e){}
+ const $=id=>document.getElementById(id);
+ function render(){
+   const total=counts.must+counts.good+counts.average;
+   const score=total?Math.round((counts.must*10+counts.good*7+counts.average*4)/total*10)/10:null;
+   $('abvScore').textContent=score===null?'—':score+'/10';
+   $('abvVotes').textContent=total+' votes';
+   $('abvSummary').textContent=total?'কমিউনিটি ভোটের ফলাফল':'আপনার ভোট দিন';
+   $('abvMust').textContent=counts.must;$('abvGood').textContent=counts.good;$('abvAverage').textContent=counts.average;
+   $('abvFill').style.width=(total?((counts.must+counts.good*.7+counts.average*.4)/total*100):0)+'%';
+   root.querySelectorAll('[data-vote]').forEach(btn=>{btn.classList.toggle('selected',btn.dataset.vote===selected);btn.setAttribute('aria-pressed',btn.dataset.vote===selected?'true':'false')});
+   $('abvNote').textContent=selected?'আপনার ভোট সংরক্ষিত হয়েছে। এই ব্রাউজার থেকে ভোট পরিবর্তন করতে অন্য অপশন বেছে নিন।':'একজন দর্শক একবার ভোট দিতে পারবেন (এই ব্রাউজারে)।';
+ }
+ root.querySelectorAll('[data-vote]').forEach(btn=>btn.addEventListener('click',()=>{
+   const next=btn.dataset.vote;
+   try{
+     if(selected===next)return;
+     if(selected && counts[selected]>0)counts[selected]--;
+     counts[next]=(counts[next]||0)+1;selected=next;
+     localStorage.setItem(countKey,JSON.stringify(counts));localStorage.setItem(key,selected);
+   }catch(e){$('abvNote').textContent='ভোটটি এই পেজে দেখানো হয়েছে, তবে ব্রাউজার স্টোরেজে সংরক্ষণ করা যায়নি.';}
+   render();
+ }));
+ render();
+})();
