@@ -434,7 +434,7 @@ const safeStorage = (() => {
             titleEl.textContent=title;
             let items=content.filter(x=>normalizeType(x.type)===type);
             const cats=[...new Set(items.map(x=>String(x.category||'').trim()).filter(Boolean))];
-            tabs.innerHTML = cats.map(c=>`<button data-cat="${escapeHtml(c)}">${escapeHtml(c)}</button>`).join('');
+            tabs.innerHTML = `<button class="active" data-cat="all">All</button>` + cats.map(c=>`<button data-cat="${escapeHtml(c)}">${escapeHtml(c)}</button>`).join('');
             const draw=(cat='all')=>{
                 let list=items;
                 if(cat!=='all') list=items.filter(x=>String(x.category||'').trim()===cat);
@@ -650,8 +650,8 @@ const safeStorage = (() => {
         }
         function buildTabs(containerId, catNames, active, onClick){
             const el = $(containerId); if(!el) return;
-            const all = catNames.filter(Boolean);
-            el.innerHTML = all.map(c => `<button class="tab-btn ${c === active ? 'active' : ''}" data-cat="${c}">${c}</button>`).join('');
+            const all = ['all', ...catNames];
+            el.innerHTML = all.map(c => `<button class="tab-btn ${c === active ? 'active' : ''}" data-cat="${c}">${c === 'all' ? 'All' : c}</button>`).join('');
             el.querySelectorAll('.tab-btn').forEach(btn => { btn.addEventListener('click', () => onClick(btn.dataset.cat)); });
         }
 
@@ -1272,27 +1272,4 @@ function openWebsitePopup(url,title){document.getElementById('popupTitle').textC
     if(stage) stage.style.display='none';
     if(dock) dock.style.display='none';
   };
-})();
-
-
-/* ===== Official trailer lifecycle guard ===== */
-(function(){
-  const backdrop = document.getElementById('modalBackdrop');
-  if (backdrop && typeof window.closeOfficialTrailer === 'function') {
-    // Stop playback immediately whenever the detail modal is hidden/closed.
-    const observer = new MutationObserver(function(){
-      if (!backdrop.classList.contains('show')) window.closeOfficialTrailer();
-    });
-    observer.observe(backdrop, { attributes: true, attributeFilter: ['class'] });
-  }
-  // Also stop media when browser navigation leaves the current page.
-  window.addEventListener('pagehide', function(){
-    if (typeof window.closeOfficialTrailer === 'function') window.closeOfficialTrailer();
-  });
-  window.addEventListener('hashchange', function(){
-    if (typeof window.parseAppRoute === 'function') {
-      try { if (window.parseAppRoute().type !== 'detail') window.closeOfficialTrailer(); }
-      catch (_) { window.closeOfficialTrailer(); }
-    }
-  });
 })();

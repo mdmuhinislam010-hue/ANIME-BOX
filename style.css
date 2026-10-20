@@ -1843,7 +1843,3 @@
 @media(max-width:1100px) { #randomCardScrollWrap { grid-template-columns:repeat(4,minmax(0,1fr))!important; gap:13px!important; } }
 @media(max-width:820px) { #randomCardScrollWrap { grid-template-columns:repeat(3,minmax(0,1fr))!important; gap:11px!important; } }
 @media(max-width:520px) { #randomCardScrollWrap { grid-template-columns:repeat(2,minmax(0,1fr))!important; gap:12px 9px!important; } #randomCardScrollWrap .simple-title { font-size:11px!important; } }
-
-/* Home category sections: remove the unwanted line beneath category cards/tabs. */
-#movies .tabs, #tvshows .tabs, #anime .tabs { border: 0 !important; box-shadow: none !important; }
-#movies .type-row-wrap, #tvshows .type-row-wrap, #anime .type-row-wrap { border-bottom: 0 !important; }
