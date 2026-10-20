@@ -1,3 +1,4 @@
+
 /* ===== Original inline script 1 ===== */
 /* Safe storage wrapper: sandboxed previews may block window.localStorage.
    Uses browser storage when available and an in-memory fallback otherwise. */
@@ -650,8 +651,8 @@ const safeStorage = (() => {
         }
         function buildTabs(containerId, catNames, active, onClick){
             const el = $(containerId); if(!el) return;
-            const all = ['all', ...catNames];
-            el.innerHTML = all.map(c => `<button class="tab-btn ${c === active ? 'active' : ''}" data-cat="${c}">${c === 'all' ? 'All' : c}</button>`).join('');
+            // Home category tabs: hide the 'All' button while keeping all titles visible by default.
+            el.innerHTML = catNames.map(c => `<button class="tab-btn ${c === active ? 'active' : ''}" data-cat="${c}">${c}</button>`).join('');
             el.querySelectorAll('.tab-btn').forEach(btn => { btn.addEventListener('click', () => onClick(btn.dataset.cat)); });
         }
 
@@ -714,7 +715,53 @@ const safeStorage = (() => {
         const clearHomeYear=$('clearHomeYear');
         if(clearHomeYear)clearHomeYear.addEventListener('click',()=>{if(homeYearSelect)homeYearSelect.value='';renderYearBrowse();});
 
-        function renderAll(){ renderTrending(); renderGrids(); renderCustomTypeSections(); renderContinueWatching(); renderYearBrowse(); }
+        function setupHomeRowArrows(root=document){
+            // Add the same five-card arrow behavior to Home category rows and Trending Now.
+            root.querySelectorAll('.type-row-wrap,.row-scroll-wrapper').forEach(wrap=>{
+                const row=wrap.querySelector('.type-row,.row-scroll');
+                if(!row) return;
+                let left=wrap.querySelector(':scope > .type-row-arrow.left');
+                let right=wrap.querySelector(':scope > .type-row-arrow.right');
+                if(!left || !right){
+                    left=document.createElement('button');
+                    left.type='button'; left.className='type-row-arrow left'; left.textContent='‹';
+                    left.setAttribute('aria-label','Scroll back five cards');
+                    right=document.createElement('button');
+                    right.type='button'; right.className='type-row-arrow right'; right.textContent='›';
+                    right.setAttribute('aria-label','Scroll forward five cards');
+                    wrap.append(left,right);
+                }
+                const cards=()=>[...row.children].filter(el=>el.matches('.simple-card,.card'));
+                const step=()=>{
+                    const list=cards();
+                    if(list.length>=5){
+                        const first=list[0], fifth=list[4];
+                        return fifth.offsetLeft + fifth.offsetWidth - first.offsetLeft + (parseFloat(getComputedStyle(row).gap)||0);
+                    }
+                    return row.clientWidth;
+                };
+                const refresh=()=>{
+                    const list=cards();
+                    const hasMoreThanFive=list.length>5 && row.scrollWidth>row.clientWidth+2;
+                    right.style.display=hasMoreThanFive && row.scrollLeft < row.scrollWidth-row.clientWidth-2 ? 'flex':'none';
+                    // The back arrow is intentionally hidden until the user clicks forward once.
+                    left.style.display=hasMoreThanFive && wrap.dataset.hasScrolledForward==='1' && row.scrollLeft>2 ? 'flex':'none';
+                };
+                if(wrap.dataset.arrowsBound!=='1'){
+                    wrap.dataset.arrowsBound='1';
+                    left.addEventListener('click',()=>row.scrollBy({left:-step(),behavior:'smooth'}));
+                    right.addEventListener('click',()=>{wrap.dataset.hasScrolledForward='1';row.scrollBy({left:step(),behavior:'smooth'});setTimeout(refresh,220);setTimeout(refresh,500);});
+                    row.addEventListener('scroll',refresh,{passive:true});
+                    if(typeof ResizeObserver!=='undefined'){const ro=new ResizeObserver(refresh);ro.observe(row);}
+                }
+                refresh();
+            });
+        }
+        setupHomeRowArrows();
+        const homeRowObserver = new MutationObserver(()=>setupHomeRowArrows(document));
+        homeRowObserver.observe(document.body,{childList:true,subtree:true});
+
+        function renderAll(){ renderTrending(); renderGrids(); renderCustomTypeSections(); renderContinueWatching(); renderYearBrowse(); setupHomeRowArrows(); }
         function renderTrending(){ const row = $('trendingRow'); const items = content.filter(c => c.trending); row.innerHTML = items.length ? items.map(cardHTML).join('') : `<div class="empty-state">No trending titles right now.</div>`; }
         function renderGrids(){ renderTypeGrid('movie', 'moviesGrid', activeMovieCat); renderTypeGrid('tv', 'tvGrid', activeTvCat); renderTypeGrid('anime', 'animeGrid', activeAnimeCat); }
         function renderTypeGrid(type, gridId, cat){ let items = content.filter(c => c.type === type); if(cat && cat !== 'all') items = items.filter(c => c.category === cat); const el = $(gridId); if(!el) return; el.innerHTML = items.length ? items.map(cardHTML).join('') : `<div class="empty-state">No titles found.</div>`; }
@@ -1273,3 +1320,4 @@ function openWebsitePopup(url,title){document.getElementById('popupTitle').textC
     if(dock) dock.style.display='none';
   };
 })();
+
