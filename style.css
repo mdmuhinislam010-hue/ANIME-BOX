@@ -1844,35 +1844,6 @@
 @media(max-width:820px) { #randomCardScrollWrap { grid-template-columns:repeat(3,minmax(0,1fr))!important; gap:11px!important; } }
 @media(max-width:520px) { #randomCardScrollWrap { grid-template-columns:repeat(2,minmax(0,1fr))!important; gap:12px 9px!important; } #randomCardScrollWrap .simple-title { font-size:11px!important; } }
 
-
-/* AnimeBox Community Vote System */
-/* AnimeBox community verdict — styled to match the video player */
-#animeBoxCommunityVote{margin:18px 0 20px;padding:14px 12px 16px;background:#17130a;border:1px solid rgba(251,191,36,.22);border-radius:8px;color:#fdf6e3;font-family:Inter,Arial,sans-serif}
-#animeBoxCommunityVote .abv-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px}
-#animeBoxCommunityVote .abv-kicker{font-size:9px;font-weight:900;letter-spacing:.8px;color:#fbbf24;text-transform:uppercase}
-#animeBoxCommunityVote h3{font-size:20px;line-height:1.25;margin:4px 0;color:#fff;font-weight:800}
-#animeBoxCommunityVote .abv-sub{font-size:12px;color:#d4b85a}
-#animeBoxCommunityVote .abv-score{flex:0 0 100px;min-height:70px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:#252016;border-radius:7px;text-align:center;padding:8px}
-#animeBoxCommunityVote .abv-score strong{font-size:22px;color:#fbbf24;line-height:1}
-#animeBoxCommunityVote .abv-score span{font-size:10px;font-weight:800;color:#fdf6e3}
-#animeBoxCommunityVote .abv-progress{height:42px;background:#252016;border-radius:6px;margin-bottom:9px;padding:7px 9px;display:flex;flex-direction:column;justify-content:center;gap:5px}
-#animeBoxCommunityVote .abv-progress-top{display:flex;justify-content:space-between;gap:8px;font-size:10px;font-weight:800;color:#fdf6e3}
-#animeBoxCommunityVote .abv-track{height:4px;background:#3a3020;border-radius:8px;overflow:hidden}
-#animeBoxCommunityVote .abv-fill{height:100%;width:0;background:linear-gradient(90deg,#fbbf24,#f59e0b);transition:width .2s}
-#animeBoxCommunityVote .abv-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-#animeBoxCommunityVote .abv-option{display:flex;align-items:center;gap:9px;min-width:0;text-align:left;padding:11px 10px;border-radius:7px;border:1px solid transparent;cursor:pointer;transition:background .15s,border-color .15s}
-#animeBoxCommunityVote .abv-option[data-vote="must"]{background:rgba(16,185,129,.13);border-color:rgba(16,185,129,.18)}
-#animeBoxCommunityVote .abv-option[data-vote="good"]{background:rgba(14,165,233,.13);border-color:rgba(14,165,233,.18)}
-#animeBoxCommunityVote .abv-option[data-vote="average"]{background:rgba(245,158,11,.13);border-color:rgba(245,158,11,.18)}
-#animeBoxCommunityVote .abv-option:hover,#animeBoxCommunityVote .abv-option.selected{border-color:currentColor;filter:brightness(1.15)}
-#animeBoxCommunityVote .abv-box{width:21px;height:21px;flex:0 0 21px;border:2px solid currentColor;border-radius:5px}
-#animeBoxCommunityVote .abv-emoji{font-size:20px;line-height:1}
-#animeBoxCommunityVote .abv-label{min-width:0;flex:1}
-#animeBoxCommunityVote .abv-label strong{display:block;font-size:12px;color:#fff;line-height:1.4}
-#animeBoxCommunityVote .abv-label small{display:block;font-size:10px;color:#d4b85a;margin-top:2px}
-#animeBoxCommunityVote .abv-count{display:grid;place-items:center;min-width:24px;height:24px;padding:0 5px;border-radius:99px;background:rgba(255,255,255,.1);font-size:10px;font-weight:900;color:#fff}
-#animeBoxCommunityVote .abv-option[data-vote="must"]{color:#10b981}
-#animeBoxCommunityVote .abv-option[data-vote="good"]{color:#0ea5e9}
-#animeBoxCommunityVote .abv-option[data-vote="average"]{color:#f59e0b}
-#animeBoxCommunityVote .abv-note{font-size:10px;color:#a89040;margin-top:9px}
-@media(max-width:520px){#animeBoxCommunityVote{padding:11px 9px;margin:14px 0 16px}#animeBoxCommunityVote .abv-top{gap:7px}#animeBoxCommunityVote h3{font-size:17px}#animeBoxCommunityVote .abv-score{flex-basis:78px;min-height:62px}#animeBoxCommunityVote .abv-options{gap:5px}#animeBoxCommunityVote .abv-option{padding:9px 5px;gap:5px;flex-wrap:wrap}#animeBoxCommunityVote .abv-box{width:16px;height:16px;flex-basis:16px}#animeBoxCommunityVote .abv-emoji{font-size:17px}#animeBoxCommunityVote .abv-label strong{font-size:10px}#animeBoxCommunityVote .abv-label small{font-size:9px}#animeBoxCommunityVote .abv-count{min-width:19px;height:19px;font-size:9px}}
+/* Home category sections: remove the unwanted line beneath category cards/tabs. */
+#movies .tabs, #tvshows .tabs, #anime .tabs { border: 0 !important; box-shadow: none !important; }
+#movies .type-row-wrap, #tvshows .type-row-wrap, #anime .type-row-wrap { border-bottom: 0 !important; }

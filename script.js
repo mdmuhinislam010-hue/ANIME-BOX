@@ -434,7 +434,7 @@ const safeStorage = (() => {
             titleEl.textContent=title;
             let items=content.filter(x=>normalizeType(x.type)===type);
             const cats=[...new Set(items.map(x=>String(x.category||'').trim()).filter(Boolean))];
-            tabs.innerHTML = `<button class="active" data-cat="all">All</button>` + cats.map(c=>`<button data-cat="${escapeHtml(c)}">${escapeHtml(c)}</button>`).join('');
+            tabs.innerHTML = cats.map(c=>`<button data-cat="${escapeHtml(c)}">${escapeHtml(c)}</button>`).join('');
             const draw=(cat='all')=>{
                 let list=items;
                 if(cat!=='all') list=items.filter(x=>String(x.category||'').trim()===cat);
@@ -650,8 +650,8 @@ const safeStorage = (() => {
         }
         function buildTabs(containerId, catNames, active, onClick){
             const el = $(containerId); if(!el) return;
-            // Home page: hide the All button while keeping all titles visible by default.
-            el.innerHTML = catNames.map(c => `<button class="tab-btn ${c === active ? 'active' : ''}" data-cat="${c}">${c}</button>`).join('');
+            const all = catNames.filter(Boolean);
+            el.innerHTML = all.map(c => `<button class="tab-btn ${c === active ? 'active' : ''}" data-cat="${c}">${c}</button>`).join('');
             el.querySelectorAll('.tab-btn').forEach(btn => { btn.addEventListener('click', () => onClick(btn.dataset.cat)); });
         }
 
@@ -1275,49 +1275,24 @@ function openWebsitePopup(url,title){document.getElementById('popupTitle').textC
 })();
 
 
-/* AnimeBox Community Vote System — shared live counts via Firebase Realtime Database */
+/* ===== Official trailer lifecycle guard ===== */
 (function(){
- const root=document.getElementById('animeBoxCommunityVote');
- if(!root) return;
- const $=id=>document.getElementById(id);
- const params=new URLSearchParams(location.search);
- const contentId=(params.get('id')||params.get('content')||params.get('contentId')||params.get('movie')||params.get('title')||location.pathname).trim().toLowerCase();
- const safeId=contentId.replace(/[^a-z0-9_-]+/g,'-').slice(0,120)||'default';
- const voteRef=()=>firebase.database().ref('communityVotes/'+safeId);
- const voterKey='animebox-community-voter-v1';
- let voterId=''; let selected=null; let counts={must:0,good:0,average:0}; let busy=false;
- try { voterId=localStorage.getItem(voterKey)||''; if(!voterId){voterId='v_'+Math.random().toString(36).slice(2)+Date.now().toString(36);localStorage.setItem(voterKey,voterId);} } catch(e) { voterId='v_'+Math.random().toString(36).slice(2)+Date.now().toString(36); }
- function render(){
-   const total=counts.must+counts.good+counts.average;
-   const score=total?Math.round((counts.must*10+counts.good*7+counts.average*4)/total*10)/10:null;
-   $('abvScore').textContent=score===null?'—':score+'/10';
-   $('abvVotes').textContent=total+' votes';
-   $('abvSummary').textContent=total?'কমিউনিটি ভোটের ফলাফল':'আপনার ভোট দিন';
-   $('abvMust').textContent=counts.must;$('abvGood').textContent=counts.good;$('abvAverage').textContent=counts.average;
-   $('abvFill').style.width=(total?((counts.must+counts.good*.7+counts.average*.4)/total*100):0)+'%';
-   root.querySelectorAll('[data-vote]').forEach(btn=>{btn.classList.toggle('selected',btn.dataset.vote===selected);btn.setAttribute('aria-pressed',btn.dataset.vote===selected?'true':'false');btn.disabled=busy;});
-   $('abvNote').textContent=selected?'আপনার ভোট সংরক্ষিত হয়েছে। সব দর্শকের ফলাফল লাইভ আপডেট হবে।':'আপনার পছন্দের অপশনে ভোট দিন। ফলাফল সবার জন্য এক হবে।';
- }
- function showError(err){ console.error('Community vote Firebase error:',err); $('abvNote').textContent='ভোট সার্ভারে সেভ হচ্ছে না। Firebase Database Rules/connection পরীক্ষা করুন।'; }
- if(!window.firebase || !firebase.database){$('abvNote').textContent='ভোট চালু করতে Firebase সংযোগ প্রয়োজন।';return;}
- // Listen to shared votes so every visitor sees the same counts and selection state.
- voteRef().on('value',snap=>{
-   const data=snap.val()||{}; const voters=data.voters||{}; counts={must:0,good:0,average:0};
-   Object.keys(voters).forEach(id=>{const v=voters[id];if(v && Object.prototype.hasOwnProperty.call(counts,v.choice))counts[v.choice]++;});
-   selected=(voters[voterId]&&voters[voterId].choice)||null; render();
- },showError);
- root.querySelectorAll('[data-vote]').forEach(btn=>btn.addEventListener('click',async()=>{
-   const next=btn.dataset.vote; if(busy||!Object.prototype.hasOwnProperty.call(counts,next))return;
-   busy=true;render();
-   try {
-     const result=await voteRef().transaction(data=>{
-       data=data&&typeof data==='object'?data:{};
-       data.voters=data.voters&&typeof data.voters==='object'?data.voters:{};
-       data.voters[voterId]={choice:next,updatedAt:Date.now()};
-       return data;
-     },undefined,false);
-     if(!result.committed) throw new Error('Vote was not committed');
-   } catch(e){showError(e);} finally {busy=false;render();}
- }));
- render();
+  const backdrop = document.getElementById('modalBackdrop');
+  if (backdrop && typeof window.closeOfficialTrailer === 'function') {
+    // Stop playback immediately whenever the detail modal is hidden/closed.
+    const observer = new MutationObserver(function(){
+      if (!backdrop.classList.contains('show')) window.closeOfficialTrailer();
+    });
+    observer.observe(backdrop, { attributes: true, attributeFilter: ['class'] });
+  }
+  // Also stop media when browser navigation leaves the current page.
+  window.addEventListener('pagehide', function(){
+    if (typeof window.closeOfficialTrailer === 'function') window.closeOfficialTrailer();
+  });
+  window.addEventListener('hashchange', function(){
+    if (typeof window.parseAppRoute === 'function') {
+      try { if (window.parseAppRoute().type !== 'detail') window.closeOfficialTrailer(); }
+      catch (_) { window.closeOfficialTrailer(); }
+    }
+  });
 })();
