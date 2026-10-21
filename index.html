@@ -12,7 +12,7 @@
     <link rel="preconnect" href="https://cdn.imageurlgenerator.com" crossorigin />
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
     <noscript><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" /></noscript>
-        <link rel="stylesheet" href="style.css" />
+        
     
     
 
@@ -35,6 +35,7 @@
 
     
 
+    <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
@@ -290,13 +291,13 @@
                         <div class="server-list" id="dubPills"></div>
 
                         <div class="season-bar">
-                            <div class="season-left">Seasons</div>
+                            <div class="season-left" id="seasonBarLabel">Seasons / Chapters</div>
                             <div class="season-nav"><span>◀</span><span>▶</span></div>
                         </div>
                         <div class="choose-season" id="seasonField" style="display:none;">
-                            <div class="choose-season-label">CHOOSE SEASON</div>
+                            <div class="choose-season-label" id="chooseSeasonLabel">CHOOSE SEASON / CHAPTER</div>
                             <div class="season-heading-row">
-                                <strong id="seasonCountLabel">Seasons</strong>
+                                <strong id="seasonCountLabel">Seasons / Chapters</strong>
                                 <select class="watch-season-select" id="seasonSelect" style="display:none;"></select>
                             </div>
                             <div class="season-grid" id="seasonPills"></div>
@@ -305,7 +306,7 @@
                         <div class="watch-choice" id="episodeField" style="display:none;">
                             <div class="episode-section-heading">
                                 <span class="episode-section-icon">▶</span>
-                                <div><strong>EPISODES</strong><small id="episodeSeasonLabel">Choose a season first</small></div>
+                                <div><strong>EPISODES</strong><small id="episodeSeasonLabel">Choose a season or chapter first</small></div>
                             </div>
                             <div class="episode-grid" id="episodePills"></div>
                         </div>
@@ -375,5 +376,7 @@
 
 
 <script src="script.js"></script>
+
+
 </body>
 </html>

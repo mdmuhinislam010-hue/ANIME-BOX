@@ -873,6 +873,7 @@ const safeStorage = (() => {
 
         function slugifyWatch(value){ return String(value || '').trim().toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); }
         function getSeasonNumber(season, index = 0){ const n = season?.number ?? String(season?.name || '').match(/\d+/)?.[0]; return Number(n) || (index + 1); }
+        function getPlaybackGroupWord(group, item = currentPlaybackItem){ const raw = String(group?.groupType || '').trim().toLowerCase(); if(raw === 'chapter') return 'Chapter'; if(raw === 'season') return 'Season'; const label = String(group?.name || group?.title || '').trim().toLowerCase(); if(/^chapter(?:\s|\d|$)/.test(label)) return 'Chapter'; if(/^season(?:\s|\d|$)/.test(label)) return 'Season'; return String(item?.type || '').toLowerCase() === 'movie' ? 'Chapter' : 'Season'; }
         function getEpisodeNumber(episode, index = 0){ const n = episode?.episodeNumber ?? episode?.number ?? String(episode?.title || episode?.name || '').match(/\d+/)?.[0]; return Number(n) || (index + 1); }
 
         function openContentById(id, fromUrl = false, watchState = null){
@@ -1030,8 +1031,8 @@ const safeStorage = (() => {
                     return;
                 }
                 if(String(currentPlaybackItem?.type || '').toLowerCase() === 'movie'){ loadMovieDubs(contentId); }
-                else { $('seasonField').style.display = 'none'; $('episodeField').style.display = 'none'; $('dubField').style.display = 'none'; $('playbackMessage').textContent = 'No seasons have been added by the admin yet.'; }
-            }).catch(() => { if(String(currentPlaybackItem?.type || '').toLowerCase() === 'movie'){ loadMovieDubs(contentId); } else $('playbackMessage').textContent = 'Unable to load seasons.'; });
+                else { $('seasonField').style.display = 'none'; $('episodeField').style.display = 'none'; $('dubField').style.display = 'none'; $('playbackMessage').textContent = (String(currentPlaybackItem?.type || '').toLowerCase() === 'movie' ? 'No chapters have been added by the admin yet.' : 'No seasons or chapters have been added by the admin yet.'); }
+            }).catch(() => { if(String(currentPlaybackItem?.type || '').toLowerCase() === 'movie'){ loadMovieDubs(contentId); } else $('playbackMessage').textContent = 'Unable to load seasons or chapters.'; });
         }
 
         function loadMovieDubs(contentId){
@@ -1051,11 +1052,16 @@ const safeStorage = (() => {
             const select = $('seasonSelect');
             if (!grid) return;
             const selectedId = String(activeSeasonId || playbackSeasons[0]?.id || '');
+            const currentGroup = playbackSeasons.find(item => String(item.id) === selectedId) || playbackSeasons[0];
+            const groupWord = currentGroup ? getPlaybackGroupWord(currentGroup) : (String(currentPlaybackItem?.type || '').toLowerCase() === 'movie' ? 'Chapter' : 'Season');
+            const barLabel = $('seasonBarLabel'); if(barLabel) barLabel.textContent = 'Seasons / Chapters';
+            const chooseLabel = $('chooseSeasonLabel'); if(chooseLabel) chooseLabel.textContent = 'CHOOSE ' + groupWord.toUpperCase();
+            const countLabel = $('seasonCountLabel'); if(countLabel) countLabel.textContent = 'Seasons / Chapters';
             // Keep both controls in sync; the reference design uses the dropdown.
             if (select) {
                 select.innerHTML = playbackSeasons.map((season, i) => {
                     const n = getSeasonNumber(season, i);
-                    const groupWord = String(currentPlaybackItem?.type || '').toLowerCase() === 'movie' ? 'Chapter' : 'Season'; return `<option value="${escapeHtml(season.id)}" ${String(season.id) === selectedId ? 'selected' : ''}>${groupWord} ${n}</option>`;
+                    const groupWord = getPlaybackGroupWord(season); return `<option value="${escapeHtml(season.id)}" ${String(season.id) === selectedId ? 'selected' : ''}>${groupWord} ${n}</option>`;
                 }).join('');
                 select.onchange = () => {
                     const seasonId = select.value;
@@ -1068,7 +1074,7 @@ const safeStorage = (() => {
             }
             grid.innerHTML = playbackSeasons.length ? playbackSeasons.map((season, i) => {
                 const n = getSeasonNumber(season, i);
-                const groupWord = String(currentPlaybackItem?.type || '').toLowerCase() === 'movie' ? 'Chapter' : 'Season'; const label = groupWord + ' ' + n;
+                const groupWord = getPlaybackGroupWord(season); const label = groupWord + ' ' + n;
                 return `<div class="season-card ${String(season.id) === selectedId ? 'active' : ''}" data-season-id="${escapeHtml(season.id)}"><span class="season-number">${label}</span><span class="season-name">${escapeHtml(season.name || season.title || label)}</span></div>`;
             }).join('') : '<div class="episode-empty">No seasons</div>';
             grid.querySelectorAll('.season-card').forEach(card => {
@@ -1090,10 +1096,13 @@ const safeStorage = (() => {
             const selectedSeason = playbackSeasons.find(s => String(s.id) === String(seasonId));
             const selectedSeasonNo = selectedSeason ? getSeasonNumber(selectedSeason, playbackSeasons.indexOf(selectedSeason)) : '';
             const episodeSeasonLabel = $('episodeSeasonLabel');
-            if (episodeSeasonLabel) episodeSeasonLabel.textContent = selectedSeasonNo ? `${String(currentPlaybackItem?.type || '').toLowerCase() === 'movie' ? 'Chapter' : 'Season'} ${selectedSeasonNo} • Select an episode` : 'Select an episode';
+            if (episodeSeasonLabel) episodeSeasonLabel.textContent = selectedSeasonNo ? `${getPlaybackGroupWord(selectedSeason)} ${selectedSeasonNo} • Select an episode` : 'Select an episode';
             db.ref(`episodes/${currentPlaybackItem.id}`).once('value').then(snap => {
                 const all = toArray(snap.val());
-                playbackEpisodes = sortByOrder(onlyEnabled(all.filter(e => String(e.seasonId || e.season) === String(seasonId))));
+                playbackEpisodes = sortByOrder(onlyEnabled(all.filter(e => {
+                  if(e.seasonId != null && String(e.seasonId) !== '') return String(e.seasonId) === String(seasonId);
+                  return String(e.season) === String(seasonId);
+                })));
                 renderEpisodePills();
                 if(playbackEpisodes.length){
                     currentPlaybackSeason = playbackSeasons.find(s => String(s.id) === String(seasonId)) || currentPlaybackSeason;
@@ -1101,7 +1110,7 @@ const safeStorage = (() => {
                     const wantedEpisode = wantedEpNo ? playbackEpisodes.find((e, i) => String(getEpisodeNumber(e, i)) === wantedEpNo) : null;
                     const episode = wantedEpisode || playbackEpisodes[0];
                     currentPlaybackEpisode = episode; renderEpisodePills(episode.id); $('watchExternalNote').style.display = 'block'; loadDubsForEpisode(episode.id);
-                } else { $('playbackMessage').textContent = 'No episodes have been added to this season yet.'; }
+                } else { $('playbackMessage').textContent = (String(currentPlaybackItem?.type || '').toLowerCase() === 'movie' ? 'No episodes have been added to this chapter yet.' : 'No episodes have been added to this season yet.'); }
             }).catch(() => { $('playbackMessage').textContent = 'Unable to load episodes.'; });
         }
 
@@ -1113,7 +1122,7 @@ const safeStorage = (() => {
                 const title = episode.title || episode.name || episode.episodeName || ('Episode ' + n);
                 const active = String(episode.id) === String(activeEpisodeId || playbackEpisodes[0]?.id);
                 const seasonNo = currentPlaybackSeason ? getSeasonNumber(currentPlaybackSeason, playbackSeasons.indexOf(currentPlaybackSeason)) : 1;
-                return `<div class="episode-card ${active ? 'active' : ''}" data-episode-id="${escapeHtml(episode.id)}" data-ep-label="EP ${String(n).padStart(2,'0')}" role="button" tabindex="0" aria-label="Play Episode ${n}"><span class="episode-number">Episode ${escapeHtml(n)}</span><span class="episode-name">Season ${escapeHtml(seasonNo)} · ${escapeHtml(episode.duration || '24 min')}</span></div>`;
+                return `<div class="episode-card ${active ? 'active' : ''}" data-episode-id="${escapeHtml(episode.id)}" data-ep-label="EP ${String(n).padStart(2,'0')}" role="button" tabindex="0" aria-label="Play Episode ${n}"><span class="episode-number">Episode ${escapeHtml(n)}</span><span class="episode-name">${getPlaybackGroupWord(currentPlaybackSeason)} ${escapeHtml(seasonNo)} · ${escapeHtml(episode.duration || '24 min')}</span></div>`;
             }).join('') : '<div class="episode-empty">No episodes</div>';
             row.querySelectorAll('.episode-card').forEach(card => {
                 const choose = () => {

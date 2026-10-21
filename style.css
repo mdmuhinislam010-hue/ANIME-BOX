@@ -1,8 +1,5 @@
 
 
-/* ===== CSS block 1 ===== */
-
-
         :root {
             --bg: #0a0800;
             --bg-soft: #0f0a00;
@@ -1956,7 +1953,8 @@
 
 
 
-/* ===== CSS block 2 ===== */
+/* ===== Extracted style block ===== */
+
 
 /* AnimeBox cards styled to match the supplied reference image */
 .simple-card,
