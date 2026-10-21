@@ -2056,3 +2056,34 @@
   .simple-card,.type-row .simple-card,.random-card-scroll-wrap .simple-card {flex-basis:224px!important;width:224px!important;}
   .simple-card-poster {height:318px!important;}
 }
+
+/* Preview image fix: show the complete artwork instead of cropping it. */
+.movie-preview-grid{
+  grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+  align-items:start;
+}
+.movie-preview-card{
+  display:flex;
+  flex-direction:column;
+  height:auto;
+  background:#111820;
+}
+.movie-preview-card img{
+  display:block;
+  width:100%;
+  height:auto;
+  max-height:320px;
+  aspect-ratio:auto;
+  object-fit:contain;
+  object-position:center;
+  background:#080b10;
+}
+.movie-preview-card span{
+  min-height:38px;
+  line-height:1.4;
+  overflow-wrap:anywhere;
+}
+@media(max-width:520px){
+  .movie-preview-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+  .movie-preview-card img{max-height:240px;}
+}
