@@ -510,23 +510,37 @@ const safeStorage = (() => {
         });
 
         const sidebar = $('sidebar'); const overlay = $('sidebarOverlay'); const hamburger = $('hamburgerBtn');
+        // Remember the desktop sidebar state so it stays hidden/shown after Home navigation or reload.
+        try {
+            if (window.innerWidth > 820 && localStorage.getItem('animeBoxSidebarHidden') === 'true') {
+                document.body.classList.add('sidebar-collapsed');
+            }
+        } catch (e) { /* Storage may be unavailable in private browsing. */ }
         function toggleSidebar(open){
-            // Desktop: persistently hide/show the side menu and reclaim page width.
-            // Mobile: keep the existing slide-in drawer and overlay behavior.
+            // Desktop: the hamburger always remains available to turn the sidebar back ON.
+            // Mobile: use the slide-in drawer and overlay.
             if(window.innerWidth > 820){
                 const shouldHide = open !== undefined ? !open : !document.body.classList.contains('sidebar-collapsed');
                 document.body.classList.toggle('sidebar-collapsed', shouldHide);
+                try { localStorage.setItem('animeBoxSidebarHidden', String(shouldHide)); } catch (e) {}
                 sidebar.classList.remove('open');
                 overlay.classList.remove('open');
                 document.body.style.overflow = '';
-                if(hamburger) hamburger.setAttribute('aria-expanded', String(!shouldHide));
+                if(hamburger) {
+                    hamburger.setAttribute('aria-expanded', String(!shouldHide));
+                    hamburger.setAttribute('aria-label', shouldHide ? 'Show menu' : 'Hide menu');
+                    hamburger.title = shouldHide ? 'Show menu' : 'Hide menu';
+                }
                 return;
             }
             const shouldOpen = open !== undefined ? open : !sidebar.classList.contains('open');
             sidebar.classList.toggle('open', shouldOpen);
             overlay.classList.toggle('open', shouldOpen);
             document.body.style.overflow = shouldOpen ? 'hidden' : '';
-            if(hamburger) hamburger.setAttribute('aria-expanded', String(shouldOpen));
+            if(hamburger) {
+                hamburger.setAttribute('aria-expanded', String(shouldOpen));
+                hamburger.setAttribute('aria-label', shouldOpen ? 'Hide menu' : 'Show menu');
+            }
         }
         if(hamburger) hamburger.addEventListener('click', () => toggleSidebar());
         if(overlay) overlay.addEventListener('click', () => toggleSidebar(false));
@@ -1041,7 +1055,7 @@ const safeStorage = (() => {
             if (select) {
                 select.innerHTML = playbackSeasons.map((season, i) => {
                     const n = getSeasonNumber(season, i);
-                    return `<option value="${escapeHtml(season.id)}" ${String(season.id) === selectedId ? 'selected' : ''}>Season ${n}</option>`;
+                    const groupWord = String(currentPlaybackItem?.type || '').toLowerCase() === 'movie' ? 'Chapter' : 'Season'; return `<option value="${escapeHtml(season.id)}" ${String(season.id) === selectedId ? 'selected' : ''}>${groupWord} ${n}</option>`;
                 }).join('');
                 select.onchange = () => {
                     const seasonId = select.value;
@@ -1054,7 +1068,7 @@ const safeStorage = (() => {
             }
             grid.innerHTML = playbackSeasons.length ? playbackSeasons.map((season, i) => {
                 const n = getSeasonNumber(season, i);
-                const label = 'Season ' + n;
+                const groupWord = String(currentPlaybackItem?.type || '').toLowerCase() === 'movie' ? 'Chapter' : 'Season'; const label = groupWord + ' ' + n;
                 return `<div class="season-card ${String(season.id) === selectedId ? 'active' : ''}" data-season-id="${escapeHtml(season.id)}"><span class="season-number">${label}</span><span class="season-name">${escapeHtml(season.name || season.title || label)}</span></div>`;
             }).join('') : '<div class="episode-empty">No seasons</div>';
             grid.querySelectorAll('.season-card').forEach(card => {
@@ -1076,7 +1090,7 @@ const safeStorage = (() => {
             const selectedSeason = playbackSeasons.find(s => String(s.id) === String(seasonId));
             const selectedSeasonNo = selectedSeason ? getSeasonNumber(selectedSeason, playbackSeasons.indexOf(selectedSeason)) : '';
             const episodeSeasonLabel = $('episodeSeasonLabel');
-            if (episodeSeasonLabel) episodeSeasonLabel.textContent = selectedSeasonNo ? `Season ${selectedSeasonNo} • Select an episode` : 'Select an episode';
+            if (episodeSeasonLabel) episodeSeasonLabel.textContent = selectedSeasonNo ? `${String(currentPlaybackItem?.type || '').toLowerCase() === 'movie' ? 'Chapter' : 'Season'} ${selectedSeasonNo} • Select an episode` : 'Select an episode';
             db.ref(`episodes/${currentPlaybackItem.id}`).once('value').then(snap => {
                 const all = toArray(snap.val());
                 playbackEpisodes = sortByOrder(onlyEnabled(all.filter(e => String(e.seasonId || e.season) === String(seasonId))));
