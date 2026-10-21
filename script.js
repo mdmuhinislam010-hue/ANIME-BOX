@@ -571,7 +571,6 @@ const safeStorage = (() => {
             const el = $('heroSection');
             if(!heroSlides.length){ el.innerHTML = `<div class="empty-state" style="padding-top:80px;">No hero slides published yet.</div>`; return; }
             if(heroIndex >= heroSlides.length) heroIndex = 0;
-            // Give the currently visible hero artwork a high-priority fetch after Firebase returns it.
             const activeHeroImage = heroSlides[heroIndex] && heroSlides[heroIndex].image;
             if(activeHeroImage && /^https?:\/\//i.test(activeHeroImage)) {
                 let heroPreload = document.querySelector('link[data-hero-preload]');
@@ -579,32 +578,40 @@ const safeStorage = (() => {
                 if(heroPreload.href !== activeHeroImage) heroPreload.href = activeHeroImage;
             }
             el.innerHTML = heroSlides.map((s, i) => {
-                const linkedCard = content.find(c => String(c.id) === String(s.link || ''));
-                const linkedPoster = linkedCard && (linkedCard.poster || linkedCard.image || linkedCard.thumbnail || linkedCard.backdrop);
-                const posterToShow = linkedPoster || s.linkedPoster || s.poster || s.image || '';
-                const posterTitle = (linkedCard && (linkedCard.title || linkedCard.name)) || s.linkedTitle || s.title || 'Poster';
+                const linkedCard = content.find(c => String(c.id) === String(s.link || s.contentId || s.animeId || ''));
+                const value = (...vals) => vals.find(v => v !== undefined && v !== null && String(v).trim() !== '');
+                const linkedPoster = linkedCard && value(linkedCard.poster, linkedCard.image, linkedCard.thumbnail, linkedCard.backdrop, linkedCard.cover);
+                const posterToShow = value(linkedPoster, s.linkedPoster, s.poster, s.image, '');
+                const title = value(linkedCard && linkedCard.title, linkedCard && linkedCard.name, s.linkedTitle, s.title, 'Untitled');
+                const type = value(linkedCard && linkedCard.type, s.type, s.category, 'Movie');
+                const typeKey = String(type).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+                const category = value(linkedCard && linkedCard.category, linkedCard && linkedCard.genre, s.category, type);
+                const rating = value(linkedCard && linkedCard.rating, linkedCard && linkedCard.score, s.rating, '—');
+                const year = value(linkedCard && linkedCard.year, linkedCard && linkedCard.releaseYear, s.year, '—');
+                const language = value(linkedCard && linkedCard.language, linkedCard && linkedCard.lang, linkedCard && linkedCard.audioLanguage, s.language, '—');
+                const genre = value(linkedCard && linkedCard.genre, linkedCard && linkedCard.genres, s.genre, '');
+                const description = value(linkedCard && linkedCard.description, linkedCard && linkedCard.overview, linkedCard && linkedCard.synopsis, s.subtitle, 'Watch the latest title now.');
+                const linkId = value(s.link, linkedCard && linkedCard.id, '');
                 return `
                 <div class="hero-slide ${i === heroIndex ? 'active' : ''}" data-hero-index="${i}" data-hero-video="${escapeHtml(s.video || '')}" style="${i === heroIndex ? 'background-image:url(' + (s.image || '') + ')' : ''}">
                     ${s.video ? `<video class="hero-bg-video" muted playsinline preload="none" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;z-index:0"></video>` : ''}
                     <div class="hero-content">
                         <div class="hero-poster-card">
-                            <img src="${posterToShow}" alt="${posterTitle}" loading="${i === heroIndex ? 'eager' : 'lazy'}" fetchpriority="${i === heroIndex ? 'high' : 'low'}" decoding="async" onerror="this.style.opacity='.4'">
+                            <img src="${escapeHtml(posterToShow)}" alt="${escapeHtml(title)}" loading="${i === heroIndex ? 'eager' : 'lazy'}" fetchpriority="${i === heroIndex ? 'high' : 'low'}" decoding="async" onerror="this.style.opacity='.4'">
                         </div>
                         <div class="hero-text-block">
-                            <div class="hero-badge"><span class="html-icon html-icon-fire">◆</span> Now Playing</div>
-                            <h1>${s.title || ''}</h1>
+                            <div class="hero-badge hero-type-${escapeHtml(typeKey)}"><span class="html-icon html-icon-fire">◆</span> ${escapeHtml(type)}</div>
+                            <h1>${escapeHtml(title)}</h1>
                             <div class="hero-meta">
-                                <span class="meta-chip">▣ ${s.category || 'Movie'}</span>
-                                <span>★ ${s.rating || '7.0'}</span>
-                                <span class="meta-chip">${s.year || '2025'}</span>
-                                <span class="dot-sep">•</span>
-                                <span>${s.language || 'Hindi'}</span>
-                                <span class="dot-sep">•</span>
-                                <span>${s.genre || 'Action'}</span>
+                                <span class="meta-chip hero-type-${escapeHtml(typeKey)}">▣ ${escapeHtml(category)}</span>
+                                <span>★ ${escapeHtml(rating)}</span>
+                                <span class="meta-chip">${escapeHtml(year)}</span>
+                                ${language ? `<span class="dot-sep">•</span><span>${escapeHtml(language)}</span>` : ''}
+                                ${genre ? `<span class="dot-sep">•</span><span>${escapeHtml(Array.isArray(genre) ? genre.join(', ') : genre)}</span>` : ''}
                             </div>
-                            <p>${s.subtitle || 'Watch the latest blockbuster now in HD quality.'}</p>
+                            <p>${escapeHtml(description)}</p>
                             <div class="hero-actions">
-                                <button class="btn btn-primary" onclick="openContentById('${s.link || ''}')">▶ Watch Now</button>
+                                <button class="btn btn-primary" onclick="openContentById('${String(linkId).replace(/'/g, "\\\\'")}')">▶ Watch Now</button>
                             </div>
                         </div>
                     </div>

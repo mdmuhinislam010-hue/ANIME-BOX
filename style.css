@@ -2047,3 +2047,32 @@
   .simple-card,.type-row .simple-card,.random-card-scroll-wrap .simple-card {flex-basis:224px!important;width:224px!important;}
   .simple-card-poster {height:318px!important;}
 }
+
+
+/* Hero slider: type-specific colors so Movie, TV and Anime are easy to tell apart. */
+.hero-text-block .hero-badge,
+.hero-text-block .hero-meta .meta-chip {
+    transition: background-color .2s ease, border-color .2s ease, color .2s ease;
+}
+.hero-text-block .hero-badge.hero-type-movie,
+.hero-text-block .hero-meta .meta-chip.hero-type-movie {
+    --hero-type-color: #f5a623;
+}
+.hero-text-block .hero-badge.hero-type-tv,
+.hero-text-block .hero-badge.hero-type-tv-show,
+.hero-text-block .hero-badge.hero-type-tv-shows,
+.hero-text-block .hero-meta .meta-chip.hero-type-tv,
+.hero-text-block .hero-meta .meta-chip.hero-type-tv-show,
+.hero-text-block .hero-meta .meta-chip.hero-type-tv-shows {
+    --hero-type-color: #42b7ff;
+}
+.hero-text-block .hero-badge.hero-type-anime,
+.hero-text-block .hero-meta .meta-chip.hero-type-anime {
+    --hero-type-color: #c084fc;
+}
+.hero-text-block .hero-badge[class*="hero-type-"],
+.hero-text-block .hero-meta .meta-chip[class*="hero-type-"] {
+    background: color-mix(in srgb, var(--hero-type-color, #f5a623) 18%, transparent);
+    border-color: color-mix(in srgb, var(--hero-type-color, #f5a623) 55%, transparent);
+    color: var(--hero-type-color, #f5a623);
+}
