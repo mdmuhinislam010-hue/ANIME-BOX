@@ -2057,33 +2057,8 @@
   .simple-card-poster {height:318px!important;}
 }
 
-/* Preview image fix: show the complete artwork instead of cropping it. */
-.movie-preview-grid{
-  grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
-  align-items:start;
-}
-.movie-preview-card{
-  display:flex;
-  flex-direction:column;
-  height:auto;
-  background:#111820;
-}
-.movie-preview-card img{
-  display:block;
-  width:100%;
-  height:auto;
-  max-height:320px;
-  aspect-ratio:auto;
-  object-fit:contain;
-  object-position:center;
-  background:#080b10;
-}
-.movie-preview-card span{
-  min-height:38px;
-  line-height:1.4;
-  overflow-wrap:anywhere;
-}
-@media(max-width:520px){
-  .movie-preview-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
-  .movie-preview-card img{max-height:240px;}
-}
+/* Preview shots: horizontal strip like a video-player screenshot gallery */
+.movie-preview-grid{display:flex!important;flex-wrap:nowrap!important;gap:10px!important;overflow-x:auto!important;overflow-y:hidden!important;padding:0 0 8px!important;scrollbar-width:thin;scroll-snap-type:x proximity;}
+.movie-preview-card{flex:0 0 clamp(220px,25vw,300px)!important;scroll-snap-align:start;}
+.movie-preview-card img{aspect-ratio:16/9!important;object-fit:contain!important;background:#111!important;}
+@media(max-width:600px){.movie-preview-card{flex-basis:78vw!important;max-width:300px!important;}}

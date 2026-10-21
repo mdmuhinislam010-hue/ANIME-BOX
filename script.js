@@ -876,6 +876,72 @@ const safeStorage = (() => {
         function getPlaybackGroupWord(group, item = currentPlaybackItem){ const raw = String(group?.groupType || '').trim().toLowerCase(); if(raw === 'chapter') return 'Chapter'; if(raw === 'season') return 'Season'; const label = String(group?.name || group?.title || '').trim().toLowerCase(); if(/^chapter(?:\s|\d|$)/.test(label)) return 'Chapter'; if(/^season(?:\s|\d|$)/.test(label)) return 'Season'; return String(item?.type || '').toLowerCase() === 'movie' ? 'Chapter' : 'Season'; }
         function getEpisodeNumber(episode, index = 0){ const n = episode?.episodeNumber ?? episode?.number ?? String(episode?.title || episode?.name || '').match(/\d+/)?.[0]; return Number(n) || (index + 1); }
 
+        // Split a wide screenshot/contact sheet into individual preview frames.
+        // Works best when the image has clear dark gutters between the shots.
+        function splitPreviewSheet(imageUrl){
+            return new Promise(resolve => {
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.onload = () => {
+                    try {
+                        const w = img.naturalWidth, h = img.naturalHeight;
+                        // Normal preview images remain a single card; only inspect wide sheets.
+                        if(!w || !h || w / h < 2.35 || w < 500){ resolve(null); return; }
+                        const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h;
+                        const ctx = canvas.getContext('2d', {willReadFrequently:true});
+                        ctx.drawImage(img, 0, 0);
+                        const data = ctx.getImageData(0, 0, w, h).data;
+                        const rowScores = [];
+                        for(let y=0;y<h;y++){
+                            let colorful=0, bright=0;
+                            for(let x=0;x<w;x+=Math.max(1,Math.floor(w/700))){
+                                const i=(y*w+x)*4, r=data[i], g=data[i+1], b=data[i+2];
+                                if(Math.max(r,g,b)-Math.min(r,g,b)>24) colorful++;
+                                if((r+g+b)/3>58) bright++;
+                            }
+                            const samples=Math.ceil(w/Math.max(1,Math.floor(w/700)));
+                            rowScores.push((colorful/samples)*0.7+(bright/samples)*0.3);
+                        }
+                        let top=0, bottom=h-1, found=false;
+                        for(let y=0;y<h;y++){ if(rowScores[y]>.28){top=y;found=true;break;} }
+                        if(found) for(let y=h-1;y>=top;y--){ if(rowScores[y]>.28){bottom=y;break;} }
+                        if(!found || bottom-top < h*.22){ resolve(null); return; }
+                        const height=bottom-top+1, darkCols=new Array(w).fill(0);
+                        for(let x=0;x<w;x++){
+                            let dark=0;
+                            for(let y=top;y<=bottom;y+=Math.max(1,Math.floor(height/100))){
+                                const i=(y*w+x)*4, r=data[i],g=data[i+1],b=data[i+2];
+                                if((r+g+b)/3<48) dark++;
+                            }
+                            darkCols[x]=dark/Math.ceil(height/Math.max(1,Math.floor(height/100)));
+                        }
+                        let left=0,right=w-1;
+                        while(left<w-1 && darkCols[left]>.92) left++;
+                        while(right>left && darkCols[right]>.92) right--;
+                        const gaps=[]; let gx=left;
+                        while(gx<=right){
+                            if(darkCols[gx]>.94){ let st=gx; while(gx<=right && darkCols[gx]>.94) gx++; if(gx-st>=4) gaps.push({start:st,end:gx-1}); }
+                            else gx++;
+                        }
+                        const cuts=[left];
+                        gaps.forEach(g=>{ if(g.start-left>60 && right-g.end>60) cuts.push(Math.round((g.start+g.end)/2)); });
+                        cuts.push(right+1);
+                        const segments=[];
+                        for(let i=0;i<cuts.length-1;i++){
+                            const x1=cuts[i], x2=cuts[i+1];
+                            if(x2-x1<70) continue;
+                            const tile=document.createElement('canvas'); tile.width=x2-x1; tile.height=height;
+                            tile.getContext('2d').drawImage(img,x1,top,x2-x1,height,0,0,x2-x1,height);
+                            segments.push(tile.toDataURL('image/jpeg',.92));
+                        }
+                        resolve(segments.length>1 ? segments : null);
+                    } catch(err) { resolve(null); }
+                };
+                img.onerror = () => resolve(null);
+                img.src = imageUrl;
+            });
+        }
+
         function renderMoviePreviews(item){
             const section = $('moviePreviewSection');
             const grid = $('moviePreviewGrid');
@@ -884,14 +950,27 @@ const safeStorage = (() => {
             const previews = Array.isArray(raw) ? raw : (raw && typeof raw === 'object' ? Object.values(raw) : []);
             const valid = previews.filter(p => p && String(p.imageUrl || p.image || '').trim() && String(p.clickUrl || p.url || '').trim());
             if(!valid.length){ section.style.display='none'; grid.innerHTML=''; return; }
-            grid.innerHTML = valid.map(p => {
-                const image = String(p.imageUrl || p.image || '').trim();
-                const url = String(p.clickUrl || p.url || '').trim();
-                const name = String(p.name || p.previewName || 'Preview').trim();
-                const safeImage = escapeHtml(image), safeUrl = escapeHtml(url), safeName = escapeHtml(name);
-                return `<a class="movie-preview-card" href="${safeUrl}" target="_blank" rel="noopener noreferrer"><img src="${safeImage}" alt="${safeName}" loading="lazy" decoding="async" onerror="this.closest('.movie-preview-card').style.display='none'"><span>${safeName}</span></a>`;
-            }).join('');
+            const renderId = String(Date.now()) + Math.random().toString(36).slice(2);
+            grid.dataset.previewRenderId = renderId;
+            const escape = value => escapeHtml(String(value || ''));
+            const card = (image,url,name) => `<a class="movie-preview-card" href="${escape(url)}" target="_blank" rel="noopener noreferrer"><img src="${escape(image)}" alt="${escape(name)}" loading="lazy" decoding="async" onerror="this.closest('.movie-preview-card').style.display='none'"><span>${escape(name)}</span></a>`;
+            grid.innerHTML = valid.map(p => card(String(p.imageUrl || p.image).trim(),String(p.clickUrl || p.url).trim(),String(p.name || p.previewName || 'Preview').trim())).join('');
             section.style.display='block';
+            // Expand each wide image sheet into separate cards; every split card keeps the same name and link.
+            Promise.all(valid.map(async p => {
+                const image=String(p.imageUrl || p.image || '').trim();
+                const tiles=await splitPreviewSheet(image);
+                return {p,image,tiles};
+            })).then(results => {
+                if(grid.dataset.previewRenderId !== renderId) return;
+                const expanded=[];
+                results.forEach(({p,image,tiles})=>{
+                    const url=String(p.clickUrl || p.url || '').trim();
+                    const name=String(p.name || p.previewName || 'Preview').trim();
+                    (tiles || [image]).forEach(tile=>expanded.push(card(tile,url,name)));
+                });
+                grid.innerHTML=expanded.join('');
+            });
         }
 
         function openContentById(id, fromUrl = false, watchState = null){
