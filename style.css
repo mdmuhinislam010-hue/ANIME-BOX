@@ -2057,8 +2057,7 @@
   .simple-card-poster {height:318px!important;}
 }
 
-/* Preview shots: horizontal strip like a video-player screenshot gallery */
-.movie-preview-grid{display:flex!important;flex-wrap:nowrap!important;gap:10px!important;overflow-x:auto!important;overflow-y:hidden!important;padding:0 0 8px!important;scrollbar-width:thin;scroll-snap-type:x proximity;}
-.movie-preview-card{flex:0 0 clamp(220px,25vw,300px)!important;scroll-snap-align:start;}
-.movie-preview-card img{aspect-ratio:16/9!important;object-fit:contain!important;background:#111!important;}
-@media(max-width:600px){.movie-preview-card{flex-basis:78vw!important;max-width:300px!important;}}
+/* Auto-split contact-sheet previews: four separate visible slices, same title on each. */
+.movie-preview-slice .movie-preview-image{display:block;width:100%;aspect-ratio:16/9;background-repeat:no-repeat;background-size:100% 400%;background-color:#111;}
+.movie-preview-slice span:last-child{display:block;padding:10px 12px;font-weight:700;font-size:13px;overflow-wrap:anywhere;}
+@media(max-width:520px){.movie-preview-slice span:last-child{padding:8px;font-size:12px}}
