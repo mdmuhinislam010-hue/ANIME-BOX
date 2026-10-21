@@ -571,6 +571,7 @@ const safeStorage = (() => {
             const el = $('heroSection');
             if(!heroSlides.length){ el.innerHTML = `<div class="empty-state" style="padding-top:80px;">No hero slides published yet.</div>`; return; }
             if(heroIndex >= heroSlides.length) heroIndex = 0;
+            // Give the currently visible hero artwork a high-priority fetch after Firebase returns it.
             const activeHeroImage = heroSlides[heroIndex] && heroSlides[heroIndex].image;
             if(activeHeroImage && /^https?:\/\//i.test(activeHeroImage)) {
                 let heroPreload = document.querySelector('link[data-hero-preload]');
@@ -578,40 +579,32 @@ const safeStorage = (() => {
                 if(heroPreload.href !== activeHeroImage) heroPreload.href = activeHeroImage;
             }
             el.innerHTML = heroSlides.map((s, i) => {
-                const linkedCard = content.find(c => String(c.id) === String(s.link || s.contentId || s.animeId || ''));
-                const value = (...vals) => vals.find(v => v !== undefined && v !== null && String(v).trim() !== '');
-                const linkedPoster = linkedCard && value(linkedCard.poster, linkedCard.image, linkedCard.thumbnail, linkedCard.backdrop, linkedCard.cover);
-                const posterToShow = value(linkedPoster, s.linkedPoster, s.poster, s.image, '');
-                const title = value(linkedCard && linkedCard.title, linkedCard && linkedCard.name, s.linkedTitle, s.title, 'Untitled');
-                const type = value(linkedCard && linkedCard.type, s.type, s.category, 'Movie');
-                const typeKey = String(type).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-                const category = value(linkedCard && linkedCard.category, linkedCard && linkedCard.genre, s.category, type);
-                const rating = value(linkedCard && linkedCard.rating, linkedCard && linkedCard.score, s.rating, '—');
-                const year = value(linkedCard && linkedCard.year, linkedCard && linkedCard.releaseYear, s.year, '—');
-                const language = value(linkedCard && linkedCard.language, linkedCard && linkedCard.lang, linkedCard && linkedCard.audioLanguage, s.language, '—');
-                const genre = value(linkedCard && linkedCard.genre, linkedCard && linkedCard.genres, s.genre, '');
-                const description = value(linkedCard && linkedCard.description, linkedCard && linkedCard.overview, linkedCard && linkedCard.synopsis, s.subtitle, 'Watch the latest title now.');
-                const linkId = value(s.link, linkedCard && linkedCard.id, '');
+                const linkedCard = content.find(c => String(c.id) === String(s.link || ''));
+                const linkedPoster = linkedCard && (linkedCard.poster || linkedCard.image || linkedCard.thumbnail || linkedCard.backdrop);
+                const posterToShow = linkedPoster || s.linkedPoster || s.poster || s.image || '';
+                const posterTitle = (linkedCard && (linkedCard.title || linkedCard.name)) || s.linkedTitle || s.title || 'Poster';
                 return `
                 <div class="hero-slide ${i === heroIndex ? 'active' : ''}" data-hero-index="${i}" data-hero-video="${escapeHtml(s.video || '')}" style="${i === heroIndex ? 'background-image:url(' + (s.image || '') + ')' : ''}">
                     ${s.video ? `<video class="hero-bg-video" muted playsinline preload="none" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;z-index:0"></video>` : ''}
                     <div class="hero-content">
                         <div class="hero-poster-card">
-                            <img src="${escapeHtml(posterToShow)}" alt="${escapeHtml(title)}" loading="${i === heroIndex ? 'eager' : 'lazy'}" fetchpriority="${i === heroIndex ? 'high' : 'low'}" decoding="async" onerror="this.style.opacity='.4'">
+                            <img src="${posterToShow}" alt="${posterTitle}" loading="${i === heroIndex ? 'eager' : 'lazy'}" fetchpriority="${i === heroIndex ? 'high' : 'low'}" decoding="async" onerror="this.style.opacity='.4'">
                         </div>
                         <div class="hero-text-block">
-                            <div class="hero-badge hero-type-${escapeHtml(typeKey)}"><span class="html-icon html-icon-fire">◆</span> ${escapeHtml(type)}</div>
-                            <h1>${escapeHtml(title)}</h1>
+                            <div class="hero-badge"><span class="html-icon html-icon-fire">◆</span> Now Playing</div>
+                            <h1>${s.title || ''}</h1>
                             <div class="hero-meta">
-                                <span class="meta-chip hero-type-${escapeHtml(typeKey)}">▣ ${escapeHtml(category)}</span>
-                                <span>★ ${escapeHtml(rating)}</span>
-                                <span class="meta-chip">${escapeHtml(year)}</span>
-                                ${language ? `<span class="dot-sep">•</span><span>${escapeHtml(language)}</span>` : ''}
-                                ${genre ? `<span class="dot-sep">•</span><span>${escapeHtml(Array.isArray(genre) ? genre.join(', ') : genre)}</span>` : ''}
+                                <span class="meta-chip">▣ ${s.category || 'Movie'}</span>
+                                <span>★ ${s.rating || '7.0'}</span>
+                                <span class="meta-chip">${s.year || '2025'}</span>
+                                <span class="dot-sep">•</span>
+                                <span>${s.language || 'Hindi'}</span>
+                                <span class="dot-sep">•</span>
+                                <span>${s.genre || 'Action'}</span>
                             </div>
-                            <p>${escapeHtml(description)}</p>
+                            <p>${s.subtitle || 'Watch the latest blockbuster now in HD quality.'}</p>
                             <div class="hero-actions">
-                                <button class="btn btn-primary" onclick="openContentById('${String(linkId).replace(/'/g, "\\\\'")}')">▶ Watch Now</button>
+                                <button class="btn btn-primary" onclick="openContentById('${s.link || ''}')">▶ Watch Now</button>
                             </div>
                         </div>
                     </div>
@@ -883,6 +876,24 @@ const safeStorage = (() => {
         function getPlaybackGroupWord(group, item = currentPlaybackItem){ const raw = String(group?.groupType || '').trim().toLowerCase(); if(raw === 'chapter') return 'Chapter'; if(raw === 'season') return 'Season'; const label = String(group?.name || group?.title || '').trim().toLowerCase(); if(/^chapter(?:\s|\d|$)/.test(label)) return 'Chapter'; if(/^season(?:\s|\d|$)/.test(label)) return 'Season'; return String(item?.type || '').toLowerCase() === 'movie' ? 'Chapter' : 'Season'; }
         function getEpisodeNumber(episode, index = 0){ const n = episode?.episodeNumber ?? episode?.number ?? String(episode?.title || episode?.name || '').match(/\d+/)?.[0]; return Number(n) || (index + 1); }
 
+        function renderMoviePreviews(item){
+            const section = $('moviePreviewSection');
+            const grid = $('moviePreviewGrid');
+            if(!section || !grid) return;
+            const raw = item && item.previews;
+            const previews = Array.isArray(raw) ? raw : (raw && typeof raw === 'object' ? Object.values(raw) : []);
+            const valid = previews.filter(p => p && String(p.imageUrl || p.image || '').trim() && String(p.clickUrl || p.url || '').trim());
+            if(!valid.length){ section.style.display='none'; grid.innerHTML=''; return; }
+            grid.innerHTML = valid.map(p => {
+                const image = String(p.imageUrl || p.image || '').trim();
+                const url = String(p.clickUrl || p.url || '').trim();
+                const name = String(p.name || p.previewName || 'Preview').trim();
+                const safeImage = escapeHtml(image), safeUrl = escapeHtml(url), safeName = escapeHtml(name);
+                return `<a class="movie-preview-card" href="${safeUrl}" target="_blank" rel="noopener noreferrer"><img src="${safeImage}" alt="${safeName}" loading="lazy" decoding="async" onerror="this.closest('.movie-preview-card').style.display='none'"><span>${safeName}</span></a>`;
+            }).join('');
+            section.style.display='block';
+        }
+
         function openContentById(id, fromUrl = false, watchState = null){
             if(!id) return;
             // If the user opens a different detail page, stop the previous trailer first.
@@ -890,6 +901,7 @@ const safeStorage = (() => {
             const item = content.find(c => String(c.id) === String(id));
             if(!item) return;
             currentPlaybackItem = item;
+            renderMoviePreviews(item);
             const poster = item.poster || item.backdrop || '';
             $('modalDetailPoster').src = poster;
             $('modalTitle').textContent = item.title || item.name || 'Untitled';
@@ -985,7 +997,14 @@ const safeStorage = (() => {
             }
             randomRecommendationLoading = true;
             if (loader) loader.textContent = 'Loading more random titles…';
-            const batch = randomShuffle(available).slice(0, 12);
+            // Show at most 30 recommendations: 5 cards per row × 6 rows.
+            const remainingSlots = Math.max(0, 30 - wrap.children.length);
+            if (!remainingSlots) {
+                randomRecommendationFinished = true;
+                if (loader) loader.textContent = 'Showing up to 30 titles (6 rows maximum).';
+                return;
+            }
+            const batch = randomShuffle(available).slice(0, remainingSlots);
             batch.forEach(item => randomRecommendationUsed.add(String(item.id)));
             const html = batch.map(item => {
                 const poster = item.poster || item.backdrop || '';
@@ -997,8 +1016,8 @@ const safeStorage = (() => {
             wrap.insertAdjacentHTML('beforeend', html);
             randomRecommendationLoading = false;
             const more = getRandomRecommendationPool().some(item => !randomRecommendationUsed.has(String(item.id)));
-            if (loader) loader.textContent = more ? 'Scroll down to load more' : 'All available titles have been shown.';
-            if (!more) randomRecommendationFinished = true;
+            if (loader) loader.textContent = wrap.children.length >= 30 ? 'Showing up to 30 titles (6 rows maximum).' : (more ? 'Scroll down to load more' : 'All available titles have been shown.');
+            if (!more || wrap.children.length >= 30) randomRecommendationFinished = true;
         }
 
         function renderRandomCardsInPanel() {
@@ -1011,7 +1030,7 @@ const safeStorage = (() => {
             wrap.innerHTML = '';
             const sentinel = $('randomCardScrollSentinel');
             const loader = $('randomCardScrollLoader');
-            if (loader) loader.textContent = 'Loading random titles…';
+            if (loader) loader.textContent = 'Loading recommendations…';
             if (sentinel && 'IntersectionObserver' in window) {
                 randomRecommendationObserver = new IntersectionObserver(entries => {
                     if (entries.some(entry => entry.isIntersecting)) loadMoreRandomRecommendations();
@@ -1230,7 +1249,7 @@ const safeStorage = (() => {
             // Stop the official trailer whenever the detail page is closed or navigation leaves it.
             if (typeof closeOfficialTrailer === 'function') closeOfficialTrailer();
             const v = $('streamVideo'); v.pause(); v.removeAttribute('src'); v.load();
-            $('modalBackdrop').classList.remove('show'); document.body.classList.remove('modal-page'); resetPlaybackUI(); currentPlaybackItem = null;
+            $('modalBackdrop').classList.remove('show'); document.body.classList.remove('modal-page'); resetPlaybackUI(); currentPlaybackItem = null; if($('moviePreviewSection'))$('moviePreviewSection').style.display='none';
             if(updateRoute && (parseAppRoute().type === 'detail' || document.body.classList.contains('modal-page'))){ history.pushState({},'', '/'); }
         }
 
