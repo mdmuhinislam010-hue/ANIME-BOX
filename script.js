@@ -876,11 +876,12 @@ const safeStorage = (() => {
         function getPlaybackGroupWord(group, item = currentPlaybackItem){ const raw = String(group?.groupType || '').trim().toLowerCase(); if(raw === 'chapter') return 'Chapter'; if(raw === 'season') return 'Season'; const label = String(group?.name || group?.title || '').trim().toLowerCase(); if(/^chapter(?:\s|\d|$)/.test(label)) return 'Chapter'; if(/^season(?:\s|\d|$)/.test(label)) return 'Season'; return String(item?.type || '').toLowerCase() === 'movie' ? 'Chapter' : 'Season'; }
         function getEpisodeNumber(episode, index = 0){ const n = episode?.episodeNumber ?? episode?.number ?? String(episode?.title || episode?.name || '').match(/\d+/)?.[0]; return Number(n) || (index + 1); }
 
-        function renderMoviePreviews(item){
+        function renderMoviePreviews(item, season = null){
             const section = $('moviePreviewSection');
             const grid = $('moviePreviewGrid');
             if(!section || !grid) return;
-            const raw = item && item.previews;
+            // Preview belongs to the currently selected season/chapter only.
+            const raw = season && season.previews;
             const previews = Array.isArray(raw) ? raw : (raw && typeof raw === 'object' ? Object.values(raw) : []);
             const valid = previews.filter(p => p && String(p.imageUrl || p.image || '').trim());
             if(!valid.length){ section.style.display='none'; grid.innerHTML=''; return; }
@@ -913,7 +914,7 @@ const safeStorage = (() => {
             const item = content.find(c => String(c.id) === String(id));
             if(!item) return;
             currentPlaybackItem = item;
-            renderMoviePreviews(item);
+            renderMoviePreviews(item, null);
             const poster = item.poster || item.backdrop || '';
             $('modalDetailPoster').src = poster;
             $('modalTitle').textContent = item.title || item.name || 'Untitled';
@@ -1064,6 +1065,7 @@ const safeStorage = (() => {
                     const wantedSeason = wantedSeasonNo ? playbackSeasons.find((ss, i) => String(getSeasonNumber(ss, i)) === wantedSeasonNo) : null;
                     const selectedSeasonId = wantedSeason ? wantedSeason.id : playbackSeasons[0]?.id || '';
                     currentPlaybackSeason = playbackSeasons.find(ss => String(ss.id) === String(selectedSeasonId)) || null;
+                    renderMoviePreviews(currentPlaybackItem, currentPlaybackSeason);
                     document.querySelectorAll('.season-card').forEach(c => { c.classList.toggle('active', String(c.dataset.seasonId) === String(selectedSeasonId)); });
                     loadEpisodesForSeason(selectedSeasonId, watchState?.episodeSlug || '');
                     return;
@@ -1104,6 +1106,7 @@ const safeStorage = (() => {
                 select.onchange = () => {
                     const seasonId = select.value;
                     currentPlaybackSeason = playbackSeasons.find(season => String(season.id) === String(seasonId)) || null;
+                    renderMoviePreviews(currentPlaybackItem, currentPlaybackSeason);
                     if (currentPlaybackItem && currentPlaybackSeason) {
                         updateAppRoute(currentPlaybackItem, getSeasonNumber(currentPlaybackSeason, playbackSeasons.indexOf(currentPlaybackSeason)), '');
                     }
@@ -1120,6 +1123,7 @@ const safeStorage = (() => {
                     if (select) select.value = card.dataset.seasonId;
                     const seasonId = card.dataset.seasonId;
                     currentPlaybackSeason = playbackSeasons.find(season => String(season.id) === String(seasonId)) || null;
+                    renderMoviePreviews(currentPlaybackItem, currentPlaybackSeason);
                     if (currentPlaybackItem && currentPlaybackSeason) updateAppRoute(currentPlaybackItem, getSeasonNumber(currentPlaybackSeason, playbackSeasons.indexOf(currentPlaybackSeason)), '');
                     loadEpisodesForSeason(seasonId);
                 });
