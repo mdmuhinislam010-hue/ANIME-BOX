@@ -879,30 +879,21 @@ const safeStorage = (() => {
         function renderMoviePreviews(item){
             const section = $('moviePreviewSection');
             const grid = $('moviePreviewGrid');
+            const count = $('moviePreviewCount');
             if(!section || !grid) return;
             const raw = item && item.previews;
             const previews = Array.isArray(raw) ? raw : (raw && typeof raw === 'object' ? Object.values(raw) : []);
             const valid = previews.filter(p => p && String(p.imageUrl || p.image || '').trim());
-            if(!valid.length){ section.style.display='none'; grid.innerHTML=''; return; }
-            // A single tall contact-sheet image is automatically shown as four stacked shots.
-            // CSS background slices avoid canvas/CORS restrictions and still work after refresh.
-            const autoSplit = true; // Every Preview URL is automatically split into four cards, all with the same name.
-            const cards = [];
-            valid.forEach(p => {
+            if(!valid.length){ section.style.display='none'; grid.innerHTML=''; if(count) count.textContent='0 photos'; return; }
+            const cards = valid.map((p, index) => {
                 const image = String(p.imageUrl || p.image || '').trim();
                 const url = String(p.clickUrl || p.url || image).trim();
                 const name = String(p.name || p.previewName || 'Preview').trim();
                 const safeImage = escapeHtml(image), safeUrl = escapeHtml(url), safeName = escapeHtml(name);
-                if (autoSplit && p.autoSplit !== false) {
-                    for(let i=0;i<4;i++) {
-                        const pos = ['0%','33.333%','66.667%','100%'][i];
-                        cards.push(`<a class="movie-preview-card movie-preview-slice" href="${safeUrl}" target="_blank" rel="noopener noreferrer" aria-label="${safeName} - Shot ${i+1}"><span class="movie-preview-image" style="background-image:url(&quot;${safeImage}&quot;);background-position:center ${pos}"></span><span>${safeName}</span></a>`);
-                    }
-                } else {
-                    cards.push(`<a class="movie-preview-card" href="${safeUrl}" target="_blank" rel="noopener noreferrer"><img src="${safeImage}" alt="${safeName}" loading="lazy" decoding="async" onerror="this.closest('.movie-preview-card').style.display='none'"><span>${safeName}</span></a>`);
-                }
+                return `<a class="movie-preview-card" href="${safeUrl}" target="_blank" rel="noopener noreferrer" aria-label="${safeName} - Photo ${index+1}"><img src="${safeImage}" alt="${safeName}" loading="lazy" decoding="async" onerror="this.closest('.movie-preview-card').style.display='none'"><span>${safeName}</span></a>`;
             });
             grid.innerHTML = cards.join('');
+            if(count) count.textContent = `${valid.length} ${valid.length === 1 ? 'photo' : 'photos'}`;
             section.style.display='block';
         }
 
