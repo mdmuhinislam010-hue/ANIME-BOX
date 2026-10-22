@@ -2061,14 +2061,3 @@
 .movie-preview-slice .movie-preview-image{display:block;width:100%;aspect-ratio:16/9;background-repeat:no-repeat;background-size:100% 400%;background-color:#111;}
 .movie-preview-slice span:last-child{display:block;padding:10px 12px;font-weight:700;font-size:13px;overflow-wrap:anywhere;}
 @media(max-width:520px){.movie-preview-slice span:last-child{padding:8px;font-size:12px}}
-
-
-/* Preview gallery: horizontal right-scroll + total photo count */
-.movie-preview-heading{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
-.movie-preview-count{display:inline-flex;align-items:center;justify-content:center;padding:4px 9px;border-radius:999px;background:rgba(229,9,20,.14);border:1px solid rgba(229,9,20,.45);color:#ff686e;font-size:11px;font-weight:800;line-height:1.3;white-space:nowrap;}
-.movie-preview-grid{display:flex!important;flex-wrap:nowrap!important;gap:12px;overflow-x:auto!important;overflow-y:hidden!important;width:100%;padding:2px 2px 12px;scroll-behavior:smooth;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:#e50914 rgba(255,255,255,.08);}
-.movie-preview-grid::-webkit-scrollbar{height:7px;}
-.movie-preview-grid::-webkit-scrollbar-track{background:rgba(255,255,255,.08);border-radius:8px;}
-.movie-preview-grid::-webkit-scrollbar-thumb{background:#e50914;border-radius:8px;}
-.movie-preview-card{flex:0 0 190px!important;width:190px;min-width:190px;scroll-snap-align:start;}
-@media(max-width:520px){.movie-preview-card{flex-basis:160px!important;width:160px;min-width:160px;}}

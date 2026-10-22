@@ -876,24 +876,34 @@ const safeStorage = (() => {
         function getPlaybackGroupWord(group, item = currentPlaybackItem){ const raw = String(group?.groupType || '').trim().toLowerCase(); if(raw === 'chapter') return 'Chapter'; if(raw === 'season') return 'Season'; const label = String(group?.name || group?.title || '').trim().toLowerCase(); if(/^chapter(?:\s|\d|$)/.test(label)) return 'Chapter'; if(/^season(?:\s|\d|$)/.test(label)) return 'Season'; return String(item?.type || '').toLowerCase() === 'movie' ? 'Chapter' : 'Season'; }
         function getEpisodeNumber(episode, index = 0){ const n = episode?.episodeNumber ?? episode?.number ?? String(episode?.title || episode?.name || '').match(/\d+/)?.[0]; return Number(n) || (index + 1); }
 
-        function renderMoviePreviews(item){
+        function renderMoviePreviews(item, season = null){
             const section = $('moviePreviewSection');
             const grid = $('moviePreviewGrid');
-            const count = $('moviePreviewCount');
             if(!section || !grid) return;
-            const raw = item && item.previews;
+            // Preview belongs to the currently selected season/chapter only.
+            const raw = season && season.previews;
             const previews = Array.isArray(raw) ? raw : (raw && typeof raw === 'object' ? Object.values(raw) : []);
             const valid = previews.filter(p => p && String(p.imageUrl || p.image || '').trim());
-            if(!valid.length){ section.style.display='none'; grid.innerHTML=''; if(count) count.textContent='0 photos'; return; }
-            const cards = valid.map((p, index) => {
+            if(!valid.length){ section.style.display='none'; grid.innerHTML=''; return; }
+            // A single tall contact-sheet image is automatically shown as four stacked shots.
+            // CSS background slices avoid canvas/CORS restrictions and still work after refresh.
+            const autoSplit = valid.length === 1 && (valid[0].autoSplit !== false);
+            const cards = [];
+            valid.forEach(p => {
                 const image = String(p.imageUrl || p.image || '').trim();
                 const url = String(p.clickUrl || p.url || image).trim();
                 const name = String(p.name || p.previewName || 'Preview').trim();
                 const safeImage = escapeHtml(image), safeUrl = escapeHtml(url), safeName = escapeHtml(name);
-                return `<a class="movie-preview-card" href="${safeUrl}" target="_blank" rel="noopener noreferrer" aria-label="${safeName} - Photo ${index+1}"><img src="${safeImage}" alt="${safeName}" loading="lazy" decoding="async" onerror="this.closest('.movie-preview-card').style.display='none'"><span>${safeName}</span></a>`;
+                if (autoSplit) {
+                    for(let i=0;i<4;i++) {
+                        const pos = ['0%','33.333%','66.667%','100%'][i];
+                        cards.push(`<a class="movie-preview-card movie-preview-slice" href="${safeUrl}" target="_blank" rel="noopener noreferrer" aria-label="${safeName} - Shot ${i+1}"><span class="movie-preview-image" style="background-image:url(&quot;${safeImage}&quot;);background-position:center ${pos}"></span><span>${safeName}</span></a>`);
+                    }
+                } else {
+                    cards.push(`<a class="movie-preview-card" href="${safeUrl}" target="_blank" rel="noopener noreferrer"><img src="${safeImage}" alt="${safeName}" loading="lazy" decoding="async" onerror="this.closest('.movie-preview-card').style.display='none'"><span>${safeName}</span></a>`);
+                }
             });
             grid.innerHTML = cards.join('');
-            if(count) count.textContent = `${valid.length} ${valid.length === 1 ? 'photo' : 'photos'}`;
             section.style.display='block';
         }
 
@@ -904,7 +914,7 @@ const safeStorage = (() => {
             const item = content.find(c => String(c.id) === String(id));
             if(!item) return;
             currentPlaybackItem = item;
-            renderMoviePreviews(item);
+            renderMoviePreviews(item, null);
             const poster = item.poster || item.backdrop || '';
             $('modalDetailPoster').src = poster;
             $('modalTitle').textContent = item.title || item.name || 'Untitled';
@@ -1055,6 +1065,7 @@ const safeStorage = (() => {
                     const wantedSeason = wantedSeasonNo ? playbackSeasons.find((ss, i) => String(getSeasonNumber(ss, i)) === wantedSeasonNo) : null;
                     const selectedSeasonId = wantedSeason ? wantedSeason.id : playbackSeasons[0]?.id || '';
                     currentPlaybackSeason = playbackSeasons.find(ss => String(ss.id) === String(selectedSeasonId)) || null;
+                    renderMoviePreviews(currentPlaybackItem, currentPlaybackSeason);
                     document.querySelectorAll('.season-card').forEach(c => { c.classList.toggle('active', String(c.dataset.seasonId) === String(selectedSeasonId)); });
                     loadEpisodesForSeason(selectedSeasonId, watchState?.episodeSlug || '');
                     return;
@@ -1095,6 +1106,7 @@ const safeStorage = (() => {
                 select.onchange = () => {
                     const seasonId = select.value;
                     currentPlaybackSeason = playbackSeasons.find(season => String(season.id) === String(seasonId)) || null;
+                    renderMoviePreviews(currentPlaybackItem, currentPlaybackSeason);
                     if (currentPlaybackItem && currentPlaybackSeason) {
                         updateAppRoute(currentPlaybackItem, getSeasonNumber(currentPlaybackSeason, playbackSeasons.indexOf(currentPlaybackSeason)), '');
                     }
@@ -1111,6 +1123,7 @@ const safeStorage = (() => {
                     if (select) select.value = card.dataset.seasonId;
                     const seasonId = card.dataset.seasonId;
                     currentPlaybackSeason = playbackSeasons.find(season => String(season.id) === String(seasonId)) || null;
+                    renderMoviePreviews(currentPlaybackItem, currentPlaybackSeason);
                     if (currentPlaybackItem && currentPlaybackSeason) updateAppRoute(currentPlaybackItem, getSeasonNumber(currentPlaybackSeason, playbackSeasons.indexOf(currentPlaybackSeason)), '');
                     loadEpisodesForSeason(seasonId);
                 });
