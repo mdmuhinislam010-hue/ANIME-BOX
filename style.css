@@ -2061,3 +2061,32 @@
 .movie-preview-slice .movie-preview-image{display:block;width:100%;aspect-ratio:16/9;background-repeat:no-repeat;background-size:100% 400%;background-color:#111;}
 .movie-preview-slice span:last-child{display:block;padding:10px 12px;font-weight:700;font-size:13px;overflow-wrap:anywhere;}
 @media(max-width:520px){.movie-preview-slice span:last-child{padding:8px;font-size:12px}}
+
+/* AnimeBox preview gallery: horizontal right-scroll for 4+ images */
+.movie-preview-grid {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    gap: 14px;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    width: 100%;
+    padding: 2px 2px 12px;
+    scroll-behavior: smooth;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: #fbbf24 rgba(255,255,255,.08);
+}
+.movie-preview-grid::-webkit-scrollbar { height: 7px; }
+.movie-preview-grid::-webkit-scrollbar-track { background: rgba(255,255,255,.08); border-radius: 8px; }
+.movie-preview-grid::-webkit-scrollbar-thumb { background: #fbbf24; border-radius: 8px; }
+.movie-preview-grid::-webkit-scrollbar-thumb:hover { background: #f59e0b; }
+.movie-preview-card {
+    flex: 0 0 190px !important;
+    width: 190px;
+    min-width: 190px;
+    scroll-snap-align: start;
+}
+@media (max-width: 520px) {
+    .movie-preview-card { flex-basis: 160px !important; width:160px; min-width:160px; }
+}

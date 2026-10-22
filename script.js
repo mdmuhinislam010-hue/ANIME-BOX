@@ -876,25 +876,25 @@ const safeStorage = (() => {
         function getPlaybackGroupWord(group, item = currentPlaybackItem){ const raw = String(group?.groupType || '').trim().toLowerCase(); if(raw === 'chapter') return 'Chapter'; if(raw === 'season') return 'Season'; const label = String(group?.name || group?.title || '').trim().toLowerCase(); if(/^chapter(?:\s|\d|$)/.test(label)) return 'Chapter'; if(/^season(?:\s|\d|$)/.test(label)) return 'Season'; return String(item?.type || '').toLowerCase() === 'movie' ? 'Chapter' : 'Season'; }
         function getEpisodeNumber(episode, index = 0){ const n = episode?.episodeNumber ?? episode?.number ?? String(episode?.title || episode?.name || '').match(/\d+/)?.[0]; return Number(n) || (index + 1); }
 
-        function renderMoviePreviews(item, season = null){
+        function renderMoviePreviews(item, heading = 'Preview'){
             const section = $('moviePreviewSection');
             const grid = $('moviePreviewGrid');
             if(!section || !grid) return;
-            // Preview belongs to the currently selected season/chapter only.
-            const raw = season && season.previews;
+            const raw = item && item.previews;
             const previews = Array.isArray(raw) ? raw : (raw && typeof raw === 'object' ? Object.values(raw) : []);
             const valid = previews.filter(p => p && String(p.imageUrl || p.image || '').trim());
             if(!valid.length){ section.style.display='none'; grid.innerHTML=''; return; }
-            // A single tall contact-sheet image is automatically shown as four stacked shots.
-            // CSS background slices avoid canvas/CORS restrictions and still work after refresh.
-            const autoSplit = valid.length === 1 && (valid[0].autoSplit !== false);
+            const title = section.querySelector('h4');
+            if(title) title.textContent = heading;
             const cards = [];
+            const splitSingleContactSheet = valid.length === 1 && valid[0].autoSplit !== false;
             valid.forEach(p => {
                 const image = String(p.imageUrl || p.image || '').trim();
                 const url = String(p.clickUrl || p.url || image).trim();
-                const name = String(p.name || p.previewName || 'Preview').trim();
+                const name = String(p.name || p.previewName || heading).trim();
                 const safeImage = escapeHtml(image), safeUrl = escapeHtml(url), safeName = escapeHtml(name);
-                if (autoSplit) {
+                // One tall contact-sheet URL is split into four independent cards; all keep the same name.
+                if (splitSingleContactSheet) {
                     for(let i=0;i<4;i++) {
                         const pos = ['0%','33.333%','66.667%','100%'][i];
                         cards.push(`<a class="movie-preview-card movie-preview-slice" href="${safeUrl}" target="_blank" rel="noopener noreferrer" aria-label="${safeName} - Shot ${i+1}"><span class="movie-preview-image" style="background-image:url(&quot;${safeImage}&quot;);background-position:center ${pos}"></span><span>${safeName}</span></a>`);
@@ -914,7 +914,7 @@ const safeStorage = (() => {
             const item = content.find(c => String(c.id) === String(id));
             if(!item) return;
             currentPlaybackItem = item;
-            renderMoviePreviews(item, null);
+            renderMoviePreviews(item);
             const poster = item.poster || item.backdrop || '';
             $('modalDetailPoster').src = poster;
             $('modalTitle').textContent = item.title || item.name || 'Untitled';
@@ -1064,8 +1064,7 @@ const safeStorage = (() => {
                     const wantedSeasonNo = String(watchState?.seasonSlug || '').match(/(\d+)/)?.[1] || '';
                     const wantedSeason = wantedSeasonNo ? playbackSeasons.find((ss, i) => String(getSeasonNumber(ss, i)) === wantedSeasonNo) : null;
                     const selectedSeasonId = wantedSeason ? wantedSeason.id : playbackSeasons[0]?.id || '';
-                    currentPlaybackSeason = playbackSeasons.find(ss => String(ss.id) === String(selectedSeasonId)) || null;
-                    renderMoviePreviews(currentPlaybackItem, currentPlaybackSeason);
+                    currentPlaybackSeason = playbackSeasons.find(ss => String(ss.id) === String(selectedSeasonId)) || null; if(currentPlaybackSeason) renderMoviePreviews(currentPlaybackSeason, getPlaybackGroupWord(currentPlaybackSeason,currentPlaybackItem)+' '+getSeasonNumber(currentPlaybackSeason,playbackSeasons.indexOf(currentPlaybackSeason))+' Preview');
                     document.querySelectorAll('.season-card').forEach(c => { c.classList.toggle('active', String(c.dataset.seasonId) === String(selectedSeasonId)); });
                     loadEpisodesForSeason(selectedSeasonId, watchState?.episodeSlug || '');
                     return;
@@ -1105,8 +1104,7 @@ const safeStorage = (() => {
                 }).join('');
                 select.onchange = () => {
                     const seasonId = select.value;
-                    currentPlaybackSeason = playbackSeasons.find(season => String(season.id) === String(seasonId)) || null;
-                    renderMoviePreviews(currentPlaybackItem, currentPlaybackSeason);
+                    currentPlaybackSeason = playbackSeasons.find(season => String(season.id) === String(seasonId)) || null; if(currentPlaybackSeason) renderMoviePreviews(currentPlaybackSeason, getPlaybackGroupWord(currentPlaybackSeason,currentPlaybackItem)+' '+getSeasonNumber(currentPlaybackSeason,playbackSeasons.indexOf(currentPlaybackSeason))+' Preview');
                     if (currentPlaybackItem && currentPlaybackSeason) {
                         updateAppRoute(currentPlaybackItem, getSeasonNumber(currentPlaybackSeason, playbackSeasons.indexOf(currentPlaybackSeason)), '');
                     }
@@ -1122,8 +1120,7 @@ const safeStorage = (() => {
                 card.addEventListener('click', () => {
                     if (select) select.value = card.dataset.seasonId;
                     const seasonId = card.dataset.seasonId;
-                    currentPlaybackSeason = playbackSeasons.find(season => String(season.id) === String(seasonId)) || null;
-                    renderMoviePreviews(currentPlaybackItem, currentPlaybackSeason);
+                    currentPlaybackSeason = playbackSeasons.find(season => String(season.id) === String(seasonId)) || null; if(currentPlaybackSeason) renderMoviePreviews(currentPlaybackSeason, getPlaybackGroupWord(currentPlaybackSeason,currentPlaybackItem)+' '+getSeasonNumber(currentPlaybackSeason,playbackSeasons.indexOf(currentPlaybackSeason))+' Preview');
                     if (currentPlaybackItem && currentPlaybackSeason) updateAppRoute(currentPlaybackItem, getSeasonNumber(currentPlaybackSeason, playbackSeasons.indexOf(currentPlaybackSeason)), '');
                     loadEpisodesForSeason(seasonId);
                 });
@@ -1251,7 +1248,7 @@ const safeStorage = (() => {
         $('streamVideo').addEventListener('pause', savePlaybackProgress);
         $('streamVideo').addEventListener('ended', () => { savePlaybackProgress(); if(effectiveAutoNextEnabled()) setTimeout(playNextEpisode,250); });
 
-        $('seasonSelect').addEventListener('change', e => { currentPlaybackSeason = playbackSeasons.find(s => String(s.id) === String(e.target.value)) || null; if(currentPlaybackItem && currentPlaybackSeason) updateAppRoute(currentPlaybackItem, getSeasonNumber(currentPlaybackSeason, playbackSeasons.indexOf(currentPlaybackSeason)), ''); loadEpisodesForSeason(e.target.value); });
+        $('seasonSelect').addEventListener('change', e => { currentPlaybackSeason = playbackSeasons.find(s => String(s.id) === String(e.target.value)) || null; if(currentPlaybackItem && currentPlaybackSeason) { updateAppRoute(currentPlaybackItem, getSeasonNumber(currentPlaybackSeason, playbackSeasons.indexOf(currentPlaybackSeason)), ''); renderMoviePreviews(currentPlaybackSeason, (getPlaybackGroupWord(currentPlaybackSeason,currentPlaybackItem))+' '+getSeasonNumber(currentPlaybackSeason,playbackSeasons.indexOf(currentPlaybackSeason))+' Preview'); } else { renderMoviePreviews(null); } loadEpisodesForSeason(e.target.value); });
         $('episodeSelect').addEventListener('change', e => loadDubsForEpisode(e.target.value));
         $('dubSelect').addEventListener('change', e => selectPlaybackDub(e.target.value));
         $('modalClose').addEventListener('click', closeModal);
