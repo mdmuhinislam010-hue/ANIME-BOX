@@ -1,3 +1,7 @@
+/* ============================================================
+   ANIMEBOX APP.JS — Fixed Type Routing & See All
+   ============================================================ */
+
 let heroSlides = [];
 let heroIndex = 0;
 let heroTimer = null;
@@ -172,7 +176,11 @@ function ensureTypeControls(section, cfg){
   if (!more){
     more = document.createElement('button');
     more.type='button'; more.className='home-type-more'; more.textContent='See All →';
-    more.addEventListener('click', () => navigateTo('#/' + slugify(cfg.name)));
+    // FIX: Navigation logic for See All button
+    more.addEventListener('click', (e) => {
+      e.preventDefault();
+      navigateTo('#/' + slugify(cfg.name));
+    });
     const heading = section.querySelector('.home-type-heading');
     if (heading && heading.parentNode){
       const row = document.createElement('div');
