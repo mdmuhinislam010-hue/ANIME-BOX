@@ -1,83 +1,64 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#000000">
-  <title>AnimeBox - Bangla, Hindi &amp; English HD Movies, Series, Anime Download</title>
-  <link rel="icon" type="image/png" href="https://cdn.imageurlgenerator.com/uploads/ce68f4a9-a8e6-42f7-9cde-64dd6467ccd1.png">
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#000000">
+<title>AnimeBox - Bangla, Hindi & English HD Movies, Series, Anime Download</title>
+<link rel="icon" type="image/png" href="https://cdn.imageurlgenerator.com/uploads/ce68f4a9-a8e6-42f7-9cde-64dd6467ccd1.png">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <!-- ===== Loading / Splash Screen ===== -->
-  <div class="loading-screen" id="loadingScreen" aria-live="polite" aria-label="Loading AnimeBox">
-    <div class="loading-logo">
-      <span class="ab">AB</span>
-      <span class="play">PLAY</span>
-    </div>
-    <div class="loading-welcome">Welcome</div>
-    <div class="loading-bar-wrap"><div class="loading-bar" id="loadingBar"></div></div>
-    <div class="loading-hint">Loading AnimeBox…</div>
-  </div>
+<!-- ===== Loading Splash ===== -->
+<div class="loading-screen" id="loadingScreen">
+  <div class="loading-logo"><span class="ab">AB</span><span class="play">PLAY</span></div>
+  <div class="loading-welcome">Welcome</div>
+  <div class="loading-bar-wrap"><div class="loading-bar" id="loadingBar"></div></div>
+  <div class="loading-hint">Loading AnimeBox…</div>
+</div>
 
-  <header class="topbar">
-    <button class="icon-btn menu-btn" type="button" aria-label="Open menu" id="menuButton">
-      <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
-    </button>
-    <a class="brand" href="/home" aria-label="AB PLAY home"><span class="brand-ab">AB</span><span class="brand-play">PLAY</span></a>
-    <nav class="desktop-nav" aria-label="Main navigation">
-      <a class="nav-link active" href="/home" data-page="home"><svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>Home</a>
-      <a class="nav-link" href="/movie" data-page="movies"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4m-4 6h4m10-6h4m-4 6h4"/></svg>Movies</a>
-      <a class="nav-link" href="/anime" data-page="anime"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 10h.01M16 10h.01M8 15c2.5 2 5.5 2 8 0"/></svg>Anime</a>
-      <a class="nav-link" href="/profile" data-page="profile"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Profile</a>
-    </nav>
-    <div class="top-actions">
-      <button class="icon-btn profile-top" type="button" aria-label="Profile" data-go="profile"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></button>
-      <button class="icon-btn" type="button" aria-label="Search" id="searchButton"><svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg></button>
-    </div>
-  </header>
-
-  <main id="pageContent" aria-label="Website content">
-    <section class="hero-wrap" aria-label="Featured slider">
-      <div class="hero-slider" id="heroSlider"><div class="hero-empty">Loading featured content…</div></div>
-    </section>
-    <section class="home-types" aria-label="Home content categories">
-      <section class="home-type-section" data-type-section="Movie">
-        <h2 class="home-type-heading">Movie</h2>
-        <div class="home-type-rail" id="homeTypeMovie" aria-label="Movie cards"></div>
-        <div class="home-type-empty" id="homeTypeMovieEmpty">No Movie cards yet.</div>
-      </section>
-      <section class="home-type-section" data-type-section="Trending">
-        <h2 class="home-type-heading">Trending</h2>
-        <div class="home-type-rail" id="homeTypeTrending" aria-label="Trending cards"></div>
-        <div class="home-type-empty" id="homeTypeTrendingEmpty">No Trending cards yet.</div>
-      </section>
-      <section class="home-type-section" data-type-section="Anime">
-        <h2 class="home-type-heading">Anime</h2>
-        <div class="home-type-rail" id="homeTypeAnime" aria-label="Anime cards"></div>
-        <div class="home-type-empty" id="homeTypeAnimeEmpty">No Anime cards yet.</div>
-      </section>
-      <section class="home-type-section" data-type-section="Series">
-        <h2 class="home-type-heading">Series</h2>
-        <div class="home-type-rail" id="homeTypeSeries" aria-label="Series cards"></div>
-        <div class="home-type-empty" id="homeTypeSeriesEmpty">No Series cards yet.</div>
-      </section>
-    </section>
-  </main>
-
-  <nav class="mobile-bottom" aria-label="Mobile navigation">
-    <a class="nav-link active" href="/home" data-page="home"><svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg><span>Home</span></a>
-    <a class="nav-link" href="/movie" data-page="movies"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4m-4 6h4m10-6h4m-4 6h4"/></svg><span>Movies</span></a>
-    <a class="nav-link" href="/anime" data-page="anime"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 10h.01M16 10h.01M8 15c2.5 2 5.5 2 8 0"/></svg><span>Anime</span></a>
-    <a class="nav-link" href="/profile" data-page="profile"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Profile</span></a>
+<header class="topbar">
+  <button class="icon-btn menu-btn" type="button" aria-label="Open menu" id="menuButton">
+    <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+  </button>
+  <a class="brand" href="#/home" aria-label="AB PLAY home"><span class="brand-ab">AB</span><span class="brand-play">PLAY</span></a>
+  <nav class="desktop-nav" aria-label="Main navigation">
+    <a class="nav-link active" href="#/home" data-page="home"><svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>Home</a>
+    <a class="nav-link" href="#/movie" data-page="movies"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4m-4 6h4m10-6h4m-4 6h4"/></svg>Movies</a>
+    <a class="nav-link" href="#/anime" data-page="anime"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 10h.01M16 10h.01M8 15c2.5 2 5.5 2 8 0"/></svg>Anime</a>
+    <a class="nav-link" href="#/profile" data-page="profile"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Profile</a>
   </nav>
+  <div class="top-actions">
+    <button class="icon-btn profile-top" type="button" aria-label="Profile" data-go="profile"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></button>
+    <button class="icon-btn" type="button" aria-label="Search" id="searchButton"><svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg></button>
+  </div>
+</header>
 
-  <!-- Firebase (compat) -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<main id="pageContent" aria-label="Website content">
+  <section class="hero-wrap" aria-label="Featured slider">
+    <div class="hero-slider" id="heroSlider"><div class="hero-empty">Loading featured content…</div></div>
+  </section>
+  <section class="home-types" aria-label="Home content categories">
+    <section class="home-type-section" data-type-section="Movie"><h2 class="home-type-heading">Movie</h2><div class="home-type-rail" id="homeTypeMovie" aria-label="Movie cards"></div><div class="home-type-empty" id="homeTypeMovieEmpty">No Movie cards yet.</div></section>
+    <section class="home-type-section" data-type-section="Trending"><h2 class="home-type-heading">Trending</h2><div class="home-type-rail" id="homeTypeTrending" aria-label="Trending cards"></div><div class="home-type-empty" id="homeTypeTrendingEmpty">No Trending cards yet.</div></section>
+    <section class="home-type-section" data-type-section="Anime"><h2 class="home-type-heading">Anime</h2><div class="home-type-rail" id="homeTypeAnime" aria-label="Anime cards"></div><div class="home-type-empty" id="homeTypeAnimeEmpty">No Anime cards yet.</div></section>
+    <section class="home-type-section" data-type-section="Series"><h2 class="home-type-heading">Series</h2><div class="home-type-rail" id="homeTypeSeries" aria-label="Series cards"></div><div class="home-type-empty" id="homeTypeSeriesEmpty">No Series cards yet.</div></section>
+  </section>
+</main>
 
-  <!-- App script -->
-  <script src="script.js" defer></script>
+<nav class="mobile-bottom" aria-label="Mobile navigation">
+  <a class="nav-link active" href="#/home" data-page="home"><svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg><span>Home</span></a>
+  <a class="nav-link" href="#/movie" data-page="movies"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4m-4 6h4m10-6h4m-4 6h4"/></svg><span>Movies</span></a>
+  <a class="nav-link" href="#/anime" data-page="anime"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 10h.01M16 10h.01M8 15c2.5 2 5.5 2 8 0"/></svg><span>Anime</span></a>
+  <a class="nav-link" href="#/profile" data-page="profile"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Profile</span></a>
+</nav>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+<!-- App -->
+<script src="app.js"></script>
 </body>
 </html>
