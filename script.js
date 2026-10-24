@@ -21,7 +21,8 @@ const builtinTypeConfig = [
   {name:'Movie',    rail:'homeTypeMovie',    empty:'homeTypeMovieEmpty',  page:0},
   {name:'Trending', rail:'homeTypeTrending', empty:'homeTypeTrendingEmpty',page:0},
   {name:'Anime',    rail:'homeTypeAnime',    empty:'homeTypeAnimeEmpty',   page:0},
-  {name:'Series',   rail:'homeTypeSeries',   empty:'homeTypeSeriesEmpty',  page:0}
+  {name:'Series',   rail:'homeTypeSeries',   empty:'homeTypeSeriesEmpty',  page:0},
+  {name:'TV Show',  rail:'homeTypeTVShow',   empty:'homeTypeTVShowEmpty', page:0}
 ];
 
 /* ---------- SPLASH ---------- */
