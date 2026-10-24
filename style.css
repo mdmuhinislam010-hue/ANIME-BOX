@@ -215,3 +215,39 @@ body.search-active #pageContent{margin:0;padding:0;background:#09090f}
 @keyframes loadingWelcome{to{opacity:1;transform:translateY(0)}}
 @keyframes loadingFadeIn{to{opacity:1}}
 @keyframes loadingFill{0%{width:0%}100%{width:100%}}
+
+
+/* User-facing download hub connected to the same Firebase Admin season/episode records. */
+.user-download-hub{max-width:1180px;margin:18px auto 0;padding:0;color:#f5f6f8;display:none}
+.user-download-block{display:none;margin:14px 0 0;padding:16px;background:#252a30;border:1px solid #3a414a;border-radius:14px}
+.user-download-block.has-items{display:block}
+.user-download-heading{margin:0 0 13px;font-size:18px;font-weight:800;color:#f5f6f8}
+.user-download-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+.user-download-card{min-width:0;padding:14px;border-radius:11px;background:#171b20;border:1px solid #353c45;display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+.user-download-name{font-weight:750;font-size:14px;line-height:1.45;overflow-wrap:anywhere}
+.user-download-meta{font-size:12px;color:#aeb7c2;line-height:1.4}
+.user-download-btn{display:inline-flex;align-items:center;justify-content:center;max-width:100%;padding:9px 12px;border-radius:8px;background:#343b45;color:#fff;text-decoration:none;font-size:12px;font-weight:750;border:1px solid #4a5563;transition:background .15s ease}
+.user-download-btn:hover{background:#47515f}
+.ep-zip-download-btn{background:#2e4652;border-color:#477081}
+.ep-zip-download-btn:hover{background:#3a5b6a}
+@media(max-width:600px){.user-download-block{padding:12px}.user-download-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.user-download-card{padding:10px}.user-download-heading{font-size:16px}.user-download-btn{padding:8px 9px;font-size:11px}}
+
+/* Episode screenshots synced with Admin Preview Manager */
+.episode-screenshots{margin-top:18px;background:#30353c;border-radius:7px;padding:10px;display:none}
+.episode-screenshots.show{display:block}
+.episode-screenshots-title{font-size:16px;font-weight:900;color:#ff5148;text-align:center;margin:0 0 9px;padding-bottom:7px;border-bottom:3px solid #ff5148;letter-spacing:.5px}
+.episode-screenshot-list{display:flex;flex-direction:column;align-items:center;gap:0}
+.episode-screenshot{display:block;width:min(100%,620px);overflow:hidden;background:#20242a;line-height:0;text-decoration:none}
+.episode-screenshot img{display:block;width:100%;height:auto;object-fit:contain}
+.episode-screenshot-name{display:block;padding:7px 9px;background:#20242a;color:#eee;font-size:12px;line-height:1.4;text-align:center}
+@media(max-width:700px){.episode-screenshots{padding:6px}.episode-screenshots-title{font-size:14px}.episode-screenshot-name{font-size:11px}}
+
+
+/* Small responsive popup for pages opened from the website */
+.ab-page-popup-backdrop{position:fixed;inset:0;z-index:999999;display:none;align-items:center;justify-content:center;padding:14px;background:rgba(0,0,0,.68);backdrop-filter:blur(3px)}
+.ab-page-popup-backdrop.show{display:flex}
+.ab-page-popup{width:min(560px,92vw);height:min(470px,78vh);min-height:230px;display:flex;flex-direction:column;overflow:hidden;background:#20242a;border:1px solid #505761;border-radius:12px;box-shadow:0 18px 70px rgba(0,0,0,.7)}
+.ab-page-popup-head{height:42px;flex:0 0 42px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 12px;color:#fff;background:#303640;font-size:12px;font-weight:800}
+.ab-page-popup-close{width:29px;height:29px;display:grid;place-items:center;border:0;border-radius:7px;background:#e53945;color:#fff;font-size:16px;font-weight:900;cursor:pointer}
+.ab-page-popup-frame{width:100%;height:100%;flex:1;min-height:0;border:0;background:#fff}
+@media(max-width:600px){.ab-page-popup-backdrop{padding:8px}.ab-page-popup{width:95vw;height:76vh;min-height:220px;border-radius:9px}.ab-page-popup-head{height:40px;flex-basis:40px}}
