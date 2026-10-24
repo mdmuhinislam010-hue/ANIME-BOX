@@ -1,8 +1,3 @@
-/* ============================================================
-   ANIMEBOX APP.JS — hash-based routing (refresh-safe, no 404)
-   ============================================================ */
-
-/* ---------- GLOBALS ---------- */
 let heroSlides = [];
 let heroIndex = 0;
 let heroTimer = null;
@@ -17,7 +12,6 @@ let activeSearchQuery = '';
 let cachedHomeMarkup = '';
 let contentFirstPaintDone = false;
 let lastRandomizedSource = null;
-let activeWatchListeners = [];
 
 const builtinTypeConfig = [
   {name:'Movie',    rail:'homeTypeMovie',    empty:'homeTypeMovieEmpty',  page:0},
@@ -657,7 +651,7 @@ function renderTypeListPage(typeName, page=0){
 }
 
 /* ============================================================
-   ROUTER (HASH-BASED — refresh safe, no 404)
+   ROUTER (HASH-BASED — refresh safe, no 404 on GitHub Pages)
    ============================================================ */
 function currentPath(){
   let p = location.hash.replace(/^#/, '') || '/home';
@@ -666,7 +660,6 @@ function currentPath(){
   return p;
 }
 function navigateTo(path, replace=false){
-  // path may be "#/details/..." or "/details/..."
   const hash = path.startsWith('#') ? path : '#' + (path.startsWith('/') ? path : '/' + path);
   if (replace) history.replaceState({}, '', hash);
   else location.hash = hash;
@@ -752,17 +745,10 @@ document.addEventListener('click', e => {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Migrate old path URLs to hash
   if (!location.hash || location.hash === '#'){
-    const oldPath = location.pathname;
-    if (oldPath && oldPath !== '/' && oldPath !== '/index.html'){
-      history.replaceState({}, '', '#/home');
-    } else {
-      history.replaceState({}, '', '#/home');
-    }
+    history.replaceState({}, '', '#/home');
   }
 
-  // Ensure controls on builtin sections
   builtinTypeConfig.forEach(cfg => {
     const rail = document.getElementById(cfg.rail);
     const section = rail && rail.closest('.home-type-section');
