@@ -1,5 +1,5 @@
 /* ============================================================
-   ANIMEBOX APP.JS — Fixed Type Routing & See All
+   ANIMEBOX APP.JS — Clean URL Routing (No Hash), Fixed Series & See All
    ============================================================ */
 
 let heroSlides = [];
@@ -58,8 +58,8 @@ function cardTitle(item){ return firstValue(item,['title','name','animeName','mo
 function cardTarget(item){ return firstValue(item,['detailUrl','route','contentUrl','url','link','id','key'],''); }
 function contentUrl(item){
   const id = String(item?.id ?? item?.key ?? item?.contentId ?? '');
-  if (!id) return '#/home';
-  return `#/details/${slugify(cardTitle(item))}/${encodeURIComponent(id)}`;
+  if (!id) return '/home';
+  return `/details/${slugify(cardTitle(item))}/${encodeURIComponent(id)}`;
 }
 
 /* ============================================================
@@ -179,7 +179,7 @@ function ensureTypeControls(section, cfg){
     // FIX: Navigation logic for See All button
     more.addEventListener('click', (e) => {
       e.preventDefault();
-      navigateTo('#/' + slugify(cfg.name));
+      navigateTo('/' + slugify(cfg.name));
     });
     const heading = section.querySelector('.home-type-heading');
     if (heading && heading.parentNode){
@@ -239,7 +239,7 @@ function renderHomeTypeCards(items){
       const image = cardImage(item);
       const title = cardTitle(item);
       const target = cardTarget(item);
-      const href = /^https?:\/\//i.test(String(target)) ? String(target) : (target ? contentUrl(item) : '#/home');
+      const href = /^https?:\/\//i.test(String(target)) ? String(target) : (target ? contentUrl(item) : '/home');
       const rawType = firstValue(item, ['typeName','type','contentType','mediaType','kind','category'],'');
       const rawAdminBadge = firstValue(item, ['badge','statusBadge','status','labelBadge','tag','contentStatus','badgesText','badgeText'],'');
       const rawLanguage = firstValue(item, ['language','lang','audioLanguage','dubLanguage','languageBadge','audio'],'');
@@ -331,7 +331,7 @@ function renderSearchPage(){
     <nav class="search-categories">${cats.map(([n,i])=>`<button class="search-category ${activeSearchCategory===n?'active':''}" data-search-category="${safeText(n)}">${i} &nbsp;${safeText(n)}</button>`).join('')}</nav>
     <div class="search-results" id="searchResults"></div>
   </section>`;
-  document.getElementById('searchBack').addEventListener('click', e => { e.preventDefault(); navigateTo('#/home'); });
+  document.getElementById('searchBack').addEventListener('click', e => { e.preventDefault(); navigateTo('/home'); });
   const input = document.getElementById('contentSearchInput');
   input.addEventListener('input', () => { activeSearchQuery = input.value; updateSearchResults(); });
   content.querySelectorAll('[data-search-chip]').forEach(b => b.addEventListener('click', () => {
@@ -382,7 +382,7 @@ function updateSearchResults(){
   temp.remove(); allPageConfig = null;
   grid.querySelectorAll('a.home-type-card').forEach(a => a.addEventListener('click', e => {
     const href = a.getAttribute('href');
-    if (href && href.startsWith('#/')){ e.preventDefault(); navigateTo(href); }
+    if (href && href.startsWith('/')){ e.preventDefault(); navigateTo(href); }
   }));
 }
 
@@ -481,7 +481,7 @@ function renderDetailsPage(id, seasonParam, episodeParam){
     </section>
   </section>`;
 
-  document.getElementById('detailsBack')?.addEventListener('click', e => { e.preventDefault(); navigateTo('#/home'); });
+  document.getElementById('detailsBack')?.addEventListener('click', e => { e.preventDefault(); navigateTo('/home'); });
   document.getElementById('detailsSave')?.addEventListener('click',()=>{
     let list=[]; try{list=JSON.parse(localStorage.getItem(myListKey)||'[]')}catch(_){}
     const idx=list.indexOf(itemId);
@@ -632,7 +632,7 @@ function setupAdminWatchPlayer(item,itemId,title,quality,language){
    ============================================================ */
 function renderTypeListPage(typeName, page=0){
   const cfg = allHomeTypeConfig().find(x => typeKey(x.name)===typeKey(typeName));
-  if (!cfg){ document.getElementById('pageContent').innerHTML='<section class="type-list-page"><p class="type-list-empty">Type not found.</p><button class="type-list-back" id="typeBack2">← Home</button></section>'; document.getElementById('typeBack2')?.addEventListener('click',e=>{e.preventDefault();navigateTo('#/home')}); return; }
+  if (!cfg){ document.getElementById('pageContent').innerHTML='<section class="type-list-page"><p class="type-list-empty">Type not found.</p><button class="type-list-back" id="typeBack2">← Home</button></section>'; document.getElementById('typeBack2')?.addEventListener('click',e=>{e.preventDefault();navigateTo('/home')}); return; }
   const matched = (latestContentItems||[]).filter(item => cfg.name==='Trending'
     ? (itemMatchesType(item,cfg)||item.trending===true||item.isTrending===true||String(item.trending).toLowerCase()==='true')
     : itemMatchesType(item,cfg));
@@ -642,7 +642,7 @@ function renderTypeListPage(typeName, page=0){
   const pageItems = matched.slice(page*pageSize, (page+1)*pageSize);
   const content = document.getElementById('pageContent');
   content.innerHTML = `<section class="type-list-page"><div class="type-list-head"><button class="type-list-back" id="typeBack">← Back</button><h1 class="type-list-title">${safeText(cfg.name)}</h1></div><div class="type-list-toolbar"><button class="type-filter">☷ All Genres</button><button class="type-filter">▣ All Years</button><button class="type-filter">◎ All Audio</button><button class="type-filter">▣ All Quality</button><button class="type-filter">☷ Newest</button></div><div class="type-list-grid" id="typeListGrid"></div>${matched.length ? `<div class="type-pagination">${Array.from({length:totalPages},(_,i)=>`<button class="type-page-btn ${i===page?'active':''}" data-page-number="${i}">${i+1}</button>`).join('')}</div>` : '<div class="type-list-empty">No content in this Type yet.</div>'}</section>`;
-  document.getElementById('typeBack').addEventListener('click', e => { e.preventDefault(); navigateTo('#/home'); });
+  document.getElementById('typeBack').addEventListener('click', e => { e.preventDefault(); navigateTo('/home'); });
   const grid = document.getElementById('typeListGrid');
   allPageConfig = {...cfg, rail:'__typeListTempRail', empty:'', emptyElement:null, page:0, randomizedItems:pageItems};
   const temp = document.createElement('div'); temp.className='home-type-section';
@@ -653,29 +653,27 @@ function renderTypeListPage(typeName, page=0){
   temp.remove(); allPageConfig = null;
   grid.querySelectorAll('a.home-type-card').forEach(a => a.addEventListener('click', e => {
     const href = a.getAttribute('href');
-    if (href && href.startsWith('#/')){ e.preventDefault(); navigateTo(href); }
+    if (href && href.startsWith('/')){ e.preventDefault(); navigateTo(href); }
   }));
   content.querySelectorAll('[data-page-number]').forEach(b => b.addEventListener('click', () => renderTypeListPage(cfg.name, Number(b.dataset.pageNumber))));
 }
 
 /* ============================================================
-   ROUTER (HASH-BASED — refresh safe, no 404 on GitHub Pages)
+   ROUTER (CLEAN URLs - No Hash)
    ============================================================ */
 function currentPath(){
-  let p = location.hash.replace(/^#/, '') || '/home';
-  if (!p.startsWith('/')) p = '/' + p;
+  let p = decodeURI(location.pathname || '/home');
   if (p.length > 1 && p.endsWith('/')) p = p.slice(0,-1);
-  return p;
+  return p || '/home';
 }
 function navigateTo(path, replace=false){
-  const hash = path.startsWith('#') ? path : '#' + (path.startsWith('/') ? path : '/' + path);
-  if (replace) history.replaceState({}, '', hash);
-  else location.hash = hash;
+  if (replace) history.replaceState({}, '', path);
+  else history.pushState({}, '', path);
   routePage();
   window.scrollTo({top:0, behavior:'instant'});
 }
 function parseDetailPath(path){
-  const m = path.match(/^\/details\/([^/]+)(?:\/([^/]+))?(?:\/season\/(\d+)\/episode\/(\d+))?/i);
+  const m = path.match(/^(?:\/details|\/home\/details?|\/home\/detail)\/([^/]+)(?:\/([^/]+))?(?:\/season\/(\d+)\/episode\/(\d+))?/i);
   if (!m) return null;
   return { slug: m[1], id: m[2] || m[1], season: m[3]?Number(m[3]):null, episode: m[4]?Number(m[4]):null };
 }
@@ -707,7 +705,7 @@ function routePage(){
   const adminSlugs = (adminTypes||[]).map(t => slugify(t.name));
   const allSlugs = [...new Set([...builtinSlugs, ...adminSlugs])];
   let typeSlug = null;
-  if (path !== '/' && path !== '/home' && !path.startsWith('/details') && path !== '/search' && path !== '/profile'){
+  if (path !== '/' && path !== '/home' && !path.startsWith('/details') && !path.startsWith('/home/detail') && path !== '/search' && path !== '/profile'){
     const seg = path.slice(1).split('/')[0];
     if (allSlugs.includes(seg)) typeSlug = seg;
   }
@@ -735,11 +733,10 @@ function routePage(){
     }
     return;
   }
-  navigateTo('#/home', true);
+  navigateTo('/home', true);
 }
 
 /* ---------- EVENTS ---------- */
-window.addEventListener('hashchange', routePage);
 window.addEventListener('popstate', routePage);
 
 document.addEventListener('click', e => {
@@ -748,13 +745,13 @@ document.addEventListener('click', e => {
   const href = link.getAttribute('href');
   if (!href) return;
   if (/^(https?:)?\/\//i.test(href)) return;
-  if (/^(mailto:|tel:|#(?!\/))/i.test(href)) return;
-  if (href.startsWith('#/')){ e.preventDefault(); navigateTo(href); }
+  if (/^(mailto:|tel:|#)/i.test(href)) return;
+  if (href.startsWith('/')){ e.preventDefault(); navigateTo(href); }
 });
 
 document.addEventListener('DOMContentLoaded', () => {
-  if (!location.hash || location.hash === '#'){
-    history.replaceState({}, '', '#/home');
+  if (location.pathname === '/' || location.pathname === '') {
+    history.replaceState({}, '', '/home');
   }
 
   builtinTypeConfig.forEach(cfg => {
@@ -763,9 +760,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (section) ensureTypeControls(section, cfg);
   });
 
-  document.getElementById('searchButton')?.addEventListener('click', () => { activeSearchQuery=''; activeSearchCategory='All'; navigateTo('#/search'); });
+  document.getElementById('searchButton')?.addEventListener('click', () => { activeSearchQuery=''; activeSearchCategory='All'; navigateTo('/search'); });
   document.getElementById('menuButton')?.addEventListener('click', () => alert('Menu controls will be added later.'));
-  document.querySelectorAll('[data-go="profile"]').forEach(b => b.addEventListener('click', () => navigateTo('#/profile')));
+  document.querySelectorAll('[data-go="profile"]').forEach(b => b.addEventListener('click', () => navigateTo('/profile')));
   window.addEventListener('resize', () => renderHomeTypeCards(latestContentItems));
 
   routePage();
