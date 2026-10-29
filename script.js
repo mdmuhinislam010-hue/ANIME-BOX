@@ -293,21 +293,23 @@ function renderHomeTypeCards(items){
       const rawRating = firstValue(item, ['rating','imdbRating','score','ratingValue','ratingBadge'],'');
       const badgeText = v => Array.isArray(v) ? v.filter(Boolean).join(', ') : (typeof v==='object' && v ? firstValue(v,['name','label','value','title'],'') : String(v??'').trim());
       const adminBadgeText = badgeText(rawAdminBadge);
-      const badgeTokens = adminBadgeText.split(/[;,|]+/).map(v=>v.trim()).filter(Boolean);
+      const badgeTokens = adminBadgeText.split(/[;,|]+/).map(v => v.trim()).filter(Boolean);
       const detectedQuality = badgeTokens.find(v => /^(HD|FHD|FULL\s*HD|UHD|4K|8K|720P|1080P|2160P)$/i.test(v)) || '';
       const statusTokens = badgeTokens.filter(v => v !== detectedQuality);
-      if (item && (item.comingSoon===true || String(item.comingSoon).toLowerCase()==='true')) statusTokens.push('Coming Soon');
+      if (item && (item.comingSoon===true || String(item.comingSoon).toLowerCase()==='true') && !statusTokens.some(v=>/coming soon/i.test(v))) statusTokens.push('Coming Soon');
       const statusText = statusTokens.join(' · ');
       const languageText = badgeText(rawLanguage);
       const yearText = badgeText(rawYear);
-      const qualityText = badgeText(rawQuality) || detectedQuality || 'WEB-DL';
+      // Quality is explicitly admin-controlled; never invent WEB-DL for missing values.
+      const qualityText = badgeText(rawQuality) || detectedQuality;
       const ratingText = badgeText(rawRating);
       const typeText = badgeText(rawType);
+      const customCardBadges = Array.isArray(item?.cardBadges) ? item.cardBadges.map(badgeText).filter(Boolean).slice(0,3) : [];
       const extraRaw = item && (item.badges ?? item.badgeList ?? item.labels);
       const extraBadges = (Array.isArray(extraRaw) ? extraRaw : (extraRaw && typeof extraRaw==='object' ? Object.values(extraRaw) : []))
         .map(badgeText).filter(Boolean).filter(v => ![statusText,languageText,yearText,qualityText,ratingText,typeText].includes(v));
-      const topLeftVals = [statusText, languageText, yearText, ...extraBadges];
-      const topLeft = topLeftVals.filter(Boolean).map((v,i)=>`<span class="home-card-badge ${i===0?'new':i===1?'language':i===2?'year':'new'}">${safeText(v)}</span>`).join('');
+      const topLeftVals = (customCardBadges.length ? customCardBadges : [statusText, languageText, yearText, ...extraBadges].filter(Boolean)).slice(0,3);
+      const topLeft = topLeftVals.map((v,i)=>`<span class="home-card-badge ${i===0?'new':i===1?'language':'year'}">${safeText(v)}</span>`).join('');
       const ratingBadge = ratingText ? `<span class="home-card-badge rating">★ ${safeText(ratingText.replace(/^★\s*/,''))}</span>` : '';
       const typeBadge = typeText ? `<span class="home-card-badge type">${safeText(typeText)}</span>` : '';
       const qualityBadge = qualityText ? `<span class="home-card-badge quality">${safeText(qualityText)}</span>` : '';
@@ -459,7 +461,7 @@ function renderDetailsPage(id, seasonParam, episodeParam){
   const rating=detailText(detailValue(item,['rating','imdbRating','score','ratingValue'],''));
   const genre=detailText(detailValue(item,['genre','genres','tags'],''));
   const language=detailText(detailValue(item,['language','lang','audioLanguage','dubLanguage'],'Not specified'));
-  const quality=detailText(detailValue(item,['quality','resolution','videoQuality','qualityLabel'],'WEB-DL'));
+  const quality=detailText(detailValue(item,['quality','resolution','videoQuality','qualityLabel'],''));
   const release=detailText(detailValue(item,['releaseDate','released','release_date','premiereDate'],year));
   const status=detailText(detailValue(item,['status','badge','contentStatus','showStatus'],item.comingSoon?'Coming Soon':'Ongoing'));
   const seasonNote=detailText(detailValue(item,['seasonEpisodeUpdate','episodeUpdate','latestEpisode','seasonInfo','episodeInfo'],''));
@@ -475,7 +477,7 @@ function renderDetailsPage(id, seasonParam, episodeParam){
       <aside class="details-poster-wrap">
         ${poster?`<img class="details-poster" src="${safeText(poster)}" alt="${safeText(title)} poster" onerror="this.style.visibility='hidden'">`:'<div class="details-poster"></div>'}
         <div class="details-poster-badges">
-          <div class="details-badge-row"><span class="details-badge quality">${safeText(quality)}</span></div>
+          ${quality?`<div class="details-badge-row"><span class="details-badge quality">${safeText(quality)}</span></div>`:""}
           <div class="details-badge-row"><span class="details-badge language">${safeText(language)}</span><span class="details-badge type">${safeText(type.toUpperCase())}</span></div>
         </div>
       </aside>
@@ -486,7 +488,7 @@ function renderDetailsPage(id, seasonParam, episodeParam){
         <div class="details-facts">
           <div><div class="details-fact-label">Type</div><div class="details-fact-value type">${safeText(type)}</div></div>
           <div><div class="details-fact-label">Language</div><div class="details-fact-value language">${safeText(language)}</div></div>
-          <div><div class="details-fact-label">Quality</div><div class="details-fact-value quality">${safeText(quality)}</div></div>
+          ${quality?`<div><div class="details-fact-label">Quality</div><div class="details-fact-value quality">${safeText(quality)}</div></div>`:""}
         </div>
         <div class="details-actions">
           ${trailer?`<button class="details-btn" type="button" id="detailsTrailer">▶ Watch Trailer</button>`:''}
@@ -515,6 +517,7 @@ function renderDetailsPage(id, seasonParam, episodeParam){
         <iframe id="adminVideoFrame" src="" title="${safeText(title)} video player" allow="autoplay; fullscreen; picture-in-picture; encrypted-media" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
         <div class="watch-placeholder" id="watchPlaceholder">Admin Panel থেকে Video Player Website / Embed URL এবং episode link যোগ করলে এখানে চালু হবে।</div>
       </div>
+      <div class="episode-completion-notice" id="episodeCompletionNotice" style="display:none" role="note"><span class="episode-completion-icon">ℹ️</span><div><strong class="episode-completion-title">Content Update Notice</strong><div class="episode-completion-message" id="episodeCompletionMessage"></div></div></div>
       <div class="episode-head"><h3 class="episode-heading">Episodes</h3><select class="season-select" id="watchSeasonSelect" aria-label="Select season"><option value="0">Season 1</option></select></div>
       <div class="episode-grid" id="watchEpisodeGrid"><div class="episode-empty">Admin থেকে Season ও Episode data লোড হচ্ছে…</div></div>
       <div class="watch-controls">
@@ -594,6 +597,11 @@ function setupAdminWatchPlayer(item,itemId,title,quality,language){
   let seasons=[], allEpisodes=[], selectedSeason=0, selectedEpisode=0;
   const directUrl=watchUrlOf(firstValue(item,['playerUrl','videoPlayerUrl','videoPlayerWebsiteUrl','videoPlayerWebsite','playerWebsite','videoWebsiteUrl','videoWebsite','webviewUrl','videoPlayerEmbedUrl','videoEmbedUrl','embedUrl','videoUrl','videoURL','watchUrl','streamUrl','linkVideo','websiteUrl'],''));
   const currentContentId=String(item?.id ?? item?.key ?? item?.contentId ?? itemId ?? '').trim();
+  const completionNotice=document.getElementById('episodeCompletionNotice');
+  const completionMessage=document.getElementById('episodeCompletionMessage');
+  const completionText=String(firstValue(item,['episodeNoticeText','seasonEpisodeNotice','completionNoticeText'],'এই কনটেন্টের নতুন Season বা Episode আর যোগ করা হবে না।')||'').trim();
+  if(completionNotice && item?.episodeNoticeEnabled===true && completionText){ completionMessage.textContent=completionText; completionNotice.style.display='flex'; }
+  else if(completionNotice){ completionNotice.style.display='none'; }
   const visible=(x)=>x && x.enabled!==false && x.active!==false && x.published!==false;
   const dlEscUser=(v)=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   const sortDownloadRows=(rows)=>rows.sort((a,b)=>(Number(a.order??a.sortOrder??0)-Number(b.order??b.sortOrder??0)) || (Number(a.number??a.episodeNumber??0)-Number(b.number??b.episodeNumber??0)));
@@ -684,8 +692,8 @@ function setupAdminWatchPlayer(item,itemId,title,quality,language){
     selectedEpisode=Math.min(selectedEpisode,eps.length-1);
     grid.innerHTML=eps.map((ep,i)=>{
       const n=ep.episodeNumber ?? ep.number ?? (i+1);
-      const label=ep.title || ep.name || ('EP '+n);
-      return `<button type="button" class="episode-card ${i===selectedEpisode?'active':''}" data-watch-ep="${i}">${safeText(label)}</button>`;
+      const label=ep.title || ep.name || ('Episode '+n);
+      return `<button type="button" class="episode-card ${i===selectedEpisode?'active':''}" data-watch-ep="${i}"><span class="episode-card-number">Episode ${safeText(n)}</span><span class="episode-card-title">${safeText(label)}</span></button>`;
     }).join('');
     grid.querySelectorAll('[data-watch-ep]').forEach(btn=>btn.addEventListener('click',()=>{selectedEpisode=Number(btn.dataset.watchEp);playSelectedEpisode(true)}));
     playSelectedEpisode(false);
@@ -723,32 +731,46 @@ function setupAdminWatchPlayer(item,itemId,title,quality,language){
 /* ============================================================
    TYPE LIST PAGE
    ============================================================ */
+const typeFilterState = {};
 function renderTypeListPage(typeName, page=0){
   const cfg = allHomeTypeConfig().find(x => typeKey(x.name)===typeKey(typeName));
   if (!cfg){ document.getElementById('pageContent').innerHTML='<section class="type-list-page"><p class="type-list-empty">Type not found.</p><button class="type-list-back" id="typeBack2">← Home</button></section>'; document.getElementById('typeBack2')?.addEventListener('click',e=>{e.preventDefault();navigateTo('/home')}); return; }
-  const matched = (latestContentItems||[]).filter(item => cfg.name==='Trending'
+  const state = typeFilterState[typeKey(cfg.name)] || (typeFilterState[typeKey(cfg.name)]={genre:'',year:'',audio:'',quality:'',sort:'newest'});
+  let matched = (latestContentItems||[]).filter(item => cfg.name==='Trending'
     ? (itemMatchesType(item,cfg)||item.trending===true||item.isTrending===true||String(item.trending).toLowerCase()==='true')
     : itemMatchesType(item,cfg));
-  const pageSize = window.matchMedia('(max-width: 640px)').matches ? 9 : 32;
+  const str = (item, keys) => { const v=firstValue(item,keys,''); return (Array.isArray(v)?v.join(', '):String(v??'')).trim(); };
+  const genreOf = x=>str(x,['genre','genres','tags']);
+  const yearOf = x=>str(x,['year','releaseYear','releasedYear','release_date','released']);
+  const audioOf = x=>str(x,['language','lang','audioLanguage','dubLanguage','audio']);
+  const qualityOf = x=>str(x,['quality','resolution','videoQuality','qualityLabel','videoResolution']);
+  const includes = (val, needle) => !needle || val.toLowerCase().includes(needle.toLowerCase());
+  matched=matched.filter(x=>includes(genreOf(x),state.genre)&&includes(yearOf(x),state.year)&&includes(audioOf(x),state.audio)&&includes(qualityOf(x),state.quality));
+  const dateValue=x=>{const v=yearOf(x);const n=parseInt(v,10);return Number.isFinite(n)?n:0;};
+  if(state.sort==='oldest') matched.sort((a,b)=>dateValue(a)-dateValue(b));
+  else if(state.sort==='title') matched.sort((a,b)=>String(firstValue(a,['title','name'],'')).localeCompare(String(firstValue(b,['title','name'],''))));
+  else if(state.sort==='rating') matched.sort((a,b)=>Number(firstValue(b,['rating','imdbRating','score'],0))-Number(firstValue(a,['rating','imdbRating','score'],0)));
+  else matched.sort((a,b)=>dateValue(b)-dateValue(a));
+  const pageSize = window.matchMedia('(max-width: 640px)').matches ? 12 : 40;
   const totalPages = Math.max(1, Math.ceil(matched.length/pageSize));
   page = Math.max(0, Math.min(Number(page)||0, totalPages-1));
   const pageItems = matched.slice(page*pageSize, (page+1)*pageSize);
+  const uniqueVals=(fn)=>[...new Set((latestContentItems||[]).filter(x=>cfg.name==='Trending'?(itemMatchesType(x,cfg)||x.trending===true||x.isTrending===true):itemMatchesType(x,cfg)).flatMap(x=>fn(x).split(/[,|]/).map(v=>v.trim()).filter(Boolean)))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
+  const opts=(values,selected,label)=>`<option value="">${label}</option>`+values.map(v=>`<option value="${safeText(v)}" ${v===selected?'selected':''}>${safeText(v)}</option>`).join('');
   const content = document.getElementById('pageContent');
-  content.innerHTML = `<section class="type-list-page"><div class="type-list-head"><button class="type-list-back" id="typeBack">← Back</button><h1 class="type-list-title">${safeText(cfg.name)}</h1></div><div class="type-list-toolbar"><button class="type-filter">☷ All Genres</button><button class="type-filter">▣ All Years</button><button class="type-filter">◎ All Audio</button><button class="type-filter">▣ All Quality</button><button class="type-filter">☷ Newest</button></div><div class="type-list-grid" id="typeListGrid"></div>${matched.length ? `<div class="type-pagination">${Array.from({length:totalPages},(_,i)=>`<button class="type-page-btn ${i===page?'active':''}" data-page-number="${i}">${i+1}</button>`).join('')}</div>` : '<div class="type-list-empty">No content in this Type yet.</div>'}</section>`;
+  content.innerHTML = `<section class="type-list-page"><div class="type-list-head"><button class="type-list-back" id="typeBack">← Back</button><h1 class="type-list-title">${safeText(cfg.name)}</h1></div><div class="type-list-toolbar"><select class="type-filter-select" data-filter-key="genre">${opts(uniqueVals(genreOf),state.genre,'☷ All Genres')}</select><select class="type-filter-select" data-filter-key="year">${opts(uniqueVals(yearOf),state.year,'▣ All Years')}</select><select class="type-filter-select" data-filter-key="audio">${opts(uniqueVals(audioOf),state.audio,'◎ All Audio')}</select><select class="type-filter-select" data-filter-key="quality">${opts(uniqueVals(qualityOf),state.quality,'▣ All Quality')}</select><select class="type-filter-select" data-filter-key="sort"><option value="newest" ${state.sort==='newest'?'selected':''}>☷ Newest</option><option value="oldest" ${state.sort==='oldest'?'selected':''}>Oldest</option><option value="rating" ${state.sort==='rating'?'selected':''}>★ Top Rated</option><option value="title" ${state.sort==='title'?'selected':''}>A–Z Title</option></select><button class="type-filter-reset" id="typeFilterReset">Reset</button></div><div class="type-filter-count">${matched.length} titles</div><div class="type-list-grid" id="typeListGrid"></div>${matched.length ? `<div class="type-pagination">${Array.from({length:totalPages},(_,i)=>`<button class="type-page-btn ${i===page?'active':''}" data-page-number="${i}">${i+1}</button>`).join('')}</div>` : '<div class="type-list-empty">No content matches these filters.</div>'}</section>`;
   document.getElementById('typeBack').addEventListener('click', e => { e.preventDefault(); navigateTo('/home'); });
+  content.querySelectorAll('[data-filter-key]').forEach(el=>el.addEventListener('change',()=>{state[el.dataset.filterKey]=el.value;renderTypeListPage(cfg.name,0);}));
+  document.getElementById('typeFilterReset')?.addEventListener('click',()=>{Object.assign(state,{genre:'',year:'',audio:'',quality:'',sort:'newest'});renderTypeListPage(cfg.name,0);});
   const grid = document.getElementById('typeListGrid');
   allPageConfig = {...cfg, rail:'__typeListTempRail', empty:'', emptyElement:null, page:0, randomizedItems:pageItems};
-  const temp = document.createElement('div'); temp.className='home-type-section';
-  temp.innerHTML='<div class="home-type-rail" id="__typeListTempRail"></div>'; temp.hidden=true; document.body.appendChild(temp);
+  const temp = document.createElement('div'); temp.className='home-type-section'; temp.innerHTML='<div class="home-type-rail" id="__typeListTempRail"></div>'; temp.hidden=true; document.body.appendChild(temp);
   renderHomeTypeCards(latestContentItems);
   const rail = document.getElementById('__typeListTempRail');
   if (rail) grid.innerHTML = rail.innerHTML;
   temp.remove(); allPageConfig = null;
-  grid.querySelectorAll('a.home-type-card').forEach(a => a.addEventListener('click', e => {
-    const href = a.getAttribute('href');
-    if (href && href.startsWith('/')){ e.preventDefault(); navigateTo(href); }
-  }));
-  content.querySelectorAll('[data-page-number]').forEach(b => b.addEventListener('click', () => renderTypeListPage(cfg.name, Number(b.dataset.pageNumber))));
+  grid.querySelectorAll('a.home-type-card').forEach(a => a.addEventListener('click', e => { const href=a.getAttribute('href'); if(href&&href.startsWith('/')){e.preventDefault();navigateTo(href);} }));
+  content.querySelectorAll('[data-page-number]').forEach(b=>b.addEventListener('click',()=>renderTypeListPage(cfg.name,Number(b.dataset.pageNumber))));
 }
 
 /* ============================================================
@@ -798,16 +820,17 @@ function routePage(){
   const adminSlugs = (adminTypes||[]).map(t => slugify(t.name));
   const allSlugs = [...new Set([...builtinSlugs, ...adminSlugs])];
   let typeSlug = null;
-  if (path !== '/' && path !== '/home' && !path.startsWith('/details') && !path.startsWith('/home/detail') && path !== '/search' && path !== '/profile'){
+  if (path !== '/' && path !== '/home' && !path.startsWith('/details') && !path.startsWith('/home/detail') && path !== '/search' && path !== '/profile' && path !== '/member-login' && path !== '/leaderboard'){
     const seg = path.slice(1).split('/')[0];
     if (allSlugs.includes(seg)) typeSlug = seg;
   }
-  const leavingHome = detailInfo || path === '/search' || typeSlug || path === '/profile';
+  const leavingHome = detailInfo || path === '/search' || typeSlug || path === '/profile' || path === '/member-login' || path === '/leaderboard';
   if (leavingHome && content.querySelector('.hero-wrap')) cachedHomeMarkup = content.innerHTML;
 
   if (path === '/search'){ showHomeSections(false); setActiveNav(''); renderSearchPage(); return; }
   if (detailInfo){ showHomeSections(false); setActiveNav(''); renderDetailsPage(detailInfo.id, detailInfo.season, detailInfo.episode); return; }
-  if (path === '/profile'){ showHomeSections(false); setActiveNav('profile'); return; }
+  if (path === '/profile' || path === '/member-login'){ showHomeSections(false); setActiveNav('profile'); renderProfilePage(); return; }
+  if (path === '/leaderboard'){ showHomeSections(false); setActiveNav('profile'); renderLeaderboardPage(); return; }
   if (typeSlug){ showHomeSections(false); setActiveNav(''); renderTypeListPage(findTypeBySlug(typeSlug)); return; }
   if (path === '/home' || path === '/'){
     showHomeSections(true); setActiveNav('home');
@@ -855,7 +878,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('searchButton')?.addEventListener('click', () => { activeSearchQuery=''; activeSearchCategory='All'; navigateTo('/search'); });
   document.getElementById('menuButton')?.addEventListener('click', () => alert('Menu controls will be added later.'));
-  document.querySelectorAll('[data-go="profile"]').forEach(b => b.addEventListener('click', () => navigateTo('/profile')));
+  document.querySelectorAll('[data-go="profile"]').forEach(b => b.addEventListener('click', () => navigateTo(animeBoxAuth.currentUser ? '/profile' : '/member-login/')));
   window.addEventListener('resize', () => renderHomeTypeCards(latestContentItems));
 
   routePage();
@@ -876,6 +899,230 @@ const firebaseConfig = {
 if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
+// Separate Firebase project reserved only for User Authentication.
+const authFirebaseConfig = {
+  apiKey: "AIzaSyCt0Ex7G_xpcklm6NN0P4Bc49enwvWc5dE",
+  authDomain: "vpnyt-ffb68.firebaseapp.com",
+  databaseURL: "https://vpnyt-ffb68-default-rtdb.firebaseio.com",
+  projectId: "vpnyt-ffb68",
+  storageBucket: "vpnyt-ffb68.firebasestorage.app",
+  messagingSenderId: "919770851500",
+  appId: "1:919770851500:web:54b1c43a8f9f2440d59709"
+};
+const authFirebaseApp = firebase.apps.find(app => app.name === "AnimeBoxAuth")
+  || firebase.initializeApp(authFirebaseConfig, "AnimeBoxAuth");
+const animeBoxAuth = authFirebaseApp.auth();
+
+/* ---------- USER AUTHENTICATION (separate Firebase project) ---------- */
+let authViewMode = 'login';
+let authStatusMessage = '';
+let authStatusKind = 'info';
+function authErrorText(error){
+  const code = String(error && error.code || '');
+  const map = {
+    'auth/invalid-email':'ইমেইল ঠিকানাটি সঠিক নয়।',
+    'auth/user-disabled':'এই অ্যাকাউন্টটি বন্ধ করা হয়েছে।',
+    'auth/user-not-found':'এই ইমেইলে কোনো অ্যাকাউন্ট পাওয়া যায়নি।',
+    'auth/wrong-password':'পাসওয়ার্ড সঠিক নয়।',
+    'auth/invalid-credential':'ইমেইল অথবা পাসওয়ার্ড সঠিক নয়।',
+    'auth/email-already-in-use':'এই ইমেইল দিয়ে আগে থেকেই অ্যাকাউন্ট আছে।',
+    'auth/weak-password':'পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।',
+    'auth/too-many-requests':'অনেকবার চেষ্টা করা হয়েছে। কিছুক্ষণ পরে আবার চেষ্টা করো।',
+    'auth/network-request-failed':'ইন্টারনেট সংযোগ পরীক্ষা করে আবার চেষ্টা করো.',
+    'auth/operation-not-allowed':'Firebase Console-এ Email/Password sign-in চালু করতে হবে।',
+    'auth/requires-recent-login':'নিরাপত্তার জন্য আবার লগইন করে চেষ্টা করো।'
+  };
+  return map[code] || 'কাজটি সম্পন্ন হয়নি। Firebase Authentication সেটিংস এবং ইন্টারনেট সংযোগ পরীক্ষা করো।';
+}
+function setAuthMessage(message, kind='info'){
+  authStatusMessage = message;
+  authStatusKind = kind;
+  const el = document.getElementById('authStatusMessage');
+  if(el){ el.textContent = message; el.className = 'auth-status '+kind; el.hidden = !message; }
+}
+function animeBoxSocialIcon(type){
+  const key=String(type||'link').trim().toLowerCase().replace(/[\s_-]+/g,'');
+  const icons={
+    youtube:{color:'#ff4545',body:'<rect x="2.5" y="5" width="19" height="14" rx="4" fill="currentColor"/><path d="M10 8.4 16 12l-6 3.6z" fill="#fff"/>'},
+    facebook:{color:'#58a6ff',body:'<path d="M13.8 21v-8h2.7l.4-3.1h-3.1v-2c0-.9.3-1.5 1.6-1.5H17V3.6c-.7-.1-1.5-.2-2.5-.2-2.5 0-4.2 1.5-4.2 4.3v2.2H7.5V13h2.8v8z" fill="currentColor"/>'},
+    telegram:{color:'#4aa8ff',body:'<path d="m22 3-3.4 18c-.2 1- .8 1.2-1.6.7l-5-3.7-2.4 2.3c-.3.3-.5.5-1 .5l.4-5.1L18.3 7c.4-.4-.1-.6-.6-.3L6.2 13.9l-5-1.6c-1.1-.3-1.1-1.1.2-1.6L20.8 3.1C21.7 2.8 22.3 3.3 22 3Z" fill="currentColor"/>'},
+    instagram:{color:'#d98bff',body:'<rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="17.5" cy="6.8" r="1.2" fill="currentColor"/>'},
+    discord:{color:'#9c9cff',body:'<path d="M7 5.5a14 14 0 0 1 10 0l2 2.8a17 17 0 0 1 1.2 8.2 15 15 0 0 1-4.5 2.3l-1-1.6a10 10 0 0 0 1.6-.8c-2.8 1.3-5.8 1.3-8.6 0 .5.3 1 .6 1.6.8l-1 1.6a15 15 0 0 1-4.5-2.3A17 17 0 0 1 5 8.3z" fill="currentColor"/><circle cx="9" cy="12" r="1.4" fill="#10111a"/><circle cx="15" cy="12" r="1.4" fill="#10111a"/>'},
+    whatsapp:{color:'#50d890',body:'<path d="M12 3a8.5 8.5 0 0 0-7.3 12.8L4 20l4.3-1.1A8.5 8.5 0 1 0 12 3Z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 8.1c-.4-.8-1.1-.5-1.3.1-.6 1.7 2.1 5.5 4.8 6.5.8.3 1.6-.5 1.7-1.2l-1.8-1-1 1c-1.1-.5-2-1.4-2.5-2.4l.8-.9z" fill="currentColor"/>'},
+    tiktok:{color:'#75e8e2',body:'<path d="M14 3h3c.2 2 1.3 3.4 3 4v3.1a9 9 0 0 1-3-1v5.6a6 6 0 1 1-6-6h.8v3.1H11a2.9 2.9 0 1 0 2.9 2.9z" fill="currentColor"/>'},
+    link:{color:'#59c7f5',body:'<path d="M9.5 14.5 14.5 9.5M8 16H6a4 4 0 0 1 0-8h4M16 8h2a4 4 0 0 1 0 8h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>'}
+  };
+  const aliases={yt:'youtube',fb:'facebook',ig:'instagram',tg:'telegram',x:'link',twitter:'link',website:'link',web:'link',other:'link',generic:'link'};
+  const item=icons[aliases[key]||key]||icons.link;
+  return `<svg class="ab-social-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false" style="color:${item.color}">${item.body}</svg>`;
+}
+function loadAdminProfileButtons(){
+  const root=document.getElementById('abAdminProfileButtons'); if(!root) return;
+  db.ref('settings/profileButtons').on('value',snap=>{
+    const val=snap.val()||{}; const items=Array.isArray(val)?val:Object.values(val);
+    const valid=items.filter(x=>x&&x.enabled!==false&&String(x.name||'').trim()&&/^https?:\/\//i.test(String(x.url||'')));
+    root.innerHTML=valid.length?`<div class="ab-profile-social-heading">MORE INFO AND SUPPORT</div>`+valid.map(x=>{
+      const iconType=x.iconType||x.icon_type||x.iconKey||x.icon||'link';
+      return `<a class="ab-profile-link ab-admin-link" href="${safeText(x.url)}" target="_blank" rel="noopener noreferrer"><span class="ab-link-icon">${animeBoxSocialIcon(iconType)}</span><span><b>${safeText(x.name)}</b></span><i aria-hidden="true">›</i></a>`;
+    }).join(''):'';
+  },()=>{root.innerHTML='';});
+}
+function renderLeaderboardPage(){
+  const content=document.getElementById('pageContent'); if(!content) return;
+  content.innerHTML=`<section class="ab-leaderboard-page"><header class="ab-lb-header"><button id="abLbBack" class="ab-lb-back">‹</button><b>🏆 Leaderboard</b><span class="ab-lb-balance">◷ <span id="abMyCoins">0</span></span></header><div class="ab-lb-content"><h1>Top Coin Earners</h1><p>Watch ads, share &amp; refer friends to climb the ranks</p><small class="ab-lb-eyebrow">☆ TOP RIGHT NOW</small><div id="abLbTop" class="ab-lb-podium"><div class="ab-lb-loading">Loading live users…</div></div><h4>ALL RANKINGS</h4><div id="abLbList" class="ab-lb-list"></div><button id="abLbHome" class="auth-secondary-btn">Home-এ ফিরে যাও</button></div></section>`;
+  document.getElementById('abLbBack')?.addEventListener('click',()=>navigateTo('/profile')); document.getElementById('abLbHome')?.addEventListener('click',()=>navigateTo('/home'));
+  const user=animeBoxAuth.currentUser;
+  // Merge live user profiles with Admin-controlled coin totals. New sign-ins appear automatically.
+  let profiles={}, coinRows={};
+  const render=()=>{
+    const all={};
+    const isRealName = value => { const n=String(value||'').trim(); return !!n && !/^animebox\s*user$/i.test(n) && !/^user$/i.test(n) && !/^unknown$/i.test(n); };
+    Object.entries(profiles).forEach(([uid,p])=>{const c=coinRows[uid]||coinRows['manual_'+uid]||{};const name=isRealName(p?.name)?p.name:(isRealName(c?.name)?c.name:'');if(!name)return;all[uid]={uid,name,photo:p.photo||p.photoURL||p.avatar||c.photo||c.photoURL||c.avatar||'',coins:Number(c.coins ?? p.coins)||0,online:!!p.online};});
+    Object.entries(coinRows).forEach(([key,c])=>{const uid=c.uid||key;const name=isRealName(c?.name)?c.name:'';if(!name)return;if(!all[uid])all[uid]={uid,name,photo:c.photo||c.photoURL||c.avatar||'',coins:Number(c.coins)||0,online:false};});
+    if(user&&!all[user.uid]){const name=String(user.displayName||user.email?.split('@')[0]||'').trim();if(name)all[user.uid]={uid:user.uid,name,photo:user.photoURL||'',coins:0,online:true};}
+    const rows=Object.values(all).sort((a,b)=>b.coins-a.coins||a.name.localeCompare(b.name));
+    if(user){const me=rows.find(x=>x.uid===user.uid);const bal=document.getElementById('abMyCoins');if(bal)bal.textContent=me?.coins||0;}
+    const top=rows.slice(0,3),podium=document.getElementById('abLbTop'),list=document.getElementById('abLbList');if(!podium||!list)return;
+    podium.innerHTML=top.length?top.map((x,i)=>({x,rank:i+1})).sort((a,b)=>({2:0,1:1,3:2}[a.rank]-({2:0,1:1,3:2}[b.rank]))).map(({x,rank})=>`<div class="ab-lb-person rank-${rank}"><span class="ab-lb-rank">#${rank}</span>${x.photo?`<img src="${safeText(x.photo)}" alt="">`:`<div class="ab-lb-avatar">${safeText((x.name||'U').slice(0,2).toUpperCase())}</div>`}<b>${safeText(x.name)}</b><strong>◷ ${x.coins.toLocaleString()}</strong><small>COINS</small></div>`).join(''):'<div class="ab-lb-loading">No users yet. Create an account to appear here.</div>';
+    list.innerHTML=rows.slice(3).map((x,i)=>`<div class="ab-lb-row"><span>#${i+4}</span>${x.photo?`<img src="${safeText(x.photo)}" alt="">`:`<div class="ab-lb-avatar">${safeText((x.name||'U').slice(0,2).toUpperCase())}</div>`}<b>${safeText(x.name)}</b><strong>◷ ${x.coins.toLocaleString()}</strong></div>`).join('');
+  };
+  db.ref('users').on('value',snap=>{profiles=snap.val()||{};render();},()=>{const el=document.getElementById('abLbTop');if(el)el.innerHTML='<div class="ab-lb-loading">Live users could not load. Check Firebase Database rules.</div>';});
+  db.ref('leaderboard').on('value',snap=>{coinRows=snap.val()||{};render();});
+}
+function renderProfilePage(){
+  const content = document.getElementById('pageContent');
+  if(!content) return;
+  showHomeSections(false);
+  const user = animeBoxAuth.currentUser;
+  if(user){
+    const display = user.displayName || (user.email ? user.email.split('@')[0] : 'AnimeBox User');
+    const initial = display.trim().charAt(0).toUpperCase() || 'U';
+    let savedPhoto = user.photoURL || '';
+    try { savedPhoto = localStorage.getItem('ab_profile_photo_' + (user.uid || 'user')) || savedPhoto; } catch(e) {}
+    // Firebase profile data is shared with the leaderboard; prefer the saved database photo.
+    try { db.ref('users/' + user.uid + '/photo').once('value').then(snap => { const remotePhoto=snap.val(); if(remotePhoto){ try{localStorage.setItem('ab_profile_photo_'+user.uid,remotePhoto);}catch(_){} const el=document.getElementById('abPhotoAvatar'); if(el && animeBoxAuth.currentUser && animeBoxAuth.currentUser.uid===user.uid) el.innerHTML=`<img src="${safeText(remotePhoto)}" alt="Profile photo">`; } }).catch(err=>console.warn('Profile photo load failed:',err.message)); } catch(_) {}
+    content.innerHTML = `
+      <section class="auth-page"><div class="auth-card auth-profile-card ab-profile-layout">
+        <div class="ab-profile-top"><span class="ab-active-dot">● Account Active</span><div class="ab-profile-tools"><button type="button" aria-label="Notifications">♧</button><button type="button" aria-label="Settings">⚙</button></div></div>
+        <div class="ab-profile-hero"><div class="ab-photo-wrap"><div class="auth-avatar ab-photo-avatar" id="abPhotoAvatar">${savedPhoto ? `<img src="${savedPhoto}" alt="Profile photo">` : safeText(initial)}</div><button class="ab-photo-edit" type="button" id="abPhotoEdit" aria-label="Change profile photo">📷</button><input type="file" id="abPhotoInput" accept="image/*" hidden></div>
+        <div class="ab-profile-name-row"><h1 class="ab-profile-name" id="abProfileName">${safeText(display)}</h1><button class="ab-name-edit" id="abNameEdit" type="button" aria-label="Edit profile name" title="Edit profile name">✎</button></div><p class="auth-subtitle">${safeText(user.email || '')}</p><button class="ab-logout-btn" id="authLogoutBtn" type="button">⏻ &nbsp; Logout</button></div>
+        <button class="ab-profile-link ab-gold" id="abLeaderboardBtn" type="button"><span class="ab-link-icon">🏆</span><span><b>Leaderboard</b><small>See who's earning the most coins</small></span><i>›</i></button>
+        <button class="ab-profile-link ab-purple" type="button"><span class="ab-link-icon">▦</span><span><b>Content Request</b><small>Request movies, anime or shows not on the site</small></span><i>›</i></button>
+        <button class="ab-profile-link ab-coin" type="button"><span class="ab-link-icon">🪙</span><span><b>Your Coin Balance</b><small>Rewards will be available later</small></span><strong>0</strong><i>›</i></button>
+        <button class="ab-profile-link ab-support" type="button"><span class="ab-link-icon">➤</span><span><b>Team Support</b><small>Having issues? Contact us here</small></span><i>›</i></button>
+        <div class="ab-profile-info"><h3>♙ &nbsp; MY ACCOUNT CREDENTIALS</h3><div><span>Profile Name</span><b>${safeText(display)}</b></div><div><span>Registered Email</span><b>${safeText(user.email || '—')}</b></div><div><span>Account Password</span><b>••••••••</b></div><div><span>Member Since</span><b>${user.metadata && user.metadata.creationTime ? new Date(user.metadata.creationTime).toLocaleDateString() : '—'}</b></div></div>
+        <div class="ab-profile-info"><h3>♢ &nbsp; SECURITY INFORMATION</h3><div><span>Account Status</span><b class="ab-blue-text">${user.emailVerified ? 'Verified' : 'Active'}</b></div><div><span>Platform</span><b>AnimeBox</b></div></div>
+        <div id="authStatusMessage" class="auth-status ${authStatusKind}" ${authStatusMessage?'':'hidden'}>${safeText(authStatusMessage)}</div><button class="auth-secondary-btn" id="authHomeBtn" type="button">Home-এ ফিরে যাও</button><div id="abAdminProfileButtons"></div><p class="auth-terms">AB • AnimeBox Account</p>
+      </div></section>`;
+    document.getElementById('abLeaderboardBtn')?.addEventListener('click',()=>navigateTo('/leaderboard'));
+    loadAdminProfileButtons();
+    document.getElementById('abPhotoEdit')?.addEventListener('click',()=>document.getElementById('abPhotoInput')?.click());
+    document.getElementById('abNameEdit')?.addEventListener('click',async()=>{
+      const currentName=user.displayName || (user.email ? user.email.split('@')[0] : 'AnimeBox User');
+      const nextName=window.prompt('নতুন Profile Name লিখো:',currentName);
+      if(nextName===null) return;
+      const cleanName=nextName.trim();
+      if(!cleanName){setAuthMessage('Profile Name খালি রাখা যাবে না।','error');return;}
+      if(cleanName.length>60){setAuthMessage('নাম ৬০ অক্ষরের মধ্যে রাখো।','error');return;}
+      try{await user.updateProfile({displayName:cleanName});setAuthMessage('Profile Name আপডেট হয়েছে।','success');renderProfilePage();}
+      catch(err){setAuthMessage(authErrorText(err),'error');}
+    });
+    document.getElementById('abPhotoInput')?.addEventListener('change', async e=>{
+      const file=e.target.files && e.target.files[0]; if(!file) return;
+      if(!file.type.startsWith('image/')){setAuthMessage('একটি image file নির্বাচন করো।','error');return;}
+      if(file.size>5*1024*1024){setAuthMessage('ছবির সাইজ 5 MB-এর কম রাখো।','error');return;}
+      try{
+        // Resize before saving so the Realtime Database record stays small.
+        const data=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onerror=()=>reject(new Error('ছবি পড়া যায়নি।'));reader.onload=()=>{const img=new Image();img.onerror=()=>reject(new Error('ছবিটি খোলা যায়নি।'));img.onload=()=>{const max=512,scale=Math.min(1,max/Math.max(img.width,img.height));const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(img.width*scale));canvas.height=Math.max(1,Math.round(img.height*scale));const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0,canvas.width,canvas.height);resolve(canvas.toDataURL('image/jpeg',0.78));};img.src=String(reader.result||'');};reader.readAsDataURL(file);});
+        setAuthMessage('প্রোফাইল ছবি সেভ হচ্ছে…','info');
+        await db.ref('users/'+user.uid).update({photo:data,photoUpdatedAt:firebase.database.ServerValue.TIMESTAMP});
+        try{localStorage.setItem('ab_profile_photo_'+user.uid,data);}catch(_){/* Firebase remains the shared source */}
+        const avatar=document.getElementById('abPhotoAvatar');if(avatar)avatar.innerHTML=`<img src="${data}" alt="Profile photo">`;
+        setAuthMessage('প্রোফাইল ছবি সেভ হয়েছে। Leaderboard-এও দেখা যাবে।','success');
+      }catch(err){console.error('Profile photo save failed:',err);setAuthMessage('ছবি সেভ হয়নি। Firebase Database rules/connection পরীক্ষা করো।','error');}
+    });
+    document.getElementById('authLogoutBtn')?.addEventListener('click', async()=>{
+      try { await animeBoxAuth.signOut(); authStatusMessage=''; navigateTo('/profile'); }
+      catch(err){ setAuthMessage(authErrorText(err),'error'); }
+    });
+    document.getElementById('authHomeBtn')?.addEventListener('click',()=>navigateTo('/home'));
+    return;
+  }
+  const signup = authViewMode === 'signup';
+  content.innerHTML = `
+    <section class="auth-page"><div class="auth-card">
+      <div class="auth-brand-mark auth-brand-left">AB <span>SECURITY TERMINAL</span></div>
+      <h1 class="auth-title">${signup?'Sign Up':'Sign In'}</h1>
+      <p class="auth-subtitle">${signup?'Create your AB profile':'Access your AB account'}</p>
+      <div class="auth-mode-tabs"><button type="button" id="authLoginTab" class="${signup?'':'active'}">Login</button><button type="button" id="authSignupTab" class="${signup?'active':''}">Sign Up</button></div>
+      <form id="authForm" class="auth-form" novalidate>
+        ${signup?'<input id="authName" name="name" type="text" autocomplete="name" placeholder="Full Name" maxlength="60" required>':''}
+        <input id="authEmail" name="email" type="email" autocomplete="email" placeholder="Gmail Address" required>
+        <input id="authPassword" name="password" type="password" autocomplete="${signup?'new-password':'current-password'}" placeholder="Password" minlength="6" required>
+        ${signup?'<input id="authConfirmPassword" name="confirmPassword" type="password" autocomplete="new-password" placeholder="Confirm Password" minlength="6" required>':''}
+        ${signup?'':'<button type="button" id="authForgotBtn" class="auth-forgot-btn">পাসওয়ার্ড ভুলে গেছ?</button>'}
+        <div id="authStatusMessage" class="auth-status ${authStatusKind}" ${authStatusMessage?'':'hidden'}>${safeText(authStatusMessage)}</div>
+        <button class="auth-primary-btn" id="authSubmitBtn" type="submit">${signup?'REGISTER PROFILE':'SIGN IN'}</button>
+      </form>
+      <p class="auth-terms">AB • AnimeBox Account</p><p class="auth-switch-line">${signup?'Registered user?':'New to AB?'} <button type="button" id="authSwitchLink">${signup?'Sign In Here':'Create an Account'}</button></p>
+    </div></section>`;
+  document.getElementById('authLoginTab')?.addEventListener('click',()=>{authViewMode='login';authStatusMessage='';renderProfilePage();});
+  document.getElementById('authSignupTab')?.addEventListener('click',()=>{authViewMode='signup';authStatusMessage='';renderProfilePage();});
+  document.getElementById('authSwitchLink')?.addEventListener('click',()=>{authViewMode=signup?'login':'signup';authStatusMessage='';renderProfilePage();});
+  document.getElementById('authForgotBtn')?.addEventListener('click',async()=>{
+    const email=document.getElementById('authEmail')?.value.trim();
+    if(!email){setAuthMessage('আগে ইমেইল লিখো, তারপর পাসওয়ার্ড রিসেট করো।','error');return;}
+    try{await animeBoxAuth.sendPasswordResetEmail(email);setAuthMessage('পাসওয়ার্ড রিসেট করার লিংক ইমেইলে পাঠানো হয়েছে।','success');}
+    catch(err){setAuthMessage(authErrorText(err),'error');}
+  });
+  document.getElementById('authForm')?.addEventListener('submit',async e=>{
+    e.preventDefault();
+    const email=document.getElementById('authEmail')?.value.trim();
+    const password=document.getElementById('authPassword')?.value || '';
+    const name=document.getElementById('authName')?.value.trim() || '';
+    const confirm=document.getElementById('authConfirmPassword')?.value || '';
+    const submit=document.getElementById('authSubmitBtn');
+    if(!email||!password){setAuthMessage('ইমেইল ও পাসওয়ার্ড পূরণ করো।','error');return;}
+    if(signup && password!==confirm){setAuthMessage('দুইটি পাসওয়ার্ড এক নয়।','error');return;}
+    if(signup && password.length<6){setAuthMessage('পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।','error');return;}
+    if(submit){submit.disabled=true;submit.textContent='অপেক্ষা করো…';}
+    try{
+      if(signup){
+        const credential=await animeBoxAuth.createUserWithEmailAndPassword(email,password);
+        if(name) await credential.user.updateProfile({displayName:name});
+        authStatusMessage='অ্যাকাউন্ট তৈরি হয়েছে।';authStatusKind='success';
+      }else{
+        await animeBoxAuth.signInWithEmailAndPassword(email,password);
+        authStatusMessage='লগইন সফল হয়েছে।';authStatusKind='success';
+      }
+      renderProfilePage();
+    }catch(err){
+      setAuthMessage(authErrorText(err),'error');
+      if(submit){submit.disabled=false;submit.textContent=signup?'Create Account':'Login';}
+    }
+  });
+}
+function syncLiveUserProfile(user){
+  if(!user)return;
+  const ref=db.ref('users/'+user.uid);
+  // Do not overwrite a custom profile photo with an empty Firebase Auth photoURL.
+  ref.once('value').then(snap=>{
+    const existing=snap.val()||{};
+    const profile={uid:user.uid,name:user.displayName||(user.email?user.email.split('@')[0]:'AnimeBox User'),email:user.email||'',photo:user.photoURL||existing.photo||existing.photoURL||existing.avatar||'',online:true,lastSeen:firebase.database.ServerValue.TIMESTAMP,createdAt:(existing.createdAt||(user.metadata&&user.metadata.creationTime)||'')};
+    return ref.update(profile);
+  }).then(()=>{ref.child('online').onDisconnect().set(false);}).catch(err=>console.warn('Live user profile sync failed:',err.message));
+}
+animeBoxAuth.onAuthStateChanged(user=>{
+  if(user)syncLiveUserProfile(user);
+  const path=currentPath();
+  if(path==='/profile'||path==='/member-login') renderProfilePage();
+  document.querySelectorAll('[data-go="profile"]').forEach(btn=>{
+    btn.setAttribute('aria-label',user?(user.displayName||user.email||'Profile'):'Profile');
+    btn.classList.toggle('auth-signed-in',!!user);
+  });
+});
+
+
 function applyContentSnapshot(content){
   heroContentMap = {};
   content.forEach(item => {
@@ -891,14 +1138,26 @@ function applyContentSnapshot(content){
   }
 }
 
-db.ref('content').once('value')
-  .then(snap => { applyContentSnapshot(normalizeSlideList(snap.val())); contentFirstPaintDone = true; if (window.__hideSplashNow) window.__hideSplashNow(); routePage(); })
-  .catch(err => { console.warn('Content first read failed:', err); contentFirstPaintDone = true; if (window.__hideSplashNow) window.__hideSplashNow(); routePage(); });
+// Live Admin-controlled Home Notice Line (Firebase: settings/homeNotice)
+function renderHomeNotice(cfg){
+  const box=document.getElementById('homeNotice'); const text=document.getElementById('homeNoticeText');
+  if(!box||!text)return; cfg=cfg&&typeof cfg==='object'?cfg:{};
+  const message=String(cfg.text||'').trim();
+  if(cfg.enabled!==true||!message){box.hidden=true;return;}
+  box.hidden=false; text.textContent=message;
+  box.classList.toggle('is-scrolling',cfg.scrolling===true);
+  box.style.setProperty('--notice-bg',/^#[0-9a-f]{3,8}$/i.test(cfg.background||'')?cfg.background:'#15151c');
+  box.style.setProperty('--notice-color',/^#[0-9a-f]{3,8}$/i.test(cfg.color||'')?cfg.color:'#ffffff');
+  box.style.setProperty('--notice-border',/^#[0-9a-f]{3,8}$/i.test(cfg.border||'')?cfg.border:'#e11d48');
+  box.style.setProperty('--notice-duration',Math.max(8,Math.min(60,Number(cfg.duration)||18))+'s');
+}
+db.ref('settings/homeNotice').on('value',snap=>renderHomeNotice(snap.val()),err=>console.warn('Home notice load failed:',err));
 
+// One live Firebase listener handles both first paint and future updates (avoids duplicate full reads).
 db.ref('content').on('value', snap => {
   applyContentSnapshot(normalizeSlideList(snap.val()));
-  if (!contentFirstPaintDone){ contentFirstPaintDone = true; if (window.__hideSplashNow) window.__hideSplashNow(); }
-});
+  if (!contentFirstPaintDone){ contentFirstPaintDone = true; if (window.__hideSplashNow) window.__hideSplashNow(); routePage(); }
+}, err => { console.warn('Content load failed:', err); if (!contentFirstPaintDone){contentFirstPaintDone=true;if(window.__hideSplashNow)window.__hideSplashNow();routePage();} });
 
 db.ref('types').on('value', snap => {
   const raw = snap.val();
