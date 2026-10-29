@@ -472,6 +472,14 @@ function renderDetailsPage(id, seasonParam, episodeParam){
   const trailer=detailText(detailValue(item,['trailerUrl','trailer','youtubeTrailer'],''));
   const myListKey='animebox_my_list'; let saved=[]; try{saved=JSON.parse(localStorage.getItem(myListKey)||'[]')}catch(_){}
   const itemId=String(item.id ?? item.key ?? item.contentId ?? id); const inList=saved.includes(itemId);
+  // Keep a per-account watch history on this browser, newest first.
+  try {
+    const historyKey='animebox_watch_history_'+(animeBoxAuth.currentUser?.uid || 'guest');
+    let watchHistory=JSON.parse(localStorage.getItem(historyKey)||'[]');
+    watchHistory=watchHistory.filter(x=>String(x.id)!==itemId);
+    watchHistory.unshift({id:itemId,title,poster,type,url:contentUrl(item),watchedAt:Date.now()});
+    localStorage.setItem(historyKey,JSON.stringify(watchHistory.slice(0,40)));
+  } catch(e) { console.warn('Watch history could not be saved:',e); }
   const castHtml=cast.length ? cast.map(person=>{const obj=typeof person==='object'&&person?person:{name:String(person)};const n=detailText(detailValue(obj,['name','actor','title','personName']),'Cast');const role=detailText(detailValue(obj,['role','character','as','voice'],'Cast'));const img=detailText(detailValue(obj,['image','photo','imageUrl','photoUrl','profile','avatar'],''));return `<div class="details-cast-card">${img?`<img src="${safeText(img)}" alt="${safeText(n)}" loading="lazy" onerror="this.outerHTML='<div class=\\'details-cast-placeholder\\'>${safeText(n.slice(0,1))}</div>'">`:`<div class="details-cast-placeholder">${safeText(n.slice(0,1))}</div>`}<div class="details-cast-name">${safeText(n)}</div><div class="details-cast-role">${safeText(role)}</div></div>`}).join('') : '<div class="details-cast-card"><div class="details-cast-placeholder">★</div><div class="details-cast-name">Cast not added</div><div class="details-cast-role">Admin content</div></div>';
   document.getElementById('pageContent').innerHTML=`<section class="details-page">
     <div class="details-topbar"><button class="details-back" type="button" id="detailsBack">← Back</button><span class="details-topbar-title">${safeText(title)}</span></div>
@@ -1025,15 +1033,43 @@ function renderProfilePage(){
         <div class="ab-profile-top"><span class="ab-active-dot">● Account Active</span><div class="ab-profile-tools"><button type="button" aria-label="Notifications">♧</button><button type="button" aria-label="Settings">⚙</button></div></div>
         <div class="ab-profile-hero"><div class="ab-photo-wrap"><div class="auth-avatar ab-photo-avatar" id="abPhotoAvatar">${savedPhoto ? `<img src="${savedPhoto}" alt="Profile photo">` : safeText(initial)}</div><button class="ab-photo-edit" type="button" id="abPhotoEdit" aria-label="Change profile photo">📷</button><input type="file" id="abPhotoInput" accept="image/*" hidden></div>
         <div class="ab-profile-name-row"><h1 class="ab-profile-name" id="abProfileName">${safeText(display)}</h1><button class="ab-name-edit" id="abNameEdit" type="button" aria-label="Edit profile name" title="Edit profile name">✎</button></div><p class="auth-subtitle">${safeText(user.email || '')}</p><button class="ab-logout-btn" id="authLogoutBtn" type="button">⏻ &nbsp; Logout</button></div>
+        <section class="ab-watch-history"><div class="ab-history-heading"><h2>🕘 Watch History</h2><button type="button" id="abClearHistory">Clear</button></div><div class="ab-history-grid" id="abWatchHistoryList"><p class="ab-history-empty">তোমার দেখা Movie ও Anime এখানে দেখা যাবে।</p></div></section>
         <button class="ab-profile-link ab-gold" id="abLeaderboardBtn" type="button"><span class="ab-link-icon">🏆</span><span><b>Leaderboard</b><small>See who's earning the most coins</small></span><i>›</i></button>
         <button class="ab-profile-link ab-purple" type="button"><span class="ab-link-icon">▦</span><span><b>Content Request</b><small>Request movies, anime or shows not on the site</small></span><i>›</i></button>
         <button class="ab-profile-link ab-coin" type="button"><span class="ab-link-icon">🪙</span><span><b>Your Coin Balance</b><small>Rewards will be available later</small></span><strong>0</strong><i>›</i></button>
         <button class="ab-profile-link ab-support" type="button"><span class="ab-link-icon">➤</span><span><b>Team Support</b><small>Having issues? Contact us here</small></span><i>›</i></button>
         <div class="ab-profile-info"><h3>♙ &nbsp; MY ACCOUNT CREDENTIALS</h3><div><span>Profile Name</span><b>${safeText(display)}</b></div><div><span>Registered Email</span><b>${safeText(user.email || '—')}</b></div><div><span>Account Password</span><b>••••••••</b></div><div><span>Member Since</span><b>${user.metadata && user.metadata.creationTime ? new Date(user.metadata.creationTime).toLocaleDateString() : '—'}</b></div></div>
-        <div class="ab-profile-info"><h3>♢ &nbsp; SECURITY INFORMATION</h3><div><span>Account Status</span><b class="ab-blue-text">${user.emailVerified ? 'Verified' : 'Active'}</b></div><div><span>Platform</span><b>AnimeBox</b></div></div>
+        <div class="ab-profile-info"><h3>♢ &nbsp; SECURITY INFORMATION</h3><div><span>Account Status</span><b class="ab-blue-text">${user.emailVerified ? 'Verified' : 'Active'}</b></div><div><span>Platform</span><b>AnimeBox</b></div><div class="ab-security-grid"><div class="ab-security-item"><span>Device</span><b id="abSecDevice">Detecting…</b></div><div class="ab-security-item"><span>OS</span><b id="abSecOS">Detecting…</b></div><div class="ab-security-item"><span>Browser</span><b id="abSecBrowser">Detecting…</b></div><div class="ab-security-item"><span>Virtual IP / Public IP</span><b id="abSecIP">Not checked</b></div><div class="ab-security-item"><span>Privacy Law</span><b>Privacy policy applies; GDPR depends on eligibility</b></div><div class="ab-security-item"><span>Encryption Standard</span><b id="abSecEncryption">Connection status checking…</b></div></div></div>
         <div id="authStatusMessage" class="auth-status ${authStatusKind}" ${authStatusMessage?'':'hidden'}>${safeText(authStatusMessage)}</div><button class="auth-secondary-btn" id="authHomeBtn" type="button">Home-এ ফিরে যাও</button><div id="abAdminProfileButtons"></div><p class="auth-terms">AB • AnimeBox Account</p>
       </div></section>`;
+    // Populate device/browser information from this browser; never claim encryption not verified.
+    try {
+      const ua=navigator.userAgent||'';
+      const device=/Mobi|Android|iPhone|iPad|iPod/i.test(ua)?'Mobile / Tablet':'Desktop';
+      let os='Unknown';
+      if(/Windows NT 10|Windows NT 11/i.test(ua)) os='Windows'; else if(/Android/i.test(ua)) os='Android'; else if(/iPhone|iPad|iPod/i.test(ua)) os='iOS / iPadOS'; else if(/Mac OS X/i.test(ua)) os='macOS'; else if(/Linux/i.test(ua)) os='Linux';
+      let browser='Unknown browser'; let version='';
+      const tests=[[/Edg\/([\d.]+)/,'Edge'],[/OPR\/([\d.]+)/,'Opera'],[/Chrome\/([\d.]+)/,'Chrome'],[/Firefox\/([\d.]+)/,'Firefox'],[/Version\/([\d.]+).*Safari/,'Safari']];
+      for(const [re,name] of tests){const m=ua.match(re);if(m){browser=name;version=m[1];break;}}
+      const set=(id,val)=>{const el=document.getElementById(id);if(el)el.textContent=val;};
+      set('abSecDevice',device);set('abSecOS',os);set('abSecBrowser',version?`${browser} ${version}`:browser);
+      set('abSecEncryption',location.protocol==='https:'?'HTTPS connection active (transport encryption; cipher not exposed here)':'HTTPS not detected');
+      // Public IP lookup is optional and uses a third-party service; display a fallback if blocked.
+      set('abSecIP','Checking public IP…');
+      if(location.protocol==='https:' && typeof fetch==='function'){
+        fetch('https://api.ipify.org?format=json',{cache:'no-store',mode:'cors'}).then(r=>{if(!r.ok)throw new Error('IP lookup failed');return r.json()}).then(d=>set('abSecIP',d&&d.ip?d.ip:'Unavailable')).catch(()=>set('abSecIP','Unavailable / blocked'));
+      } else set('abSecIP','Unavailable on this connection');
+    } catch(e) { console.warn('Security info unavailable:',e); }
     document.getElementById('abLeaderboardBtn')?.addEventListener('click',()=>navigateTo('/leaderboard'));
+    const historyKey='animebox_watch_history_'+(user.uid || 'guest');
+    const renderWatchHistory=()=>{
+      const holder=document.getElementById('abWatchHistoryList'); if(!holder)return;
+      let items=[]; try{items=JSON.parse(localStorage.getItem(historyKey)||'[]')}catch(_){}
+      holder.innerHTML=items.length?items.slice(0,12).map(x=>`<button type="button" class="ab-history-card" data-history-url="${safeText(x.url||('/details/'+encodeURIComponent(x.id)))}"><span class="ab-history-poster">${x.poster?`<img src="${safeText(x.poster)}" alt="" loading="lazy">`:'<span>▶</span>'}</span><span class="ab-history-title">${safeText(x.title||'Untitled')}</span><small>${safeText(x.type||'Anime')}</small></button>`).join(''):'<p class="ab-history-empty">এখনও কোনো Movie বা Anime দেখা হয়নি।</p>';
+      holder.querySelectorAll('[data-history-url]').forEach(btn=>btn.addEventListener('click',()=>navigateTo(btn.getAttribute('data-history-url'))));
+    };
+    renderWatchHistory();
+    document.getElementById('abClearHistory')?.addEventListener('click',()=>{try{localStorage.removeItem(historyKey)}catch(_){}renderWatchHistory();});
     loadAdminProfileButtons();
     document.getElementById('abPhotoEdit')?.addEventListener('click',()=>document.getElementById('abPhotoInput')?.click());
     document.getElementById('abNameEdit')?.addEventListener('click',async()=>{
