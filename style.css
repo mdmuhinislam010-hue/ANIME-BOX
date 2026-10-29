@@ -301,3 +301,10 @@ body.search-active #pageContent{margin:0;padding:0;background:#09090f}
 .ab-admin-link>i{font-style:normal;font-size:23px;line-height:1;color:#65758b;transition:transform .15s,color .15s}
 .ab-admin-link:hover>i{transform:translateX(2px);color:#25c8f4}
 @media(max-width:600px){.ab-admin-link{min-height:54px;gap:10px}.ab-admin-link .ab-link-icon{width:32px;height:32px;min-width:32px;flex-basis:32px}.ab-admin-link .ab-social-svg{width:17px;height:17px}}
+
+/* Admin-controlled social button colors published from settings/profileButtons */
+.ab-admin-link{border-color:color-mix(in srgb,var(--ab-social-color,#59c7f5) 42%,#24252e);background:color-mix(in srgb,var(--ab-social-color,#59c7f5) 8%,#111218)}
+.ab-admin-link:hover{border-color:var(--ab-social-color,#59c7f5);background:color-mix(in srgb,var(--ab-social-color,#59c7f5) 15%,#111218)}
+.ab-admin-link .ab-link-icon{border-color:color-mix(in srgb,var(--ab-social-color,#59c7f5) 48%,#202b3b);background:color-mix(in srgb,var(--ab-social-color,#59c7f5) 18%,#0b111c);color:var(--ab-social-color,#59c7f5)}
+.ab-admin-link>i{color:var(--ab-social-color,#59c7f5)}
+.ab-admin-link:hover>i{color:var(--ab-social-color,#59c7f5)}

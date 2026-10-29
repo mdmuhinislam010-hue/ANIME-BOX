@@ -60,7 +60,9 @@ const builtinTypeConfig = [
   };
   document.addEventListener('click', function(e){
     const a = e.target && e.target.closest ? e.target.closest('a[target="_blank"]') : null;
-    if (!a || a.hasAttribute('download') || a.closest('.user-download-hub')) return;
+    // Profile social links should use the browser's normal new-tab behavior,
+    // not the site's custom iframe popup.
+    if (!a || a.hasAttribute('download') || a.closest('.user-download-hub') || a.closest('.ab-admin-link, .ab-profile-social')) return;
     const href = a.href;
     if (!href || !/^https?:/i.test(href)) return;
     e.preventDefault();
@@ -940,22 +942,37 @@ function setAuthMessage(message, kind='info'){
   const el = document.getElementById('authStatusMessage');
   if(el){ el.textContent = message; el.className = 'auth-status '+kind; el.hidden = !message; }
 }
-function animeBoxSocialIcon(type){
+const ANIMEBOX_SOCIAL_BRAND_COLORS={
+  telegram:'#229ED9',youtube:'#FF0033',tiktok:'#25F4EE',instagram:'#D946A8',facebook:'#1877F2',
+  discord:'#5865F2',whatsapp:'#25D366',twitch:'#9146FF',x:'#FFFFFF',pinterest:'#E60023',linkedin:'#0A66C2',link:'#59C7F5'
+};
+function animeBoxSocialSafeColor(value,type='link'){
+  const candidate=String(value||'').trim();
+  return /^#[0-9a-f]{6}$/i.test(candidate)?candidate:(ANIMEBOX_SOCIAL_BRAND_COLORS[type]||ANIMEBOX_SOCIAL_BRAND_COLORS.link);
+}
+function animeBoxSocialIcon(type, customColor){
   const key=String(type||'link').trim().toLowerCase().replace(/[\s_-]+/g,'');
   const icons={
-    youtube:{color:'#ff4545',body:'<rect x="2.5" y="5" width="19" height="14" rx="4" fill="currentColor"/><path d="M10 8.4 16 12l-6 3.6z" fill="#fff"/>'},
-    facebook:{color:'#58a6ff',body:'<path d="M13.8 21v-8h2.7l.4-3.1h-3.1v-2c0-.9.3-1.5 1.6-1.5H17V3.6c-.7-.1-1.5-.2-2.5-.2-2.5 0-4.2 1.5-4.2 4.3v2.2H7.5V13h2.8v8z" fill="currentColor"/>'},
-    telegram:{color:'#4aa8ff',body:'<path d="m22 3-3.4 18c-.2 1- .8 1.2-1.6.7l-5-3.7-2.4 2.3c-.3.3-.5.5-1 .5l.4-5.1L18.3 7c.4-.4-.1-.6-.6-.3L6.2 13.9l-5-1.6c-1.1-.3-1.1-1.1.2-1.6L20.8 3.1C21.7 2.8 22.3 3.3 22 3Z" fill="currentColor"/>'},
-    instagram:{color:'#d98bff',body:'<rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="17.5" cy="6.8" r="1.2" fill="currentColor"/>'},
-    discord:{color:'#9c9cff',body:'<path d="M7 5.5a14 14 0 0 1 10 0l2 2.8a17 17 0 0 1 1.2 8.2 15 15 0 0 1-4.5 2.3l-1-1.6a10 10 0 0 0 1.6-.8c-2.8 1.3-5.8 1.3-8.6 0 .5.3 1 .6 1.6.8l-1 1.6a15 15 0 0 1-4.5-2.3A17 17 0 0 1 5 8.3z" fill="currentColor"/><circle cx="9" cy="12" r="1.4" fill="#10111a"/><circle cx="15" cy="12" r="1.4" fill="#10111a"/>'},
-    whatsapp:{color:'#50d890',body:'<path d="M12 3a8.5 8.5 0 0 0-7.3 12.8L4 20l4.3-1.1A8.5 8.5 0 1 0 12 3Z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 8.1c-.4-.8-1.1-.5-1.3.1-.6 1.7 2.1 5.5 4.8 6.5.8.3 1.6-.5 1.7-1.2l-1.8-1-1 1c-1.1-.5-2-1.4-2.5-2.4l.8-.9z" fill="currentColor"/>'},
-    tiktok:{color:'#75e8e2',body:'<path d="M14 3h3c.2 2 1.3 3.4 3 4v3.1a9 9 0 0 1-3-1v5.6a6 6 0 1 1-6-6h.8v3.1H11a2.9 2.9 0 1 0 2.9 2.9z" fill="currentColor"/>'},
-    link:{color:'#59c7f5',body:'<path d="M9.5 14.5 14.5 9.5M8 16H6a4 4 0 0 1 0-8h4M16 8h2a4 4 0 0 1 0 8h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>'}
+    youtube:{color:'#FF0033',body:'<rect x="2.5" y="5" width="19" height="14" rx="4" fill="currentColor"/><path d="M10 8.4 16 12l-6 3.6z" fill="#fff"/>'},
+    facebook:{color:'#1877F2',body:'<path d="M13.8 21v-8h2.7l.4-3.1h-3.1v-2c0-.9.3-1.5 1.6-1.5H17V3.6c-.7-.1-1.5-.2-2.5-.2-2.5 0-4.2 1.5-4.2 4.3v2.2H7.5V13h2.8v8z" fill="currentColor"/>'},
+    telegram:{color:'#229ED9',body:'<path d="m22 3-3.4 18c-.2 1-.8 1.2-1.6.7l-5-3.7-2.4 2.3c-.3.3-.5.5-1 .5l.4-5.1L18.3 7c.4-.4-.1-.6-.6-.3L6.2 13.9l-5-1.6c-1.1-.3-1.1-1.1.2-1.6L20.8 3.1C21.7 2.8 22.3 3.3 22 3Z" fill="currentColor"/>'},
+    instagram:{color:'#D946A8',body:'<rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="17.5" cy="6.8" r="1.2" fill="currentColor"/>'},
+    discord:{color:'#5865F2',body:'<path d="M7 5.5a14 14 0 0 1 10 0l2 2.8a17 17 0 0 1 1.2 8.2 15 15 0 0 1-4.5 2.3l-1-1.6a10 10 0 0 0 1.6-.8c-2.8 1.3-5.8 1.3-8.6 0 .5.3 1 .6 1.6.8l-1 1.6a15 15 0 0 1-4.5-2.3A17 17 0 0 1 5 8.3z" fill="currentColor"/><circle cx="9" cy="12" r="1.4" fill="#fff"/><circle cx="15" cy="12" r="1.4" fill="#fff"/>'},
+    whatsapp:{color:'#25D366',body:'<path d="M12 3a8.5 8.5 0 0 0-7.3 12.8L4 20l4.3-1.1A8.5 8.5 0 1 0 12 3Z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 8.1c-.4-.8-1.1-.5-1.3.1-.6 1.7 2.1 5.5 4.8 6.5.8.3 1.6-.5 1.7-1.2l-1.8-1-1 1c-1.1-.5-2-1.4-2.5-2.4l.8-.9z" fill="currentColor"/>'},
+    tiktok:{color:'#25F4EE',body:'<path d="M14 3h3c.2 2 1.3 3.4 3 4v3.1a9 9 0 0 1-3-1v5.6a6 6 0 1 1-6-6h.8v3.1H11a2.9 2.9 0 1 0 2.9 2.9z" fill="currentColor"/><path d="M13 4.3h2.2c.3 2 1.1 3.2 2.6 4" fill="none" stroke="#FE2C55" stroke-width="1.1"/>'},
+    twitch:{color:'#9146FF',body:'<path d="M4 3h17v12l-5 5h-4l-3 2v-2H4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M10 7v5M15 7v5" stroke="currentColor" stroke-width="2.2"/>'},
+    x:{color:'#FFFFFF',body:'<path d="M5 3h4.2l9.8 18h-4.2z" fill="currentColor"/><path d="M19.5 3 5 21M4 3l16 18" fill="none" stroke="currentColor" stroke-width="2.2"/>'},
+    pinterest:{color:'#E60023',body:'<path d="M12 2.5a9.5 9.5 0 0 0-3.5 18.3c0-.8 0-1.8.2-2.7l1.3-5.4s-.3-.6-.3-1.5c0-1.4.8-2.5 1.9-2.5.9 0 1.3.7 1.3 1.5 0 .9-.6 2.3-.9 3.6-.3 1.1.5 2 1.6 2 1.9 0 3.2-2.4 3.2-5.2 0-2.2-1.5-3.8-4.2-3.8-3.1 0-5 2.3-5 4.9 0 .9.3 1.7.8 2.2.2.2.2.4.1.7l-.3 1c-.1.3-.3.4-.6.3-1.4-.6-2.1-2.2-2.1-4 0-3 2.5-6.6 7.4-6.6 4 0 6.7 2.9 6.7 6.1 0 4.2-2.3 7.3-5.7 7.3-1.1 0-2.2-.6-2.6-1.3l-.7 2.8c-.2 1-.7 1.9-1.1 2.7A9.5 9.5 0 1 0 12 2.5Z" fill="currentColor"/>'},
+    linkedin:{color:'#0A66C2',body:'<path d="M5 8.5H2V21h3zM3.5 2A1.8 1.8 0 1 0 3.5 5.6 1.8 1.8 0 0 0 3.5 2ZM9 8.5h2.9v1.7h.1a3.2 3.2 0 0 1 2.9-1.9c3.1 0 3.7 2 3.7 4.7V21h-3.1v-7.1c0-1.7 0-3-1.9-3s-2.1 1.5-2.1 2.9V21H9z" fill="currentColor"/>'},
+    link:{color:'#59C7F5',body:'<path d="M9.5 14.5 14.5 9.5M8 16H6a4 4 0 0 1 0-8h4M16 8h2a4 4 0 0 1 0 8h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>'}
   };
-  const aliases={yt:'youtube',fb:'facebook',ig:'instagram',tg:'telegram',x:'link',twitter:'link',website:'link',web:'link',other:'link',generic:'link'};
-  const item=icons[aliases[key]||key]||icons.link;
-  return `<svg class="ab-social-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false" style="color:${item.color}">${item.body}</svg>`;
+  const aliases={yt:'youtube',fb:'facebook',ig:'instagram',tg:'telegram',twitter:'x',xcom:'x',website:'link',web:'link',other:'link',generic:'link'};
+  const resolved=aliases[key]||key;
+  const item=icons[resolved]||icons.link;
+  const color=animeBoxSocialSafeColor(customColor||item.color,resolved);
+  return `<svg class="ab-social-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false" style="color:${color}">${item.body}</svg>`;
 }
+
 function loadAdminProfileButtons(){
   const root=document.getElementById('abAdminProfileButtons'); if(!root) return;
   db.ref('settings/profileButtons').on('value',snap=>{
@@ -963,7 +980,9 @@ function loadAdminProfileButtons(){
     const valid=items.filter(x=>x&&x.enabled!==false&&String(x.name||'').trim()&&/^https?:\/\//i.test(String(x.url||'')));
     root.innerHTML=valid.length?`<div class="ab-profile-social-heading">MORE INFO AND SUPPORT</div>`+valid.map(x=>{
       const iconType=x.iconType||x.icon_type||x.iconKey||x.icon||'link';
-      return `<a class="ab-profile-link ab-admin-link" href="${safeText(x.url)}" target="_blank" rel="noopener noreferrer"><span class="ab-link-icon">${animeBoxSocialIcon(iconType)}</span><span><b>${safeText(x.name)}</b></span><i aria-hidden="true">›</i></a>`;
+      const normalizedType=String(iconType).trim().toLowerCase().replace(/[\s_-]+/g,'');
+      const color=animeBoxSocialSafeColor(x.color,normalizedType);
+      return `<a class="ab-profile-link ab-admin-link" style="--ab-social-color:${color}" href="${safeText(x.url)}" target="_blank" rel="noopener noreferrer"><span class="ab-link-icon">${animeBoxSocialIcon(iconType,color)}</span><span><b>${safeText(x.name)}</b></span><i aria-hidden="true">›</i></a>`;
     }).join(''):'';
   },()=>{root.innerHTML='';});
 }
