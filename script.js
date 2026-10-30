@@ -604,7 +604,7 @@ function setupAdminWatchPlayer(item,itemId,title,quality,language){
   const grid=document.getElementById('watchEpisodeGrid');
   const frame=document.getElementById('adminVideoFrame');
   if(!seasonSelect||!grid||!frame) return;
-  let seasons=[], allEpisodes=[], selectedSeason=0, selectedEpisode=0;
+  let seasons=[], allEpisodes=[], selectedSeason=0, selectedEpisode=0, showAllEpisodes=false;
   const directUrl=watchUrlOf(firstValue(item,['playerUrl','videoPlayerUrl','videoPlayerWebsiteUrl','videoPlayerWebsite','playerWebsite','videoWebsiteUrl','videoWebsite','webviewUrl','videoPlayerEmbedUrl','videoEmbedUrl','embedUrl','videoUrl','videoURL','watchUrl','streamUrl','linkVideo','websiteUrl'],''));
   const currentContentId=String(item?.id ?? item?.key ?? item?.contentId ?? itemId ?? '').trim();
   const completionNotice=document.getElementById('episodeCompletionNotice');
@@ -620,16 +620,28 @@ function setupAdminWatchPlayer(item,itemId,title,quality,language){
     const zipBlock=document.getElementById('userSeasonZipBlock'), epBlock=document.getElementById('userEpisodeDownloadBlock');
     if(!hub||!zipRoot||!epRoot||!zipBlock||!epBlock)return;
     const validUrl=value=>/^https?:\/\//i.test(String(value||'').trim());
-    const zipRows=seasons.filter(s=>validUrl(s.zipUrl)); const episodeRows=[];
-    seasons.forEach((season,si)=>{
+    const zipRows=seasons.filter(s=>validUrl(s.zipUrl));
+    const episodeRows=[];
+    // Episode download links follow the same season currently selected in the player.
+    // This prevents downloads added under Season 17 from appearing while Season 1 is selected.
+    const season=seasons[selectedSeason];
+    if(season){
+      const seasonIndex=selectedSeason;
       const eps=sortDownloadRows(allEpisodes.filter(ep=>{
-        const sid=String(ep.seasonId??ep.parentSeasonId??ep.groupId??'').trim(); if(sid&&sid===String(season.id))return true;
+        const sid=String(ep.seasonId??ep.parentSeasonId??ep.groupId??'').trim();
+        if(sid) return sid===String(season.id);
         const values=[ep.season,ep.seasonNumber,ep.groupNumber,ep.parentSeasonNumber].filter(v=>v!==undefined&&v!==null&&String(v).trim()!=='');
-        if(values.some(v=>String(v)===String(season.number??si+1)||String(v).toLowerCase()===String(season.name||'').toLowerCase()))return true;
-        return !sid&&!values.length&&seasons.length===1;
+        if(values.length) return values.some(v=>String(v)===String(season.number??seasonIndex+1)||String(v).toLowerCase()===String(season.name||'').toLowerCase());
+        return seasons.length===1;
       }).filter(visible));
-      eps.forEach((ep,ei)=>{const url=String(ep.downloadUrl||'').trim(), ez=String(ep.episodeZipUrl||ep.zipDownloadUrl||ep.zipUrl||ep.downloadZipUrl||'').trim();if(validUrl(url)||validUrl(ez))episodeRows.push({season,ep,ei,url:validUrl(url)?url:'',episodeZip:validUrl(ez)?ez:''});});
-    });
+      eps.forEach((ep,ei)=>{
+        const url=String(ep.downloadUrl||'').trim();
+        const ez=String(ep.episodeZipUrl||ep.zipDownloadUrl||ep.zipUrl||ep.downloadZipUrl||'').trim();
+        if(validUrl(url)||validUrl(ez)) episodeRows.push({season,ep,ei,url:validUrl(url)?url:'',episodeZip:validUrl(ez)?ez:''});
+      });
+    }
+    const epHeading=epBlock.querySelector('.user-download-heading');
+    if(epHeading) epHeading.textContent='⬇️ Episode Downloads'+(season?' · '+(season.name||('Season '+(season.number||selectedSeason+1))):'');
     zipRoot.innerHTML=zipRows.map(s=>`<article class="user-download-card"><div class="user-download-name">${dlEscUser(s.zipName||s.name||('Season '+(s.number||''))+' ZIP')}</div><div class="user-download-meta">${dlEscUser(s.name||('Season '+(s.number||'')))} · Full Season ZIP</div><a class="user-download-btn" href="${dlEscUser(s.zipUrl)}" target="_blank" rel="noopener noreferrer" download>⬇ Download ZIP</a></article>`).join('');
     epRoot.innerHTML=episodeRows.map(({season,ep,ei,url,episodeZip})=>`<article class="user-download-card"><div class="user-download-name">${dlEscUser(ep.title||ep.name||('Episode '+(ep.episodeNumber||ei+1)))}</div><div class="user-download-meta">${dlEscUser(season.name||('Season '+(season.number||'')))} · ${dlEscUser(ep.qualityName||ep.downloadQuality||ep.downloadQualityName||'Download')}</div>${url?`<a class="user-download-btn" href="${dlEscUser(url)}" target="_blank" rel="noopener noreferrer">⬇ Download Episode</a>`:''}${episodeZip?`<a class="user-download-btn ep-zip-download-btn" href="${dlEscUser(episodeZip)}" target="_blank" rel="noopener noreferrer" download>📦 Download EP ZIP</a>`:''}</article>`).join('');
     zipBlock.classList.toggle('has-items',zipRows.length>0);epBlock.classList.toggle('has-items',episodeRows.length>0);hub.style.display=(zipRows.length||episodeRows.length)?'block':'none';
@@ -700,25 +712,36 @@ function setupAdminWatchPlayer(item,itemId,title,quality,language){
       return;
     }
     selectedEpisode=Math.min(selectedEpisode,eps.length-1);
-    grid.innerHTML=eps.map((ep,i)=>{
+    if(selectedEpisode>=12) showAllEpisodes=true;
+    const visibleEpisodes=showAllEpisodes?eps:eps.slice(0,12);
+    grid.innerHTML=visibleEpisodes.map((ep,i)=>{
       const n=ep.episodeNumber ?? ep.number ?? (i+1);
       const label=ep.title || ep.name || ('Episode '+n);
       return `<button type="button" class="episode-card ${i===selectedEpisode?'active':''}" data-watch-ep="${i}"><span class="episode-card-number">Episode ${safeText(n)}</span><span class="episode-card-title">${safeText(label)}</span></button>`;
     }).join('');
+    document.getElementById('watchEpisodeSeeAll')?.remove();
+    if(eps.length>12){
+      const more=document.createElement('button'); more.type='button'; more.id='watchEpisodeSeeAll'; more.className='episode-see-all';
+      more.textContent=showAllEpisodes?'Show Less ↑':`See All Episodes (${eps.length}) →`;
+      grid.insertAdjacentElement('afterend',more);
+      more.addEventListener('click',()=>{showAllEpisodes=!showAllEpisodes;renderEpisodes(); if(showAllEpisodes) more.scrollIntoView({behavior:'smooth',block:'nearest'});});
+    }
     grid.querySelectorAll('[data-watch-ep]').forEach(btn=>btn.addEventListener('click',()=>{selectedEpisode=Number(btn.dataset.watchEp);playSelectedEpisode(true)}));
     playSelectedEpisode(false);
   }
-  seasonSelect.addEventListener('change',()=>{selectedSeason=Number(seasonSelect.value)||0;selectedEpisode=0;renderEpisodes()});
+  seasonSelect.addEventListener('change',()=>{selectedSeason=Number(seasonSelect.value)||0;selectedEpisode=0;showAllEpisodes=false;renderEpisodes();renderUserDownloadHub()});
   document.getElementById('watchPrevious').addEventListener('click',()=>{
     if(selectedEpisode>0) selectedEpisode--;
     else if(selectedSeason>0){selectedSeason--;selectedEpisode=Math.max(0,selectedEpisodes().length-1);seasonSelect.value=String(selectedSeason)}
     renderEpisodes();
+    renderUserDownloadHub();
   });
   document.getElementById('watchNext').addEventListener('click',()=>{
     const eps=selectedEpisodes();
     if(selectedEpisode<eps.length-1) selectedEpisode++;
     else if(selectedSeason<seasons.length-1){selectedSeason++;selectedEpisode=0;seasonSelect.value=String(selectedSeason)}
     renderEpisodes();
+    renderUserDownloadHub();
   });
 
   if(typeof db!=='undefined'){
