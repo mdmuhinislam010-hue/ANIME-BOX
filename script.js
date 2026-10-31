@@ -82,12 +82,7 @@ const builtinTypeConfig = [
     setTimeout(() => { screen.style.display = 'none'; }, 600);
   };
   window.__hideSplashNow = hide;
-  // Do not make the whole website wait for the first Firebase content snapshot.
-  // Show the page shell as soon as the HTML is ready; Firebase fills it in when data arrives.
-  document.addEventListener('DOMContentLoaded', () => {
-    window.setTimeout(hide, 250);
-  }, { once: true });
-  window.setTimeout(hide, 4000);
+  window.setTimeout(hide, 3000);
 })();
 
 /* ---------- UTILS ---------- */
@@ -166,7 +161,7 @@ function renderHero(){
   heroSlider.innerHTML = `
     <div class="hero-slide-bg" style="background-image:${background ? `url('${safeText(bgSafe)}')` : fallbackBg}"></div>
     <div class="hero-slide">
-      ${poster ? `<img class="hero-poster" src="${safeText(poster)}" alt="${safeText(title)} poster" loading="eager" decoding="async" fetchpriority="high" onerror="this.style.display='none'">` : ''}
+      ${poster ? `<img class="hero-poster" src="${safeText(poster)}" alt="${safeText(title)} poster" loading="eager" onerror="this.style.display='none'">` : ''}
       <div class="hero-info">
         <div class="hero-tags">
           <span class="hero-tag type">${safeText(type).toUpperCase()}</span>
@@ -490,7 +485,7 @@ function renderDetailsPage(id, seasonParam, episodeParam){
     <div class="details-topbar"><button class="details-back" type="button" id="detailsBack">← Back</button><span class="details-topbar-title">${safeText(title)}</span></div>
     <div class="details-shell">
       <aside class="details-poster-wrap">
-        ${poster?`<img class="details-poster" src="${safeText(poster)}" alt="${safeText(title)} poster" loading="lazy" decoding="async" onerror="this.style.visibility='hidden'">`:'<div class="details-poster"></div>'}
+        ${poster?`<img class="details-poster" src="${safeText(poster)}" alt="${safeText(title)} poster" onerror="this.style.visibility='hidden'">`:'<div class="details-poster"></div>'}
         <div class="details-poster-badges">
           ${quality?`<div class="details-badge-row"><span class="details-badge quality">${safeText(quality)}</span></div>`:""}
           <div class="details-badge-row"><span class="details-badge language">${safeText(language)}</span><span class="details-badge type">${safeText(type.toUpperCase())}</span></div>
