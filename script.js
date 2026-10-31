@@ -578,6 +578,19 @@ function watchUrlOf(obj){
   if (typeof obj==='string') return /^https?:\/\//i.test(obj) ? obj : '';
   return String(firstValue(obj,['websiteUrl','episodeUrl','episodeLink','playerUrl','videoPlayerUrl','videoPlayerWebsiteUrl','videoPlayerWebsite','playerWebsite','videoWebsiteUrl','videoWebsite','videoEmbedUrl','videoPlayerEmbedUrl','videoUrl','videoURL','embedUrl','watchUrl','streamUrl','url','link','src','iframeUrl','source'],'')||'').trim();
 }
+function sortWatchSeasons(rows){
+  const seasonNumber = (season, index) => {
+    const direct = Number(season?.number ?? season?.seasonNumber ?? season?.groupNumber);
+    if (Number.isFinite(direct) && direct > 0) return direct;
+    const label = String(season?.name || season?.title || season?.seasonName || '');
+    const match = label.match(/(?:season|s|chapter|ch)\s*0*(\d+)/i) || label.match(/0*(\d+)/);
+    return match ? Number(match[1]) : index + 1;
+  };
+  return (Array.isArray(rows) ? rows : []).map((season,index)=>({season,index,number:seasonNumber(season,index)}))
+    .sort((a,b)=>a.number-b.number || Number(a.season?.order ?? a.season?.sortOrder ?? 0)-Number(b.season?.order ?? b.season?.sortOrder ?? 0) || a.index-b.index)
+    .map(entry=>entry.season);
+}
+
 function normalizeWatchSeasons(raw, item){
   let source = raw || firstValue(item,['seasons','seasonList','seasonEpisodes','episodesBySeason','episodeData'],'');
   if (!source){
@@ -667,39 +680,82 @@ function setupAdminWatchPlayer(item,itemId,title,quality,language){
     }).join('');
     section.classList.add('show');
   }
+  let frameLoadToken=0;
   function setFrame(url,episode){
     renderEpisodeScreenshots(episode);
     const safeUrl=String(url||'').trim();
     const ready=document.getElementById('watchReady');
     const placeholder=document.getElementById('watchPlaceholder');
-    if (safeUrl && /^https?:\/\//i.test(safeUrl)){ frame.src=safeUrl; placeholder.style.display='none'; ready.textContent='● Player Loaded'; }
-    else { frame.removeAttribute('src'); placeholder.style.display='grid'; ready.textContent='● Add Player URL'; }
+    if (safeUrl && /^https?:\/\//i.test(safeUrl)){
+      // Clear the previous document first so selecting another episode always
+      // creates a fresh iframe navigation, even when the host URL is reused.
+      const token=++frameLoadToken;
+      frame.src='about:blank';
+      placeholder.style.display='none';
+      ready.textContent='● Loading Player…';
+      requestAnimationFrame(()=>{
+        if(token!==frameLoadToken) return;
+        frame.src=safeUrl;
+        ready.textContent='● Player Loaded';
+      });
+    } else {
+      ++frameLoadToken;
+      frame.src='about:blank';
+      placeholder.textContent=episode
+        ? 'এই Episode-এর Website URL Admin Panel থেকে যোগ করুন।'
+        : 'Admin Panel থেকে Video Player Website / Embed URL যোগ করলে এখানে চালু হবে।';
+      placeholder.style.display='grid';
+      ready.textContent=episode ? '● Episode URL Missing' : '● Add Player URL';
+    }
     const epName=episode ? (episode.title||episode.name||('Episode '+(episode.episodeNumber||''))) : 'Episode —';
     document.getElementById('watchCurrentEpisode').textContent=epName;
     document.getElementById('watchCurrentQuality').textContent=detailText(firstValue(episode||{},['quality','resolution','videoQuality'],quality),quality);
     document.getElementById('watchCurrentLanguage').textContent=detailText(firstValue(episode||{},['language','lang','audioLanguage'],language),language);
   }
+  function episodeSeasonKey(ep){
+    return String(firstValue(ep,['seasonId','parentSeasonId','groupId'],'')||'').trim();
+  }
+  function episodeSeasonNumber(ep){
+    return firstValue(ep,['season','seasonNumber','groupNumber','parentSeasonNumber'],null);
+  }
   function selectedEpisodes(){
     const season=seasons[selectedSeason];
     if(!season) return [];
-    return allEpisodes.filter(ep=>{
-      if(ep.seasonId!==undefined && ep.seasonId!==null && String(ep.seasonId)!=='') return String(ep.seasonId)===String(season.id);
-      return Number(ep.season||1)===Number(season.number||selectedSeason+1);
+    const sid=String(season.id??'').trim();
+    const byId=allEpisodes.filter(ep=>episodeSeasonKey(ep) && episodeSeasonKey(ep)===sid);
+    // Prefer the Admin's exact Firebase season ID. Fall back to season number
+    // only when the data has no matching season-ID records (legacy records).
+    let rows=byId.length ? byId : allEpisodes.filter(ep=>{
+      const n=episodeSeasonNumber(ep);
+      return n!==null && n!==undefined && String(n).trim()!=='' &&
+        (String(n)===String(season.number??selectedSeason+1) ||
+         String(n).toLowerCase()===String(season.name||'').toLowerCase());
+    });
+    if(!rows.length && seasons.length===1) rows=allEpisodes.filter(ep=>!episodeSeasonKey(ep) && episodeSeasonNumber(ep)==null);
+    return rows.sort((a,b)=>{
+      const ao=Number(a.order??a.sortOrder??a.episodeNumber??a.number??0);
+      const bo=Number(b.order??b.sortOrder??b.episodeNumber??b.number??0);
+      return ao-bo || String(a.id||'').localeCompare(String(b.id||''),undefined,{numeric:true});
     });
   }
   function renderSeasonOptions(){
-    seasonSelect.innerHTML=seasons.length ? seasons.map((s,i)=>`<option value="${i}">${safeText(s.name||('Season '+(s.number||i+1)))}</option>`).join('') : '<option value="0">No seasons added</option>';
+    seasonSelect.innerHTML=seasons.length ? seasons.map((s,i)=>`<option value="${i}">${safeText(s.name||((String(s.groupType||'').toLowerCase()==='chapter'?'Chapter':'Season')+' '+(s.number||i+1)))}</option>`).join('') : '<option value="0">No seasons added</option>';
     seasonSelect.disabled=!seasons.length;
     seasonSelect.value=String(Math.min(selectedSeason,Math.max(0,seasons.length-1)));
   }
   function playSelectedEpisode(scroll){
     const eps=selectedEpisodes();
+    if(!eps.length){
+      setFrame(directUrl,null);
+      return;
+    }
+    selectedEpisode=Math.max(0,Math.min(selectedEpisode,eps.length-1));
     const ep=eps[selectedEpisode];
-    const url=watchUrlOf(ep) || directUrl;
-    setFrame(url,ep||null);
+    const url=watchUrlOf(ep);
+    setFrame(url,ep);
     grid.querySelectorAll('[data-watch-ep]').forEach((btn,i)=>btn.classList.toggle('active',i===selectedEpisode));
-    document.getElementById('watchPrevious').disabled=!eps.length || (selectedSeason===0 && selectedEpisode===0);
-    document.getElementById('watchNext').disabled=!eps.length || (selectedSeason===seasons.length-1 && selectedEpisode>=eps.length-1);
+    document.getElementById('watchPrevious').disabled=(selectedSeason===0 && selectedEpisode===0);
+    document.getElementById('watchNext').disabled=(selectedSeason===seasons.length-1 && selectedEpisode>=eps.length-1);
     if(scroll) document.getElementById('detailsWatchArea')?.scrollIntoView({behavior:'smooth',block:'start'});
   }
   function renderEpisodes(){
@@ -726,8 +782,18 @@ function setupAdminWatchPlayer(item,itemId,title,quality,language){
       grid.insertAdjacentElement('afterend',more);
       more.addEventListener('click',()=>{showAllEpisodes=!showAllEpisodes;renderEpisodes(); if(showAllEpisodes) more.scrollIntoView({behavior:'smooth',block:'nearest'});});
     }
-    grid.querySelectorAll('[data-watch-ep]').forEach(btn=>btn.addEventListener('click',()=>{selectedEpisode=Number(btn.dataset.watchEp);playSelectedEpisode(true)}));
     playSelectedEpisode(false);
+  }
+  // One delegated listener survives episode-grid redraws and selects by the
+  // current rendered index, avoiding stale per-button handlers.
+  if(!grid.dataset.episodeClickBound){
+    grid.dataset.episodeClickBound='1';
+    grid.addEventListener('click',event=>{
+      const btn=event.target.closest('[data-watch-ep]');
+      if(!btn || !grid.contains(btn)) return;
+      selectedEpisode=Number(btn.dataset.watchEp);
+      playSelectedEpisode(true);
+    });
   }
   seasonSelect.addEventListener('change',()=>{selectedSeason=Number(seasonSelect.value)||0;selectedEpisode=0;showAllEpisodes=false;renderEpisodes();renderUserDownloadHub()});
   document.getElementById('watchPrevious').addEventListener('click',()=>{
@@ -746,8 +812,10 @@ function setupAdminWatchPlayer(item,itemId,title,quality,language){
 
   if(typeof db!=='undefined'){
     db.ref('seasons/'+currentContentId).on('value',snap=>{
-      seasons=normalizeSlideList(snap.val()).map(x=>({...x,id:String(x.id??x.key??'')})).filter(x=>x.enabled!==false && x.active!==false);
-      selectedSeason=Math.min(selectedSeason,Math.max(0,seasons.length-1));
+      const previouslySelectedId=String(seasons[selectedSeason]?.id ?? '');
+      seasons=sortWatchSeasons(normalizeSlideList(snap.val()).map(x=>({...x,id:String(x.id??x.key??'')})).filter(x=>x.enabled!==false && x.active!==false));
+      const restoredIndex=previouslySelectedId ? seasons.findIndex(x=>String(x.id??'')===previouslySelectedId) : -1;
+      selectedSeason=restoredIndex>=0 ? restoredIndex : Math.min(selectedSeason,Math.max(0,seasons.length-1));
       renderSeasonOptions(); renderEpisodes(); renderUserDownloadHub();
     });
     db.ref('episodes/'+currentContentId).on('value',snap=>{
@@ -755,10 +823,10 @@ function setupAdminWatchPlayer(item,itemId,title,quality,language){
       renderEpisodes(); renderUserDownloadHub();
     });
   } else {
-    seasons=normalizeWatchSeasons(null,item);
+    seasons=sortWatchSeasons(normalizeWatchSeasons(null,item));
     renderSeasonOptions(); renderEpisodes();
   }
-  if(!seasons.length){ seasons=normalizeWatchSeasons(null,item); renderSeasonOptions(); renderEpisodes(); renderUserDownloadHub(); }
+  if(!seasons.length){ seasons=sortWatchSeasons(normalizeWatchSeasons(null,item)); renderSeasonOptions(); renderEpisodes(); renderUserDownloadHub(); }
 }
 
 /* ============================================================
