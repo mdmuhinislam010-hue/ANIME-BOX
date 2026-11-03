@@ -1107,6 +1107,31 @@ function renderLeaderboardPage(){
   db.ref('users').on('value',snap=>{profiles=snap.val()||{};render();},()=>{const el=document.getElementById('abLbTop');if(el)el.innerHTML='<div class="ab-lb-loading">Live users could not load. Check Firebase Database rules.</div>';});
   db.ref('leaderboard').on('value',snap=>{coinRows=snap.val()||{};render();});
 }
+
+/* ---------- SECURE EMAIL OTP PASSWORD RESET ---------- */
+const ANIMEBOX_OTP_API = 'https://asia-southeast1-vpnyt-ffb68.cloudfunctions.net';
+let passwordResetEmail = '';
+function renderPasswordResetPage(email=''){
+  const content=document.getElementById('pageContent'); if(!content)return;
+  passwordResetEmail=String(email||'').trim();
+  let step='email';
+  const shell=(inner)=>`<section class="auth-page"><div class="auth-card ab-otp-card"><div class="auth-brand-mark auth-brand-left">AB <span>ACCOUNT RECOVERY</span></div>${inner}<p class="auth-terms">AB • AnimeBox Account Security</p></div></section>`;
+  const showMessage=(msg,kind='info')=>{const el=document.getElementById('abOtpMessage');if(el){el.textContent=msg;el.className='auth-status '+kind;el.hidden=!msg;}};
+  const render=()=>{
+    if(step==='email'){
+      content.innerHTML=shell(`<h1 class="auth-title">Forgot Password?</h1><p class="auth-subtitle">তোমার অ্যাকাউন্টের ইমেইল দাও। আমরা ৬ সংখ্যার OTP পাঠাব।</p><form id="abOtpEmailForm" class="auth-form"><input id="abOtpEmail" type="email" autocomplete="email" placeholder="Registered Email Address" value="${safeText(passwordResetEmail)}" required><div id="abOtpMessage" class="auth-status info" hidden></div><button class="auth-primary-btn" id="abOtpSend" type="submit">SEND OTP</button></form><button class="auth-secondary-btn" id="abOtpBack">Back to Login</button>`);
+      document.getElementById('abOtpBack')?.addEventListener('click',()=>{authViewMode='login';renderProfilePage();});
+      document.getElementById('abOtpEmailForm')?.addEventListener('submit',async e=>{e.preventDefault();passwordResetEmail=document.getElementById('abOtpEmail').value.trim();if(!passwordResetEmail){showMessage('ইমেইল লিখো।','error');return;}const btn=document.getElementById('abOtpSend');btn.disabled=true;btn.textContent='SENDING…';try{const r=await fetch(ANIMEBOX_OTP_API+'/sendPasswordResetOtp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:passwordResetEmail})});const d=await r.json();if(!r.ok)throw new Error(d.message||'OTP পাঠানো যায়নি।');step='verify';render();showMessage('ইমেইলটি যদি AnimeBox অ্যাকাউন্টে নিবন্ধিত থাকে, OTP পাঠানো হয়েছে। Inbox/Spam দেখো।','success');}catch(err){showMessage(err.message||'সার্ভারের সাথে সংযোগ করা যায়নি।','error');btn.disabled=false;btn.textContent='SEND OTP';}});
+    }else{
+      content.innerHTML=shell(`<h1 class="auth-title">Verify OTP</h1><p class="auth-subtitle">${safeText(passwordResetEmail)}<br>ইমেইলে পাওয়া ৬ সংখ্যার কোড এবং নতুন পাসওয়ার্ড দাও।</p><form id="abOtpVerifyForm" class="auth-form"><input id="abOtpCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" placeholder="6-Digit OTP" required><input id="abOtpNewPassword" type="password" autocomplete="new-password" minlength="6" placeholder="New Password (min 6 characters)" required><input id="abOtpConfirmPassword" type="password" autocomplete="new-password" minlength="6" placeholder="Confirm New Password" required><div id="abOtpMessage" class="auth-status info" hidden></div><button class="auth-primary-btn" id="abOtpVerify" type="submit">VERIFY & RESET PASSWORD</button></form><button class="auth-secondary-btn" id="abOtpResend">Resend OTP</button><button class="auth-secondary-btn" id="abOtpBack">Back to Login</button>`);
+      document.getElementById('abOtpBack')?.addEventListener('click',()=>{authViewMode='login';renderProfilePage();});
+      document.getElementById('abOtpResend')?.addEventListener('click',async()=>{const b=document.getElementById('abOtpResend');b.disabled=true;try{const r=await fetch(ANIMEBOX_OTP_API+'/sendPasswordResetOtp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:passwordResetEmail})});const d=await r.json();if(!r.ok)throw new Error(d.message||'আবার OTP পাঠানো যায়নি।');showMessage('OTP পাঠানো হয়েছে। Inbox/Spam দেখো।','success');}catch(err){showMessage(err.message,'error');}finally{b.disabled=false;}});
+      document.getElementById('abOtpVerifyForm')?.addEventListener('submit',async e=>{e.preventDefault();const otp=document.getElementById('abOtpCode').value.trim();const password=document.getElementById('abOtpNewPassword').value;const confirm=document.getElementById('abOtpConfirmPassword').value;if(!/^\d{6}$/.test(otp)){showMessage('৬ সংখ্যার OTP লিখো।','error');return;}if(password.length<6){showMessage('নতুন পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।','error');return;}if(password!==confirm){showMessage('দুইটি পাসওয়ার্ড এক নয়।','error');return;}const btn=document.getElementById('abOtpVerify');btn.disabled=true;btn.textContent='VERIFYING…';try{const r=await fetch(ANIMEBOX_OTP_API+'/verifyPasswordResetOtp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:passwordResetEmail,otp,password})});const d=await r.json();if(!r.ok)throw new Error(d.message||'OTP সঠিক নয় অথবা মেয়াদ শেষ।');step='done';content.innerHTML=shell(`<h1 class="auth-title">Password Updated</h1><p class="auth-subtitle">তোমার পাসওয়ার্ড সফলভাবে পরিবর্তন হয়েছে। এখন নতুন পাসওয়ার্ড দিয়ে Login করো।</p><div class="auth-status success">Password reset successful.</div><button class="auth-primary-btn" id="abOtpLogin">GO TO LOGIN</button>`);document.getElementById('abOtpLogin')?.addEventListener('click',()=>{authViewMode='login';authStatusMessage='নতুন পাসওয়ার্ড দিয়ে লগইন করো।';authStatusKind='success';renderProfilePage();});}catch(err){showMessage(err.message||'OTP যাচাই করা যায়নি।','error');btn.disabled=false;btn.textContent='VERIFY & RESET PASSWORD';}});
+    }
+  };
+  render();
+}
+
 function renderProfilePage(){
   const content = document.getElementById('pageContent');
   if(!content) return;
@@ -1121,7 +1146,7 @@ function renderProfilePage(){
     try { db.ref('users/' + user.uid + '/photo').once('value').then(snap => { const remotePhoto=snap.val(); if(remotePhoto){ try{localStorage.setItem('ab_profile_photo_'+user.uid,remotePhoto);}catch(_){} const el=document.getElementById('abPhotoAvatar'); if(el && animeBoxAuth.currentUser && animeBoxAuth.currentUser.uid===user.uid) el.innerHTML=`<img src="${safeText(remotePhoto)}" alt="Profile photo">`; } }).catch(err=>console.warn('Profile photo load failed:',err.message)); } catch(_) {}
     content.innerHTML = `
       <section class="auth-page"><div class="auth-card auth-profile-card ab-profile-layout">
-        <div class="ab-profile-top"><span class="ab-active-dot">● Account Active</span><div class="ab-profile-tools"><button type="button" aria-label="Notifications">♧</button><button type="button" aria-label="Settings">⚙</button></div></div>
+        <div class="ab-profile-top"><span class="ab-active-dot">● Account Active</span><div class="ab-profile-tools"><button type="button" aria-label="Notifications" onclick="abOpenNotifications()">♧</button><button type="button" aria-label="Settings">⚙</button></div></div>
         <div class="ab-profile-hero"><div class="ab-photo-wrap"><div class="auth-avatar ab-photo-avatar" id="abPhotoAvatar">${savedPhoto ? `<img src="${savedPhoto}" alt="Profile photo">` : safeText(initial)}</div><button class="ab-photo-edit" type="button" id="abPhotoEdit" aria-label="Change profile photo">📷</button><input type="file" id="abPhotoInput" accept="image/*" hidden></div>
         <div class="ab-profile-name-row"><h1 class="ab-profile-name" id="abProfileName">${safeText(display)}</h1><button class="ab-name-edit" id="abNameEdit" type="button" aria-label="Edit profile name" title="Edit profile name">✎</button></div><p class="auth-subtitle">${safeText(user.email || '')}</p><button class="ab-logout-btn" id="authLogoutBtn" type="button">⏻ &nbsp; Logout</button></div>
         <section class="ab-watch-history"><div class="ab-history-heading"><h2>🕘 Watch History</h2><button type="button" id="abClearHistory">Clear</button></div><div class="ab-history-grid" id="abWatchHistoryList"><p class="ab-history-empty">তোমার দেখা Movie ও Anime এখানে দেখা যাবে।</p></div></section>
@@ -1215,11 +1240,9 @@ function renderProfilePage(){
   document.getElementById('authLoginTab')?.addEventListener('click',()=>{authViewMode='login';authStatusMessage='';renderProfilePage();});
   document.getElementById('authSignupTab')?.addEventListener('click',()=>{authViewMode='signup';authStatusMessage='';renderProfilePage();});
   document.getElementById('authSwitchLink')?.addEventListener('click',()=>{authViewMode=signup?'login':'signup';authStatusMessage='';renderProfilePage();});
-  document.getElementById('authForgotBtn')?.addEventListener('click',async()=>{
-    const email=document.getElementById('authEmail')?.value.trim();
-    if(!email){setAuthMessage('আগে ইমেইল লিখো, তারপর পাসওয়ার্ড রিসেট করো।','error');return;}
-    try{await animeBoxAuth.sendPasswordResetEmail(email);setAuthMessage('পাসওয়ার্ড রিসেট করার লিংক ইমেইলে পাঠানো হয়েছে।','success');}
-    catch(err){setAuthMessage(authErrorText(err),'error');}
+  document.getElementById('authForgotBtn')?.addEventListener('click',()=>{
+    const email=document.getElementById('authEmail')?.value.trim() || '';
+    renderPasswordResetPage(email);
   });
   document.getElementById('authForm')?.addEventListener('submit',async e=>{
     e.preventDefault();
@@ -1322,3 +1345,64 @@ db.ref('heroSlides').on('value', snap => {
   renderHero();
   restartHeroTimer();
 }, () => { heroSlides = []; renderHero(); });
+
+
+/* ============================================================
+   ANIMEBOX IN-SITE NOTIFICATIONS
+   Firebase RTDB project: ttttt-9bee0 (same database as Admin)
+   Background/browser push is intentionally not enabled in this phase.
+   ============================================================ */
+const AB_NOTIFICATION_READ_KEY='animebox_notification_reads_v1';
+let abNotificationItems=[];
+let abNotificationFirstSnapshot=true;
+let abNotificationSeenIds=new Set();
+function abNotificationEscape(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function abGetReadIds(){try{return new Set(JSON.parse(localStorage.getItem(AB_NOTIFICATION_READ_KEY)||'[]'));}catch(_){return new Set();}}
+function abSaveReadIds(set){try{localStorage.setItem(AB_NOTIFICATION_READ_KEY,JSON.stringify(Array.from(set).slice(-500)));}catch(_){}}
+function abNotificationLink(item){const raw=String(item.link||'/home');if(/^https?:\/\//i.test(raw))return raw;return raw.startsWith('/')?raw:'/home';}
+function abEnsureNotificationUI(){
+  if(document.getElementById('abNotificationOverlay'))return;
+  const overlay=document.createElement('div');overlay.id='abNotificationOverlay';overlay.className='ab-notification-overlay';overlay.innerHTML=`<section class="ab-notification-panel" role="dialog" aria-modal="true" aria-label="Notifications"><header class="ab-notification-head"><div><b>🔔 Notifications</b><small id="abNotificationSubtitle">Your latest AnimeBox updates</small></div><div class="ab-notification-head-actions"><button type="button" id="abNotificationReadAll">Read all</button><button type="button" id="abNotificationClose" aria-label="Close notifications">✕</button></div></header><div id="abNotificationList" class="ab-notification-list"><div class="ab-notification-empty">Loading notifications…</div></div></section>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click',e=>{if(e.target===overlay)abCloseNotifications();});
+  document.getElementById('abNotificationClose').addEventListener('click',abCloseNotifications);
+  document.getElementById('abNotificationReadAll').addEventListener('click',()=>{const ids=abGetReadIds();abNotificationItems.forEach(n=>ids.add(n.id));abSaveReadIds(ids);abRenderNotifications();});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')abCloseNotifications();});
+}
+function abRenderNotifications(){
+  const count=document.getElementById('abNotificationCount');const list=document.getElementById('abNotificationList');const subtitle=document.getElementById('abNotificationSubtitle');
+  if(!count||!list)return;
+  const read=abGetReadIds();const unread=abNotificationItems.filter(n=>!read.has(n.id)).length;
+  count.textContent=unread>99?'99+':String(unread);count.hidden=unread===0;
+  if(subtitle)subtitle.textContent=unread?`${unread} unread · Latest AnimeBox updates`:'You are all caught up';
+  if(!abNotificationItems.length){list.innerHTML='<div class="ab-notification-empty"><span>🔔</span><b>No notifications yet</b><small>New Movie, Anime and Series updates will appear here.</small></div>';return;}
+  list.innerHTML=abNotificationItems.slice(0,50).map(n=>{
+    const isRead=read.has(n.id);const image=n.image?`<img src="${abNotificationEscape(n.image)}" alt="" loading="lazy" onerror="this.style.display='none'">`:'<div class="ab-notification-thumb-fallback">🔔</div>';
+    const time=n.createdAt?new Date(Number(n.createdAt)).toLocaleString():'Recently';
+    return `<button type="button" class="ab-notification-item ${isRead?'is-read':'is-unread'}" data-notification-id="${abNotificationEscape(n.id)}">${image}<span class="ab-notification-copy"><b>${abNotificationEscape(n.title||'AnimeBox Update')}</b><span>${abNotificationEscape(n.message||'')}</span><small>${abNotificationEscape(n.type||'Update')} · ${abNotificationEscape(time)}</small></span>${isRead?'':'<i aria-label="Unread"></i>'}</button>`;
+  }).join('');
+  list.querySelectorAll('[data-notification-id]').forEach(btn=>btn.addEventListener('click',()=>{
+    const item=abNotificationItems.find(n=>n.id===btn.dataset.notificationId);if(!item)return;
+    const ids=abGetReadIds();ids.add(item.id);abSaveReadIds(ids);abRenderNotifications();
+    const link=abNotificationLink(item);abCloseNotifications();
+    if(/^https?:\/\//i.test(link)){window.location.href=link;}else{navigateTo(link);}
+  }));
+}
+function abOpenNotifications(){abEnsureNotificationUI();abRenderNotifications();document.getElementById('abNotificationOverlay').classList.add('show');document.body.classList.add('ab-notifications-open');}
+function abCloseNotifications(){document.getElementById('abNotificationOverlay')?.classList.remove('show');document.body.classList.remove('ab-notifications-open');}
+function abShowNewNotificationToast(item){
+  let toast=document.getElementById('abNotificationToast');if(!toast){toast=document.createElement('button');toast.type='button';toast.id='abNotificationToast';toast.className='ab-notification-toast';document.body.appendChild(toast);}
+  toast.innerHTML=`<span class="ab-toast-icon">🔔</span><span><b>${abNotificationEscape(item.title||'AnimeBox Update')}</b><small>${abNotificationEscape(item.message||'')}</small></span><span class="ab-toast-close">✕</span>`;
+  toast.classList.add('show');toast.onclick=()=>{abOpenNotifications();toast.classList.remove('show');};
+  clearTimeout(window.__abNotificationToastTimer);window.__abNotificationToastTimer=setTimeout(()=>toast.classList.remove('show'),6500);
+}
+function abInitNotifications(){
+  const bell=document.getElementById('abNotificationBell');if(bell&&bell.dataset.bound!=='1'){bell.dataset.bound='1';bell.addEventListener('click',abOpenNotifications);}
+  // The same shared Firebase Realtime Database used by the Admin HTML.
+  db.ref('notifications').limitToLast(60).on('value',snap=>{
+    const raw=snap.val()||{};const incoming=Object.entries(raw).map(([id,v])=>({id,...(v||{})})).filter(n=>n.active!==false).sort((a,b)=>(Number(b.createdAt)||0)-(Number(a.createdAt)||0));
+    if(!abNotificationFirstSnapshot){const newest=incoming.find(n=>!abNotificationSeenIds.has(n.id));if(newest)abShowNewNotificationToast(newest);}
+    abNotificationItems=incoming;abNotificationSeenIds=new Set(incoming.map(n=>n.id));abNotificationFirstSnapshot=false;abRenderNotifications();
+  },err=>console.warn('AnimeBox notifications could not load:',err));
+}
+document.addEventListener('DOMContentLoaded',abInitNotifications);
