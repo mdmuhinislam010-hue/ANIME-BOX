@@ -1000,6 +1000,13 @@ const firebaseConfig = {
 if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
+// Firebase Cloud Messaging Web Push (existing AnimeBox database project).
+const AB_FCM_VAPID_PUBLIC_KEY = 'BPsMEDtjz5QX5jNrJNodmtiy9EXJbO7QV0WY4NDI9qIna-1uHMl-Zar8b2ZzNChDwiE_E6hgdCjpLcj7AIwRqo4';
+const AB_PUSH_BACKEND_URL = 'https://YOUR-RENDER-PUSH-SERVICE.onrender.com';
+let abFcmMessaging = null;
+let abFcmPushReady = false;
+
+
 // Separate Firebase project reserved only for User Authentication.
 const authFirebaseConfig = {
   apiKey: "AIzaSyCt0Ex7G_xpcklm6NN0P4Bc49enwvWc5dE",
@@ -1362,11 +1369,13 @@ function abSaveReadIds(set){try{localStorage.setItem(AB_NOTIFICATION_READ_KEY,JS
 function abNotificationLink(item){const raw=String(item.link||'/home');if(/^https?:\/\//i.test(raw))return raw;return raw.startsWith('/')?raw:'/home';}
 function abEnsureNotificationUI(){
   if(document.getElementById('abNotificationOverlay'))return;
-  const overlay=document.createElement('div');overlay.id='abNotificationOverlay';overlay.className='ab-notification-overlay';overlay.innerHTML=`<section class="ab-notification-panel" role="dialog" aria-modal="true" aria-label="Notifications"><header class="ab-notification-head"><div><b>🔔 Notifications</b><small id="abNotificationSubtitle">Your latest AnimeBox updates</small></div><div class="ab-notification-head-actions"><button type="button" id="abNotificationReadAll">Read all</button><button type="button" id="abNotificationClose" aria-label="Close notifications">✕</button></div></header><div id="abNotificationList" class="ab-notification-list"><div class="ab-notification-empty">Loading notifications…</div></div></section>`;
+  const overlay=document.createElement('div');overlay.id='abNotificationOverlay';overlay.className='ab-notification-overlay';overlay.innerHTML=`<section class="ab-notification-panel" role="dialog" aria-modal="true" aria-label="Notifications"><header class="ab-notification-head"><div><b>🔔 Notifications</b><small id="abNotificationSubtitle">Your latest AnimeBox updates</small></div><div class="ab-notification-head-actions"><button type="button" id="abNotificationReadAll">Read all</button><button type="button" id="abNotificationClose" aria-label="Close notifications">✕</button></div></header><div class="ab-push-enable-wrap"><button type="button" id="abEnableBackgroundPush" class="ab-push-enable-btn">🔔 Enable Background Notifications</button><small id="abPushEnableStatus">Receive alerts even when AnimeBox is closed.</small></div><div id="abNotificationList" class="ab-notification-list"><div class="ab-notification-empty">Loading notifications…</div></div></section>`;
   document.body.appendChild(overlay);
   overlay.addEventListener('click',e=>{if(e.target===overlay)abCloseNotifications();});
   document.getElementById('abNotificationClose').addEventListener('click',abCloseNotifications);
   document.getElementById('abNotificationReadAll').addEventListener('click',()=>{const ids=abGetReadIds();abNotificationItems.forEach(n=>ids.add(n.id));abSaveReadIds(ids);abRenderNotifications();});
+  document.getElementById('abEnableBackgroundPush')?.addEventListener('click',abEnableBackgroundPush);
+  abRefreshPushButtonState();
   document.addEventListener('keydown',e=>{if(e.key==='Escape')abCloseNotifications();});
 }
 function abRenderNotifications(){
@@ -1395,6 +1404,52 @@ function abShowNewNotificationToast(item){
   toast.innerHTML=`<span class="ab-toast-icon">🔔</span><span><b>${abNotificationEscape(item.title||'AnimeBox Update')}</b><small>${abNotificationEscape(item.message||'')}</small></span><span class="ab-toast-close">✕</span>`;
   toast.classList.add('show');toast.onclick=()=>{abOpenNotifications();toast.classList.remove('show');};
   clearTimeout(window.__abNotificationToastTimer);window.__abNotificationToastTimer=setTimeout(()=>toast.classList.remove('show'),6500);
+}
+
+function abPushStatus(message,isError=false){
+  const el=document.getElementById('abPushEnableStatus');
+  if(el){el.textContent=message;el.style.color=isError?'#ff8b8b':'#8d99ad';}
+}
+function abRefreshPushButtonState(){
+  const btn=document.getElementById('abEnableBackgroundPush');
+  if(!btn)return;
+  if(!('Notification' in window)){btn.disabled=true;btn.textContent='Push not supported in this browser';abPushStatus('এই Browser-এ Web Push সমর্থিত নয়।');return;}
+  if(Notification.permission==='denied'){btn.disabled=true;btn.textContent='Browser Permission Blocked';abPushStatus('Browser Settings থেকে AnimeBox-এর Notification permission Allow করতে হবে।',true);}
+  else if(abFcmPushReady){btn.disabled=true;btn.textContent='✓ Background Notifications Enabled';abPushStatus('Background notifications are enabled on this device.');}
+  else{btn.disabled=false;btn.textContent='🔔 Enable Background Notifications';}
+}
+async function abEnableBackgroundPush(){
+  const btn=document.getElementById('abEnableBackgroundPush');
+  const user=animeBoxAuth.currentUser;
+  if(!user){abPushStatus('আগে Login করো, তারপর Background Notifications চালু করো।',true);return;}
+  if(!('Notification' in window)||!('serviceWorker' in navigator)||!firebase.messaging){abPushStatus('এই Browser-এ Push Notification support নেই।',true);return;}
+  if(btn){btn.disabled=true;btn.textContent='Enabling…';}
+  try{
+    const permission=await Notification.requestPermission();
+    if(permission!=='granted'){abPushStatus(permission==='denied'?'Permission Blocked. Browser Settings থেকে Allow করতে হবে।':'Permission দেওয়া হয়নি। In-site notifications আগের মতো চলবে.',true);abRefreshPushButtonState();return;}
+    const supported=await firebase.messaging.isSupported();
+    if(!supported)throw new Error('এই Browser/Device-এ Firebase Messaging support নেই।');
+    const registration=await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+    await navigator.serviceWorker.ready;
+    if(!abFcmMessaging)abFcmMessaging=firebase.messaging();
+    const token=await abFcmMessaging.getToken({vapidKey:AB_FCM_VAPID_PUBLIC_KEY,serviceWorkerRegistration:registration});
+    if(!token)throw new Error('FCM token পাওয়া যায়নি।');
+    if(AB_PUSH_BACKEND_URL.includes('YOUR-RENDER-PUSH-SERVICE'))throw new Error('Render Push Backend URL এখনো সেট করা হয়নি।');
+    const idToken=await user.getIdToken();
+    const response=await fetch(AB_PUSH_BACKEND_URL.replace(/\/$/,'')+'/register-token',{
+      method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+idToken},
+      body:JSON.stringify({token,userAgent:navigator.userAgent.slice(0,220)})
+    });
+    const result=await response.json().catch(()=>({}));
+    if(!response.ok||!result.ok)throw new Error(result.message||'Push token registration failed.');
+    abFcmPushReady=true;
+    abPushStatus('✓ এই Device-এ Background Notifications চালু হয়েছে।');
+    abRefreshPushButtonState();
+  }catch(err){
+    console.error('AnimeBox background push setup failed:',err);
+    abPushStatus(err&&err.message?err.message:'Push setup failed. পরে আবার চেষ্টা করো।',true);
+    if(btn){btn.disabled=false;btn.textContent='🔔 Enable Background Notifications';}
+  }
 }
 function abInitNotifications(){
   const bell=document.getElementById('abNotificationBell');if(bell&&bell.dataset.bound!=='1'){bell.dataset.bound='1';bell.addEventListener('click',abOpenNotifications);}

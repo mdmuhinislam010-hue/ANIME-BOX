@@ -400,3 +400,10 @@ body.search-active #pageContent{margin:0;padding:0;background:#09090f}
 @keyframes abNotificationIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
 @media(max-width:600px){.ab-notification-overlay{padding:60px 10px 10px;justify-content:center}.ab-notification-panel{max-height:calc(100vh - 76px);width:100%}.ab-notification-toast{top:62px;right:10px;width:calc(100vw - 20px)}.top-actions{gap:8px}}
 @media(prefers-reduced-motion:reduce){.ab-notification-toast.show{animation:none}}
+
+/* Background push enable control inside the existing notification panel */
+.ab-push-enable-wrap{display:flex;flex-direction:column;gap:6px;padding:11px 14px;border-bottom:1px solid #252b39;background:#101722}
+.ab-push-enable-btn{width:100%;border:1px solid #23638b;border-radius:9px;padding:10px 12px;background:linear-gradient(110deg,#123b66,#07566a);color:#fff;font-size:12px;font-weight:800;cursor:pointer}
+.ab-push-enable-btn:hover{filter:brightness(1.12)}
+.ab-push-enable-btn:disabled{opacity:.72;cursor:default}
+#abPushEnableStatus{font-size:10px;color:#8d99ad;line-height:1.45}
