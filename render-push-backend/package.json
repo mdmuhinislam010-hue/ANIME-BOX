@@ -1,0 +1,17 @@
+{
+  "name": "animebox-fcm-push-backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AnimeBox FCM Web Push worker and authenticated token registration API",
+  "main": "server.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "firebase-admin": "^12.7.0"
+  }
+}
