@@ -33,10 +33,10 @@ body{padding-bottom:0}
 }
 /* Hero */
 .hero-wrap{padding:14px 18px 20px;background:#000}
-.hero-slider{position:relative;isolation:isolate;overflow:hidden;width:100%;min-height:460px;border-radius:5px;background:#08090d;border:1px solid #171a22}
+.hero-slider{position:relative;isolation:isolate;overflow:hidden;width:100%;height:clamp(420px,42vw,620px);min-height:0;border-radius:5px;background:#08090d;border:1px solid #171a22}
 .hero-slide-bg{position:absolute;inset:0;z-index:0;background:#101018 center center / cover no-repeat}
 .hero-slide-bg:after{content:"";position:absolute;inset:0;z-index:0;background:linear-gradient(90deg,rgba(0,0,0,.92) 0%,rgba(0,0,0,.64) 40%,rgba(0,0,0,.12) 100%),linear-gradient(0deg,#030306 0%,transparent 70%)}
-.hero-slide{position:relative;z-index:1;display:flex;align-items:flex-end;min-height:460px;padding:26px 32px 32px;gap:18px}
+.hero-slide{position:relative;z-index:1;display:flex;align-items:flex-end;height:100%;min-height:0;padding:26px 32px 32px;gap:18px}
 .hero-poster{width:116px;height:164px;object-fit:cover;border-radius:7px;flex:none;border:1px solid #444;box-shadow:0 5px 20px #0009;background:#222}
 .hero-info{max-width:620px;min-width:0;padding-bottom:4px}
 .hero-tags{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:5px}
@@ -53,10 +53,10 @@ body{padding-bottom:0}
 .hero-dots{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:5px;z-index:2;max-width:75%;overflow:hidden}
 .hero-dot{width:5px;height:5px;padding:0;border:0;border-radius:50%;background:#8c8c95;cursor:pointer;flex:none}
 .hero-dot.active{width:18px;border-radius:5px;background:linear-gradient(90deg,#4169e1,#1592ff,#4169e1);background-size:200%;animation:heroBlueRGB 5s linear infinite}
-.hero-empty{min-height:460px;display:grid;place-items:center;color:#888;font-size:13px}
+.hero-empty{height:100%;min-height:100%;display:grid;place-items:center;color:#888;font-size:13px}
 @media(max-width:640px){
   .hero-wrap{padding:8px 8px 14px}
-  .hero-slider,.hero-slide,.hero-empty{min-height:160px}
+  .hero-slider{height:160px;min-height:160px}.hero-slide,.hero-empty{height:160px;min-height:160px}
   .hero-slide{padding:14px 10px 24px;gap:7px;align-items:flex-end}
   .hero-poster{width:48px;height:70px;border-radius:5px}
   .hero-info{max-width:calc(100% - 55px);padding-bottom:0}
