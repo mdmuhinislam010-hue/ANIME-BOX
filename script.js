@@ -526,6 +526,24 @@ function renderDetailsPage(id, seasonParam, episodeParam){
         <div><div class="watch-kicker">WATCH ONLINE</div><h2 class="watch-title">${safeText(title)}${year?` (${safeText(year)})`:''}</h2></div>
         <span class="watch-ready" id="watchReady">● Ready</span>
       </div>
+      <section class="ab-community-vote" id="abCommunityVote" aria-label="Community vote">
+        <div class="ab-vote-top">
+          <div>
+            <div class="ab-vote-kicker">COMMUNITY VOTE</div>
+            <h3 class="ab-vote-title">এই কনটেন্টটি কেমন?</h3>
+            <p class="ab-vote-subtitle">তোমার মতামত দিয়ে ভোট দাও</p>
+          </div>
+          <div class="ab-vote-total"><strong id="abVoteTotal">0</strong><span>Total votes</span></div>
+        </div>
+        <div class="ab-vote-summary"><div class="ab-vote-summary-fill" id="abVoteTopBar"></div></div>
+        <div class="ab-vote-summary-label"><span id="abVoteTopLabel">এখনো ভোট পড়েনি</span><span id="abVoteTopPercent">0%</span></div>
+        <div class="ab-vote-options" id="abVoteOptions">
+          <button class="ab-vote-option" type="button" data-vote="great"><span class="ab-vote-choice"><span class="ab-vote-icon">🔥</span><span class="ab-vote-copy"><b>অসাধারণ</b><small>Must watch</small></span></span><span class="ab-vote-count" data-vote-count="great">0</span><span class="ab-vote-bar"><i data-vote-bar="great"></i></span><span class="ab-vote-percent" data-vote-percent="great">0%</span></button>
+          <button class="ab-vote-option" type="button" data-vote="good"><span class="ab-vote-choice"><span class="ab-vote-icon">👍</span><span class="ab-vote-copy"><b>ভালো</b><small>Good</small></span></span><span class="ab-vote-count" data-vote-count="good">0</span><span class="ab-vote-bar"><i data-vote-bar="good"></i></span><span class="ab-vote-percent" data-vote-percent="good">0%</span></button>
+          <button class="ab-vote-option" type="button" data-vote="okay"><span class="ab-vote-choice"><span class="ab-vote-icon">🙂</span><span class="ab-vote-copy"><b>মোটামুটি</b><small>Average</small></span></span><span class="ab-vote-count" data-vote-count="okay">0</span><span class="ab-vote-bar"><i data-vote-bar="okay"></i></span><span class="ab-vote-percent" data-vote-percent="okay">0%</span></button>
+        </div>
+        <p class="ab-vote-status" id="abVoteStatus" aria-live="polite">একটি অপশন বেছে নিয়ে ভোট দাও।</p>
+      </section>
       <div class="watch-screen">
         <iframe id="adminVideoFrame" src="" title="${safeText(title)} video player" allow="autoplay; fullscreen; picture-in-picture; encrypted-media" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
         <div class="watch-placeholder" id="watchPlaceholder">Admin Panel থেকে Video Player Website / Embed URL এবং episode link যোগ করলে এখানে চালু হবে।</div>
@@ -558,6 +576,7 @@ function renderDetailsPage(id, seasonParam, episodeParam){
   document.getElementById('detailsTrailer')?.addEventListener('click',()=>{ if(trailer) window.open(trailer,'_blank','noopener'); });
   document.getElementById('detailsWatch')?.addEventListener('click',()=>{ document.getElementById('detailsWatchArea')?.scrollIntoView({behavior:'smooth',block:'start'}); });
   setupAdminWatchPlayer(item,itemId,title,quality,language);
+  setupCommunityVote(itemId);
 
   if (seasonParam && episodeParam){
     const tryJump = (attempts) => {
@@ -575,6 +594,89 @@ function renderDetailsPage(id, seasonParam, episodeParam){
     };
     setTimeout(() => tryJump(6), 600);
   }
+}
+
+
+function setupCommunityVote(contentId){
+  const root=document.getElementById('abCommunityVote');
+  if(!root) return;
+  const options=['great','good','okay'];
+  const labels={great:'অসাধারণ',good:'ভালো',okay:'মোটামুটি'};
+  const totalEl=document.getElementById('abVoteTotal');
+  const topBar=document.getElementById('abVoteTopBar');
+  const topLabel=document.getElementById('abVoteTopLabel');
+  const topPercent=document.getElementById('abVoteTopPercent');
+  const status=document.getElementById('abVoteStatus');
+  if(typeof db==='undefined' || !window.firebase || !firebase.database){
+    status.textContent='ভোট সিস্টেম সংযোগ করা যায়নি।';
+    return;
+  }
+  const safeId=String(contentId||'content').replace(/[.#$\[\]\/]/g,'_').slice(0,120);
+  const ref=db.ref('communityVotes/'+safeId);
+  let myVote='';
+  try{
+    let deviceId=localStorage.getItem('ab_vote_device_id');
+    if(!deviceId){ deviceId=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():('d'+Date.now().toString(36)+Math.random().toString(36).slice(2)); localStorage.setItem('ab_vote_device_id',deviceId); }
+    myVote=localStorage.getItem('ab_voted_'+safeId)||'';
+    root.dataset.deviceId=deviceId;
+  }catch(_){ status.textContent='এই ব্রাউজারে ভোট সংরক্ষণ করা যাচ্ছে না।'; }
+  function render(data){
+    const voters=(data&&data.voters&&typeof data.voters==='object')?data.voters:{};
+    const counts={great:0,good:0,okay:0};
+    Object.values(voters).forEach(v=>{if(options.includes(v))counts[v]++;});
+    const total=counts.great+counts.good+counts.okay;
+    totalEl.textContent=total.toLocaleString();
+    const top=options.reduce((a,b)=>counts[a]>=counts[b]?a:b,'great');
+    const topPct=total?Math.round(counts[top]*100/total):0;
+    topBar.style.width=topPct+'%';
+    topLabel.textContent=total?labels[top]+' সবচেয়ে বেশি ভোট পেয়েছে':'এখনো ভোট পড়েনি';
+    topPercent.textContent=topPct+'%';
+    options.forEach(key=>{
+      const pct=total?Math.round(counts[key]*100/total):0;
+      const count=root.querySelector('[data-vote-count="'+key+'"]');
+      const bar=root.querySelector('[data-vote-bar="'+key+'"]');
+      const percent=root.querySelector('[data-vote-percent="'+key+'"]');
+      if(count)count.textContent=counts[key].toLocaleString();
+      if(bar)bar.style.width=pct+'%';
+      if(percent)percent.textContent=pct+'%';
+      const button=root.querySelector('[data-vote="'+key+'"]');
+      if(button){button.classList.toggle('selected',myVote===key);button.classList.toggle('is-top',total>0&&key===top);}
+    });
+    if(myVote) status.textContent='তুমি ইতিমধ্যে ভোট দিয়েছ: '+labels[myVote]+'.';
+    else status.textContent='একটি অপশন বেছে নিয়ে ভোট দাও।';
+  }
+  ref.on('value',snap=>render(snap.val()||{}),()=>{status.textContent='ভোটের ফলাফল লোড করা যায়নি। Firebase Database Rules পরীক্ষা করো।';});
+  root.querySelectorAll('[data-vote]').forEach(button=>{
+    button.addEventListener('click',async()=>{
+      const choice=button.dataset.vote;
+      if(!options.includes(choice)||myVote)return;
+      const deviceId=root.dataset.deviceId;
+      if(!deviceId){status.textContent='ভোট দেওয়ার জন্য Local Storage অনুমতি প্রয়োজন।';return;}
+      button.disabled=true;
+      try{
+        const result=await ref.transaction(current=>{
+          current=current&&typeof current==='object'?current:{};
+          current.voters=current.voters&&typeof current.voters==='object'?current.voters:{};
+          if(current.voters[deviceId])return;
+          current.voters[deviceId]=choice;
+          return current;
+        });
+        if(result.committed){
+          myVote=choice;
+          try{localStorage.setItem('ab_voted_'+safeId,choice);}catch(_){}
+          status.textContent='তোমার ভোট গ্রহণ করা হয়েছে।';
+        }else{
+          myVote=choice;
+          try{localStorage.setItem('ab_voted_'+safeId,choice);}catch(_){}
+          status.textContent='এই ব্রাউজার থেকে আগে ভোট দেওয়া হয়েছে।';
+        }
+        render(result.snapshot.val()||{});
+      }catch(error){
+        status.textContent='ভোট জমা হয়নি। Firebase Database Rules-এ read/write অনুমতি পরীক্ষা করো।';
+      }finally{button.disabled=!!myVote;}
+    });
+  });
+  root.querySelectorAll('[data-vote]').forEach(b=>b.disabled=!!myVote);
 }
 
 function watchUrlOf(obj){
