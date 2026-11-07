@@ -152,7 +152,7 @@ body{padding-bottom:0}
 .watch-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap}
 .watch-kicker{font-size:10px;letter-spacing:1px;color:#20d8ef;font-weight:900}.watch-title{font-size:17px;font-weight:900;margin:3px 0 0}
 .watch-ready{background:#3c424b;border-radius:6px;padding:7px 10px;font-size:11px;font-weight:800;color:#a9f5ff}
-.watch-screen{position:relative;background:#080a0c;aspect-ratio:16/9;max-height:70vh;min-height:220px;overflow:hidden;border-radius:5px}
+.watch-screen{position:relative;background:#080a0c;width:100%;aspect-ratio:16/9;height:auto;max-height:none;min-height:0;overflow:hidden;border-radius:5px}
 .watch-screen iframe{width:100%;height:100%;position:absolute;inset:0;border:0;background:#080a0c}.watch-placeholder{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:#c8cdd3;padding:20px;font-size:13px}
 .watch-screen iframe:not([src=""])+.watch-placeholder{display:none}
 .episode-completion-notice{display:flex;align-items:flex-start;gap:10px;margin:14px 0 12px;padding:13px 15px;border:1px solid rgba(255,190,65,.45);border-left:4px solid #ffb52e;border-radius:9px;background:linear-gradient(110deg,rgba(110,75,12,.32),rgba(38,42,48,.95));color:#f6e7c2;font-size:13px;line-height:1.55}.episode-completion-icon{font-size:19px;line-height:1.25}.episode-completion-title{display:block;color:#ffd36a;font-size:13px;font-weight:900;margin-bottom:3px}.episode-completion-message{overflow-wrap:anywhere}
@@ -169,7 +169,7 @@ body{padding-bottom:0}
   .details-list{font-size:11px}.details-section-title{font-size:14px}
   .details-story{font-size:11px}
   .watch-area{padding:8px;margin-top:8px}.watch-title{font-size:14px}
-  .watch-screen{min-height:190px;aspect-ratio:16/10}
+  .watch-screen{min-height:0;aspect-ratio:16/9}
   .episode-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
   .episode-card{padding:12px 4px;font-size:11px;min-height:42px}
   .watch-nav{margin-left:0;width:100%}.watch-nav button{flex:1}
