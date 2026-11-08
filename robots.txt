@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://animebox1.onrender.com/sitemap.xml
