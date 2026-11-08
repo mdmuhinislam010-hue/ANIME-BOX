@@ -15,6 +15,7 @@ let activeSearchCategory = 'All';
 let activeSearchQuery = '';
 let cachedHomeMarkup = '';
 let contentFirstPaintDone = false;
+let heroDataLoaded = false;
 let lastRandomizedSource = null;
 
 const builtinTypeConfig = [
@@ -71,23 +72,6 @@ const builtinTypeConfig = [
 })();
 
 
-/* ---------- SPLASH ---------- */
-(function initLoadingScreen(){
-  const screen = document.getElementById('loadingScreen');
-  if (!screen) return;
-  let hidden = false;
-  const hide = () => {
-    if (hidden) return; hidden = true;
-    screen.classList.add('hide');
-    setTimeout(() => { screen.style.display = 'none'; }, 600);
-  };
-  window.__hideSplashNow = hide;
-  // Show the app shell as soon as the lightweight hero data is ready;
-  // do not keep the entire website hidden while the full content node downloads.
-  window.__showAppShellNow = () => { hide(); };
-  window.setTimeout(hide, 3000);
-})();
-
 /* ---------- UTILS ---------- */
 function safeText(v){ return String(v ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
 function firstValue(obj, keys, fallback=''){
@@ -112,12 +96,88 @@ function contentUrl(item){
   return `/details/${slugify(cardTitle(item))}/${encodeURIComponent(id)}`;
 }
 
+// Fast first-paint placeholders: keep the layout stable while Firebase responds.
+function cardSkeletonMarkup(count=6){
+  return Array.from({length:count},()=>'<div class="ab-card-skeleton"><div class="ab-card-skeleton-poster"></div><div class="ab-card-skeleton-line"></div><div class="ab-card-skeleton-line short"></div></div>').join('');
+}
+
+/* Image loading shimmer: keeps the existing card/detail layout unchanged. */
+function markImageLoading(img){
+  if (!(img instanceof HTMLImageElement)) return;
+  img.classList.add('ab-img-loading');
+  if (img.complete){
+    img.classList.remove('ab-img-loading');
+    return;
+  }
+}
+function initImageLoadingEffects(root=document){
+  root.querySelectorAll('img').forEach(markImageLoading);
+}
+document.addEventListener('load', e => {
+  if (e.target instanceof HTMLImageElement) e.target.classList.remove('ab-img-loading');
+}, true);
+document.addEventListener('error', e => {
+  if (e.target instanceof HTMLImageElement) e.target.classList.remove('ab-img-loading');
+}, true);
+
+function showHomeLoadingSkeletons(){
+  document.querySelectorAll('.home-type-rail').forEach(rail=>{ if(!rail.querySelector('.home-type-card')) rail.innerHTML=cardSkeletonMarkup(6); });
+  const hero=document.getElementById('heroSlider');
+  if(hero && !hero.querySelector('.hero-slide') && !hero.querySelector('.ab-hero-skeleton')) hero.innerHTML=heroSkeletonMarkup();
+  document.querySelectorAll('.home-type-empty').forEach(el=>el.hidden=true);
+}
+function showPageLoadingSkeleton(kind='details'){
+  const content=document.getElementById('pageContent'); if(!content)return;
+  if(kind==='details') {
+    const bar=(w='100%',h=12)=>`<i class="ab-detail-shimmer" style="width:${w};height:${h}px"></i>`;
+    const cast=Array.from({length:8},()=>'<div class="ab-detail-cast-skeleton"><i></i>'+bar('75%',8)+bar('55%',6)+'</div>').join('');
+    content.innerHTML=`<section class="details-page ab-details-loading" aria-label="Loading title details">
+      <div class="details-topbar"><span class="details-back ab-detail-shimmer"></span><span class="details-topbar-title ab-detail-shimmer" style="width:38%;height:12px"></span></div>
+      <div class="details-shell">
+        <aside class="details-poster-wrap"><div class="details-poster ab-detail-shimmer"></div><div class="details-poster-badges"><div class="details-badge-row"><i class="ab-detail-shimmer" style="width:55px;height:18px"></i><i class="ab-detail-shimmer" style="width:48px;height:18px"></i></div></div></aside>
+        <article class="details-main ab-detail-main-loading">
+          ${bar('62%',25)}<div class="ab-detail-status-loading">${bar('48px',18)}</div>
+          <div class="ab-detail-facts-loading">${bar('42%',11)}${bar('42%',11)}</div>
+          <div class="ab-detail-actions-loading">${bar('104px',30)}${bar('82px',30)}${bar('96px',30)}</div>
+          <div class="ab-detail-meta-loading">${bar('72%',10)}${bar('90%',10)}${bar('58%',10)}${bar('66%',10)}</div>
+          <h2 class="details-section-title">🎭 Cast</h2><div class="details-cast ab-detail-cast-loading">${cast}</div>
+          <h2 class="details-section-title">📖 Storyline</h2><div class="ab-detail-story-loading">${bar('100%',10)}${bar('96%',10)}${bar('70%',10)}</div>
+        </article>
+      </div>
+      <section class="watch-area ab-detail-watch-loading">
+        <div class="watch-head"><div>${bar('82px',9)}${bar('270px',17)}</div>${bar('72px',25)}</div>
+        <section class="ab-community-vote"><div class="ab-vote-top"><div>${bar('120px',9)}${bar('180px',16)}${bar('145px',9)}</div>${bar('58px',48)}</div><div class="ab-detail-vote-line"></div><div class="ab-detail-vote-options">${bar('32%',48)}${bar('32%',48)}${bar('32%',48)}</div></section>
+        <div class="watch-screen ab-detail-player-loading"></div>
+        <div class="episode-head"><h3 class="episode-heading">Episodes</h3>${bar('130px',30)}</div>
+        <div class="episode-grid ab-detail-episodes">${Array.from({length:4},()=>bar('100%',48)).join('')}</div>
+        <div class="watch-controls">${bar('78px',24)}${bar('78px',24)}${bar('78px',24)}<div class="watch-nav">${bar('70px',28)}${bar('70px',28)}</div></div>
+      </section>
+    </section>`;
+  } else content.innerHTML='<section class="type-list-page ab-type-loading"><div class="ab-type-loading-head"></div><div class="ab-type-loading-filters"></div><div class="ab-type-loading-grid">'+cardSkeletonMarkup(10)+'</div></section>';
+}
+
 /* ============================================================
    HERO SLIDER
    ============================================================ */
+function heroSkeletonMarkup(){
+  // Match the final hero layout so loading never shifts the slider UI.
+  return `<div class="hero-slide-bg ab-hero-skeleton-bg"></div>
+    <div class="hero-slide ab-hero-skeleton">
+      <div class="hero-poster ab-hero-skeleton-poster"></div>
+      <div class="hero-info ab-hero-skeleton-copy">
+        <div class="ab-hero-skeleton-tags"><i></i><i></i><i></i></div>
+        <i class="ab-hero-skeleton-title"></i>
+        <div class="ab-hero-skeleton-meta"><i></i><i></i><i></i></div>
+        <i class="ab-hero-skeleton-description"></i>
+        <i class="ab-hero-skeleton-button"></i>
+      </div>
+    </div>
+    <div class="ab-hero-skeleton-dots"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>`;
+}
 function slideIdentity(s,i){ return String((s && (s.id ?? s.key ?? s.link ?? s.title ?? s.name)) ?? i); }
 function chooseRandomInitialSlide(){
-  if (!heroSlides.length){ heroIndex = 0; return; }
+  if (!heroDataLoaded){ heroSlider.innerHTML = heroSkeletonMarkup(); return; }
+  if (!heroSlides.length){ heroIndex = 0; heroSlider.innerHTML = '<div class="hero-empty">No hero slides published yet.</div>'; return; }
   if (heroSlides.length === 1){ heroIndex = 0; return; }
   let previous = '';
   try { previous = localStorage.getItem('animebox_last_initial_hero') || ''; } catch(_){}
@@ -132,6 +192,10 @@ function chooseRandomInitialSlide(){
 function renderHero(){
   const heroSlider = document.getElementById('heroSlider');
   if (!heroSlider) return;
+  if (!heroDataLoaded){
+    heroSlider.innerHTML = heroSkeletonMarkup();
+    return;
+  }
   if (!heroSlides.length){
     heroSlider.innerHTML = '<div class="hero-empty">No hero slides published yet.</div>';
     return;
@@ -164,7 +228,7 @@ function renderHero(){
   heroSlider.innerHTML = `
     <div class="hero-slide-bg" style="background-image:${background ? `url('${safeText(bgSafe)}')` : fallbackBg}"></div>
     <div class="hero-slide">
-      ${poster ? `<img class="hero-poster" src="${safeText(poster)}" alt="${safeText(title)} poster" loading="eager" onerror="this.style.display='none'">` : ''}
+      ${poster ? `<img class="hero-poster ab-img-loading" decoding="async" fetchpriority="high" src="${safeText(poster)}" alt="${safeText(title)} poster" loading="eager" onerror="this.style.display='none'">` : ''}
       <div class="hero-info">
         <div class="hero-tags">
           <span class="hero-tag type">${safeText(type).toUpperCase()}</span>
@@ -183,6 +247,17 @@ function renderHero(){
       <div class="hero-dots">${heroSlides.map((_,i)=>`<button class="hero-dot ${i===heroIndex?'active':''}" data-dot="${i}" aria-label="Slide ${i+1}"></button>`).join('')}</div>
     ` : ''}
   `;
+  if (background){
+    const heroBg = new Image();
+    heroSlider.classList.add('ab-hero-image-loading');
+    heroBg.onload = () => heroSlider.classList.remove('ab-hero-image-loading');
+    heroBg.onerror = () => heroSlider.classList.remove('ab-hero-image-loading');
+    heroBg.src = String(background);
+    if (heroBg.complete) heroSlider.classList.remove('ab-hero-image-loading');
+  } else {
+    heroSlider.classList.remove('ab-hero-image-loading');
+  }
+  initImageLoadingEffects(heroSlider);
   document.getElementById('heroWatch')?.addEventListener('click', () => {
     if (!target) return;
     if (/^https?:\/\//i.test(String(target))){ location.href = target; return; }
@@ -320,7 +395,7 @@ function renderHomeTypeCards(items){
       const qualityBadge = qualityText ? `<span class="home-card-badge quality">${safeText(qualityText)}</span>` : '';
       return `<a class="home-type-card" href="${safeText(href)}" title="${safeText(title)}">
         <div class="home-type-card-poster">
-          <img src="${safeText(image)}" alt="${safeText(title)}" loading="lazy" decoding="async" fetchpriority="low" onerror="this.style.visibility='hidden'">
+          <img class="ab-img-loading" src="${safeText(image)}" alt="${safeText(title)}" loading="lazy" decoding="async" fetchpriority="low" onerror="this.style.visibility='hidden'">
           <div class="home-card-badges">
             <div class="home-card-badge-row"><div class="home-card-badge-stack">${topLeft}</div>${qualityBadge}</div>
             <div class="home-card-badge-row">${ratingBadge}${typeBadge}</div>
@@ -359,6 +434,7 @@ function renderCustomTypeSections(){
       const rail = document.createElement('div'); rail.className='home-type-rail'; rail.id='homeTypeAdmin_'+id;
       const empty = document.createElement('div'); empty.className='home-type-empty'; empty.textContent='No '+String(t.name).trim()+' cards yet.';
       section.append(h, rail, empty); container.appendChild(section);
+      if (!contentFirstPaintDone) rail.innerHTML = cardSkeletonMarkup(6);
       const cfg = {name:String(t.name).trim(), key:String(t.key||''), id:String(t.id||''), rail:rail.id, emptyElement:empty, page:0};
       ensureTypeControls(section, cfg);
       return cfg;
@@ -453,6 +529,7 @@ function detailArray(item, keys){
 }
 
 function renderDetailsPage(id, seasonParam, episodeParam){
+  if (!contentFirstPaintDone){ showPageLoadingSkeleton('details'); return; }
   const item = (latestContentItems||[]).find(x =>
     String(x.id ?? x.key ?? x.contentId ?? '') === String(id) ||
     String(cardTarget(x)) === String(id) ||
@@ -483,12 +560,12 @@ function renderDetailsPage(id, seasonParam, episodeParam){
     watchHistory.unshift({id:itemId,title,poster,type,url:contentUrl(item),watchedAt:Date.now()});
     localStorage.setItem(historyKey,JSON.stringify(watchHistory.slice(0,40)));
   } catch(e) { console.warn('Watch history could not be saved:',e); }
-  const castHtml=cast.length ? cast.map(person=>{const obj=typeof person==='object'&&person?person:{name:String(person)};const n=detailText(detailValue(obj,['name','actor','title','personName']),'Cast');const role=detailText(detailValue(obj,['role','character','as','voice'],'Cast'));const img=detailText(detailValue(obj,['image','photo','imageUrl','photoUrl','profile','avatar'],''));return `<div class="details-cast-card">${img?`<img src="${safeText(img)}" alt="${safeText(n)}" loading="lazy" onerror="this.outerHTML='<div class=\\'details-cast-placeholder\\'>${safeText(n.slice(0,1))}</div>'">`:`<div class="details-cast-placeholder">${safeText(n.slice(0,1))}</div>`}<div class="details-cast-name">${safeText(n)}</div><div class="details-cast-role">${safeText(role)}</div></div>`}).join('') : '<div class="details-cast-card"><div class="details-cast-placeholder">★</div><div class="details-cast-name">Cast not added</div><div class="details-cast-role">Admin content</div></div>';
+  const castHtml=cast.length ? cast.map(person=>{const obj=typeof person==='object'&&person?person:{name:String(person)};const n=detailText(detailValue(obj,['name','actor','title','personName']),'Cast');const role=detailText(detailValue(obj,['role','character','as','voice'],'Cast'));const img=detailText(detailValue(obj,['image','photo','imageUrl','photoUrl','profile','avatar'],''));return `<div class="details-cast-card">${img?`<img class="ab-img-loading" src="${safeText(img)}" alt="${safeText(n)}" loading="lazy" decoding="async" onerror="this.outerHTML='<div class=\\'details-cast-placeholder\\'>${safeText(n.slice(0,1))}</div>'">`:`<div class="details-cast-placeholder">${safeText(n.slice(0,1))}</div>`}<div class="details-cast-name">${safeText(n)}</div><div class="details-cast-role">${safeText(role)}</div></div>`}).join('') : '<div class="details-cast-card"><div class="details-cast-placeholder">★</div><div class="details-cast-name">Cast not added</div><div class="details-cast-role">Admin content</div></div>';
   document.getElementById('pageContent').innerHTML=`<section class="details-page">
     <div class="details-topbar"><button class="details-back" type="button" id="detailsBack">← Back</button><span class="details-topbar-title">${safeText(title)}</span></div>
     <div class="details-shell">
       <aside class="details-poster-wrap">
-        ${poster?`<img class="details-poster" src="${safeText(poster)}" alt="${safeText(title)} poster" onerror="this.style.visibility='hidden'">`:'<div class="details-poster"></div>'}
+        ${poster?`<img class="details-poster ab-img-loading" src="${safeText(poster)}" alt="${safeText(title)} poster" loading="eager" decoding="async" fetchpriority="high" onerror="this.style.visibility='hidden'">`:'<div class="details-poster"></div>'}
         <div class="details-poster-badges">
           ${quality?`<div class="details-badge-row"><span class="details-badge quality">${safeText(quality)}</span></div>`:""}
           <div class="details-badge-row"><span class="details-badge language">${safeText(language)}</span><span class="details-badge type">${safeText(type.toUpperCase())}</span></div>
@@ -939,6 +1016,7 @@ function setupAdminWatchPlayer(item,itemId,title,quality,language){
    ============================================================ */
 const typeFilterState = {};
 function renderTypeListPage(typeName, page=0){
+  if (!contentFirstPaintDone){ showPageLoadingSkeleton('type'); return; }
   const cfg = allHomeTypeConfig().find(x => typeKey(x.name)===typeKey(typeName));
   if (!cfg){ document.getElementById('pageContent').innerHTML='<section class="type-list-page"><p class="type-list-empty">Type not found.</p><button class="type-list-back" id="typeBack2">← Home</button></section>'; document.getElementById('typeBack2')?.addEventListener('click',e=>{e.preventDefault();navigateTo('/home')}); return; }
   const state = typeFilterState[typeKey(cfg.name)] || (typeFilterState[typeKey(cfg.name)]={genre:'',year:'',audio:'',quality:'',sort:'newest'});
@@ -1087,6 +1165,18 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('[data-go="profile"]').forEach(b => b.addEventListener('click', () => navigateTo(animeBoxAuth.currentUser ? '/profile' : '/member-login/')));
   window.addEventListener('resize', () => renderHomeTypeCards(latestContentItems));
 
+  showHomeLoadingSkeletons();
+  initImageLoadingEffects();
+  if (window.MutationObserver){
+    const imageObserver = new MutationObserver(records => {
+      records.forEach(record => record.addedNodes.forEach(node => {
+        if (node.nodeType !== 1) return;
+        if (node.matches && node.matches('img')) markImageLoading(node);
+        if (node.querySelectorAll) initImageLoadingEffects(node);
+      }));
+    });
+    imageObserver.observe(document.getElementById('pageContent') || document.body, {childList:true,subtree:true});
+  }
   routePage();
 });
 
@@ -1445,6 +1535,7 @@ db.ref('heroSlides').on('value', snap => {
     .sort((a,b) => Number(a.order ?? a.sortOrder ?? 0) - Number(b.order ?? b.sortOrder ?? 0));
   const firstLoad = heroSlides.length === 0 && incoming.length > 0;
   heroSlides = incoming;
+  heroDataLoaded = true;
   if (firstLoad) chooseRandomInitialSlide();
   else heroIndex = Math.min(heroIndex, Math.max(0, heroSlides.length - 1));
   renderHero();
@@ -1452,7 +1543,7 @@ db.ref('heroSlides').on('value', snap => {
   // Let users see the page shell/hero while the larger content collection loads.
   if (window.__showAppShellNow) window.__showAppShellNow();
   if (!contentFirstPaintDone && typeof routePage === 'function') routePage();
-}, () => { heroSlides = []; renderHero(); if (window.__showAppShellNow) window.__showAppShellNow(); });
+}, () => { heroSlides = []; heroDataLoaded = true; renderHero(); if (window.__showAppShellNow) window.__showAppShellNow(); });
 
 
 /* ============================================================
