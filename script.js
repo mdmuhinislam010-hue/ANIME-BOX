@@ -590,6 +590,8 @@ function renderDetailsPage(id, seasonParam, episodeParam){
   const quality=detailText(detailValue(item,['quality','resolution','videoQuality','qualityLabel'],''));
   const release=detailText(detailValue(item,['releaseDate','released','release_date','premiereDate'],year));
   const status=detailText(detailValue(item,['status','badge','contentStatus','showStatus'],item.comingSoon?'Coming Soon':'Ongoing'));
+  const addedAtValue=Number(item.createdAt)||0;
+  const addedAtLabel=addedAtValue?new Date(addedAtValue).toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'';
   const seasonNote=detailText(detailValue(item,['seasonEpisodeUpdate','episodeUpdate','latestEpisode','seasonInfo','episodeInfo'],''));
   const description=detailText(detailValue(item,['description','overview','storyline','plot','synopsis'],''),'No storyline added yet.');
   const cast=detailArray(item,['cast','actors','voiceActors','staff']);
@@ -633,6 +635,7 @@ function renderDetailsPage(id, seasonParam, episodeParam){
           ${rating?`<div class="details-list-row">⭐ <b>IMDb:</b> ${safeText(rating)}${String(rating).includes('/')?'':'/10'}</div>`:''}
           ${genre?`<div class="details-list-row">🎬 <b>Genre:</b> ${safeText(genre)}</div>`:''}
           <div class="details-list-row">🔊 <b>Language:</b> ${safeText(language)}</div>
+          ${addedAtLabel?`<div class="details-list-row">🕒 <b>Added:</b> ${safeText(addedAtLabel)}</div>`:''}
           <div class="details-list-row">📺 <b>Quality:</b> ${safeText(quality)}</div>
           ${release?`<div class="details-list-row">🗓️ <b>Released:</b> ${safeText(release)}</div>`:''}
         </div>
@@ -775,25 +778,31 @@ function setupCommunityVote(contentId){
       if(!deviceId){status.textContent='ভোট দেওয়ার জন্য Local Storage অনুমতি প্রয়োজন।';return;}
       button.disabled=true;
       try{
-        const result=await ref.transaction(current=>{
-          current=current&&typeof current==='object'?current:{};
-          current.voters=current.voters&&typeof current.voters==='object'?current.voters:{};
-          if(current.voters[deviceId])return;
-          current.voters[deviceId]=choice;
-          return current;
+        const supabase=window.animeBoxSupabase;
+        if(!supabase) throw new Error('Supabase client পাওয়া যায়নি।');
+        const {data,error}=await supabase.rpc('animebox_submit_vote',{
+          p_content_id:safeId,
+          p_device_id:deviceId,
+          p_choice:choice
         });
-        if(result.committed){
-          myVote=choice;
-          try{localStorage.setItem('ab_voted_'+safeId,choice);}catch(_){}
-          status.textContent='তোমার ভোট গ্রহণ করা হয়েছে।';
-        }else{
-          myVote=choice;
-          try{localStorage.setItem('ab_voted_'+safeId,choice);}catch(_){}
-          status.textContent='এই ব্রাউজার থেকে আগে ভোট দেওয়া হয়েছে।';
-        }
-        render(result.snapshot.val()||{});
+        if(error) throw error;
+        const voteData=data&&data.vote_data&&typeof data.vote_data==='object'?data.vote_data:{};
+        myVote=choice;
+        try{localStorage.setItem('ab_voted_'+safeId,choice);}catch(_){}
+        status.textContent=data&&data.committed
+          ?'তোমার ভোট গ্রহণ করা হয়েছে।'
+          :'এই ব্রাউজার থেকে আগে ভোট দেওয়া হয়েছে।';
+        render(voteData);
       }catch(error){
-        status.textContent='ভোট জমা হয়নি। Supabase Database Rules-এ read/write অনুমতি পরীক্ষা করো।';
+        console.error('AnimeBox vote submit failed:',error);
+        const message=String(error&&error.message||'');
+        if(/function .*animebox_submit_vote|schema cache|could not find the function/i.test(message)){
+          status.textContent='Vote RPC পাওয়া যায়নি। Supabase-এ নতুন AnimeBox_Supabase_Setup.sql চালাও।';
+        }else if(/row-level security|permission denied|not allowed/i.test(message)){
+          status.textContent='Supabase অনুমতি নেই। Setup SQL চালিয়ে RLS Policy ও RPC permission ঠিক করো।';
+        }else{
+          status.textContent='ভোট জমা হয়নি: '+(message||'ইন্টারনেট ও Supabase সংযোগ পরীক্ষা করো।');
+        }
       }finally{button.disabled=!!myVote;}
     });
   });

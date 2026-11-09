@@ -35,3 +35,26 @@ AUTHENTICATION CHECKLIST
 - If Confirm email is enabled, new users must click the confirmation link before signing in.
 - This package uses Supabase Auth for signup, login, logout, profile-name updates, and password reset. It no longer calls the old Firebase OTP Cloud Function.
 - The SQL file currently grants public app access to the shared JSON state table to preserve the legacy public website/Admin behavior. This is permissive: do not store secrets or private user data in that table. For production security, Admin writes should be moved behind authenticated server-side authorization and narrower RLS policies.
+
+
+COMMUNITY VOTE FIX (IMPORTANT)
+- The User Website now submits votes through the database-side RPC function
+  animebox_submit_vote. This makes vote writes atomic and prevents concurrent
+  submissions from replacing each other.
+- Before deploying this ZIP, open Supabase Dashboard > SQL Editor and run the
+  complete AnimeBox_Supabase_Setup.sql included in this ZIP. Running it again
+  is safe for the existing animebox_state row and does not delete its data.
+- Then deploy all files together to the same website root. Keep
+  supabase-adapter.js beside index.html and script.js.
+- If a vote still fails, the page now shows a more useful error message and
+  the browser console records the Supabase error. Do not expose a service_role
+  key in the website; the publishable key is intended for browser use.
+
+
+CARD ADD DATE + ADMIN RECENT UPDATES
+- The Admin Panel stores createdAt when a new card is added and updates updatedAt whenever the card is edited.
+- The Admin Panel shows Added and Last updated timestamps in the card list.
+- A Recently Updated Cards panel shows the latest four updated cards, numbered 1, 2, 3, 4.
+- The User Website shows the Added date/time on the content details page when createdAt exists.
+- Older cards without a saved createdAt are labeled as time not recorded; their historical add date is not guessed.
+- Use the matching updated Admin HTML file together with this User ZIP and the same Supabase project.
