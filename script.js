@@ -381,6 +381,32 @@ function shuffleCards(list){
   for (let i = out.length-1; i > 0; i--){ const j = Math.floor(Math.random()*(i+1)); [out[i],out[j]]=[out[j],out[i]]; }
   return out;
 }
+function animeBoxRelativeTime(timestamp){
+  const value=Number(timestamp)||0;
+  if(!value) return '';
+  const diff=Math.max(0,Date.now()-value);
+  const minutes=Math.floor(diff/60000);
+  if(minutes<1) return 'Just now';
+  if(minutes<60) return `${minutes}m ago`;
+  const hours=Math.floor(minutes/60);
+  if(hours<24) return `${hours}h ago`;
+  const days=Math.floor(hours/24);
+  if(days<30) return `${days}d ago`;
+  const months=Math.floor(days/30);
+  if(days<365) return `${months}mo ago`;
+  const years=Math.floor(days/365);
+  return `${years}y ago`;
+}
+function refreshHomeCardTimes(){
+  document.querySelectorAll('[data-card-time]').forEach(el=>{
+    const label=animeBoxRelativeTime(el.dataset.cardTime);
+    if(label) el.textContent=label;
+  });
+}
+if(!window.__animeBoxCardTimeTicker){
+  window.__animeBoxCardTimeTicker=setInterval(refreshHomeCardTimes,60000);
+}
+
 function renderHomeTypeCards(items){
   const incomingItems = Array.isArray(items) ? items : [];
   latestContentItems = incomingItems;
@@ -436,8 +462,12 @@ function renderHomeTypeCards(items){
       const ratingBadge = ratingText ? `<span class="home-card-badge rating">★ ${safeText(ratingText.replace(/^★\s*/,''))}</span>` : '';
       const typeBadge = typeText ? `<span class="home-card-badge type">${safeText(typeText)}</span>` : '';
       const qualityBadge = qualityText ? `<span class="home-card-badge quality">${safeText(qualityText)}</span>` : '';
+      // Show the timestamp of the last Admin update (fall back to original publish time).
+      const cardTimestamp=Number(item.updatedAt||item.createdAt)||0;
+      const cardTimeBadge=cardTimestamp?`<span class="home-card-time" data-card-time="${cardTimestamp}" title="Last updated: ${safeText(new Date(cardTimestamp).toLocaleString())}">${safeText(animeBoxRelativeTime(cardTimestamp))}</span>`:'';
       return `<a class="home-type-card" href="${safeText(href)}" title="${safeText(title)}">
         <div class="home-type-card-poster">
+          ${cardTimeBadge}
           ${image ? `<img class="ab-img-loading" src="${safeText(image)}" alt="${safeText(title)}" loading="lazy" decoding="async" fetchpriority="low" onerror="this.style.visibility='hidden'">` : ''}
           <div class="home-card-badges">
             <div class="home-card-badge-row"><div class="home-card-badge-stack">${topLeft}</div>${qualityBadge}</div>
@@ -598,13 +628,28 @@ function renderDetailsPage(id, seasonParam, episodeParam){
   const trailer=detailText(detailValue(item,['trailerUrl','trailer','youtubeTrailer'],''));
   const myListKey='animebox_my_list'; let saved=[]; try{saved=JSON.parse(localStorage.getItem(myListKey)||'[]')}catch(_){}
   const itemId=String(item.id ?? item.key ?? item.contentId ?? id); const inList=saved.includes(itemId);
-  // Keep a per-account watch history on this browser, newest first.
+  // Keep a local history and, after the visitor's one-time consent, send a private
+  // watch event to the Edge Function. The server derives the public IP from request headers.
   try {
-    const historyKey='animebox_watch_history_'+(animeBoxAuth.currentUser?.uid || 'guest');
+    const activeUser=animeBoxAuth.currentUser;
+    const historyKey='animebox_watch_history_'+(activeUser?.uid || 'guest');
     let watchHistory=JSON.parse(localStorage.getItem(historyKey)||'[]');
     watchHistory=watchHistory.filter(x=>String(x.id)!==itemId);
     watchHistory.unshift({id:itemId,title,poster,type,url:contentUrl(item),watchedAt:Date.now()});
     localStorage.setItem(historyKey,JSON.stringify(watchHistory.slice(0,40)));
+    let consent=localStorage.getItem('animebox_private_watch_consent');
+    if(consent===null){
+      consent=confirm('AnimeBox-এর Watch History ও Public IP Admin Panel-এ নিরাপদভাবে সংরক্ষণ করা হবে। আপনি কি সম্মতি দিচ্ছেন?')?'yes':'no';
+      localStorage.setItem('animebox_private_watch_consent',consent);
+    }
+    if(consent==='yes' && window.animeBoxSupabase?.functions){
+      let actorId=activeUser?.uid||localStorage.getItem('animebox_guest_watch_id');
+      if(!actorId){actorId='guest_'+(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2));localStorage.setItem('animebox_guest_watch_id',actorId);}
+      window.animeBoxSupabase.functions.invoke('animebox-private',{body:{
+        action:'track_watch',actorId,contentId:itemId,title,poster,
+        contentType:type,contentUrl:contentUrl(item),displayName:activeUser?.displayName||''
+      }}).then(({error})=>{if(error)console.warn('Private watch history could not be saved:',error)});
+    }
   } catch(e) { console.warn('Watch history could not be saved:',e); }
   const castHtml=cast.length ? cast.map(person=>{const obj=typeof person==='object'&&person?person:{name:String(person)};const n=detailText(detailValue(obj,['name','actor','title','personName']),'Cast');const role=detailText(detailValue(obj,['role','character','as','voice'],'Cast'));const img=detailText(detailValue(obj,['image','photo','imageUrl','photoUrl','profile','avatar'],''));return `<div class="details-cast-card">${img?`<img class="ab-img-loading" src="${safeText(img)}" alt="${safeText(n)}" loading="lazy" decoding="async" onerror="this.outerHTML='<div class=\\'details-cast-placeholder\\'>${safeText(n.slice(0,1))}</div>'">`:`<div class="details-cast-placeholder">${safeText(n.slice(0,1))}</div>`}<div class="details-cast-name">${safeText(n)}</div><div class="details-cast-role">${safeText(role)}</div></div>`}).join('') : '<div class="details-cast-card"><div class="details-cast-placeholder">★</div><div class="details-cast-name">Cast not added</div><div class="details-cast-role">Admin content</div></div>';
   document.getElementById('pageContent').innerHTML=`<section class="details-page">
