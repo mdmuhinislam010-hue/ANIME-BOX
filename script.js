@@ -17,6 +17,38 @@ let cachedHomeMarkup = '';
 let contentFirstPaintDone = false;
 let heroDataLoaded = false;
 let lastRandomizedSource = null;
+let lastContentSnapshotJSON = '';
+let lastHeroSnapshotJSON = ''; 
+// Keep only one pair of live watch-data listeners for the active detail page.
+let activeWatchListeners = [];
+function stopActiveWatchListeners(){
+  activeWatchListeners.forEach(({ref, event, callback})=>{ try{ ref.off(event, callback); }catch(_){} });
+  activeWatchListeners = [];
+}
+const AB_HOME_CACHE_KEY = 'animebox_home_cache_v2';
+const AB_HOME_CACHE_TTL = 6 * 60 * 60 * 1000;
+function readHomeCache(){
+  try {
+    const raw = localStorage.getItem(AB_HOME_CACHE_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    if (!data || Date.now() - Number(data.savedAt || 0) > AB_HOME_CACHE_TTL) return null;
+    return data;
+  } catch (_) { return null; }
+}
+function writeHomeCache(){
+  try {
+    const payload = {
+      savedAt: Date.now(),
+      content: latestContentItems,
+      heroSlides,
+      heroIndex
+    };
+    const raw = JSON.stringify(payload);
+    // Keep the browser cache small; Supabase remains the source of truth.
+    if (raw.length <= 2_200_000) localStorage.setItem(AB_HOME_CACHE_KEY, raw);
+  } catch (_) {}
+}
 
 const builtinTypeConfig = [
   {name:'Movie',    rail:'homeTypeMovie',    empty:'homeTypeMovieEmpty',  page:0},
@@ -82,10 +114,22 @@ function asUrl(v){ if (!v) return ''; if (typeof v==='string') return v; return 
 function typeKey(v){ return String(v ?? '').trim().toLowerCase().replace(/[^a-z0-9]+/g,''); }
 function slugify(str){ return String(str ?? '').trim().toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'') || 'item'; }
 function normalizeSlideList(data){
-  if (Array.isArray(data)) return data.filter(Boolean);
-  return data && typeof data==='object'
-    ? Object.entries(data).map(([id,v]) => ({...((v&&typeof v==='object')?v:{}), id}))
-    : [];
+  // Admin data may be saved as an array, an RTDB-style keyed object,
+  // or wrapped by an export/import layer. Unwrap common container shapes.
+  let source = data;
+  for (let i=0; i<3 && source && !Array.isArray(source) && typeof source==='object'; i++){
+    const nested = ['items','list','records','content','data'].find(k =>
+      source[k] && (Array.isArray(source[k]) || typeof source[k]==='object')
+    );
+    if (!nested) break;
+    source = source[nested];
+  }
+  if (Array.isArray(source)) return source.filter(v => v && typeof v==='object');
+  if (source && typeof source==='object'){
+    return Object.entries(source).filter(([,v])=>v && typeof v==='object')
+      .map(([id,v]) => ({...v, id: v.id ?? v.key ?? id}));
+  }
+  return [];
 }
 function cardImage(item){ return asUrl(firstValue(item,['poster','posterUrl','image','imageUrl','thumbnail','thumbnailUrl','cover','coverUrl','photo','banner','backdrop'],'')); }
 function cardTitle(item){ return firstValue(item,['title','name','animeName','movieName','contentTitle'],'Untitled'); }
@@ -96,7 +140,7 @@ function contentUrl(item){
   return `/details/${slugify(cardTitle(item))}/${encodeURIComponent(id)}`;
 }
 
-// Fast first-paint placeholders: keep the layout stable while Firebase responds.
+// Fast first-paint placeholders: keep the layout stable while Supabase responds.
 function cardSkeletonMarkup(count=6){
   return Array.from({length:count},()=>'<div class="ab-card-skeleton"><div class="ab-card-skeleton-poster"></div><div class="ab-card-skeleton-line"></div><div class="ab-card-skeleton-line short"></div></div>').join('');
 }
@@ -258,18 +302,8 @@ function renderHero(){
     heroSlider.classList.remove('ab-hero-image-loading');
   }
   initImageLoadingEffects(heroSlider);
-  document.getElementById('heroWatch')?.addEventListener('click', () => {
-    if (!target) return;
-    if (/^https?:\/\//i.test(String(target))){ location.href = target; return; }
-    if (linkedCard){ navigateTo(contentUrl(linkedCard)); return; }
-    const maybe = heroContentMap[String(target)];
-    if (maybe) navigateTo(contentUrl(maybe));
-  });
-  document.getElementById('heroPrev')?.addEventListener('click', () => { moveHero(-1); restartHeroTimer(); });
-  document.getElementById('heroNext')?.addEventListener('click', () => { moveHero(1);  restartHeroTimer(); });
-  heroSlider.querySelectorAll('[data-dot]').forEach(b => b.addEventListener('click', () => {
-    heroIndex = Number(b.dataset.dot); renderHero(); restartHeroTimer();
-  }));
+  // Hero controls use delegated document events so they keep working when the
+  // Home DOM is restored from cache after opening a detail page.
 }
 function moveHero(step){
   if (!heroSlides.length) return;
@@ -322,12 +356,21 @@ function cardsPerPage(){
 }
 function allHomeTypeConfig(){ return [...builtinTypeConfig, ...customTypeConfig, ...(allPageConfig ? [allPageConfig] : [])]; }
 function itemMatchesType(item, cfg){
-  const fields = ['type','category','contentType','mediaType','kind','section','typeKey','typeId','typeName'];
+  const fields = ['type','category','contentType','mediaType','kind','section','typeKey','typeId','typeName','content_type','movieType'];
   const values = fields.map(k => item && item[k]).filter(v => v!==undefined && v!==null && String(v).trim()!=='').map(String);
+  const aliases = {
+    movie:['movie','movies','film','films'],
+    trending:['trending','popular','popularnow'],
+    anime:['anime','animation','animations'],
+    series:['series','tvseries','webseries','webseries'],
+    tvshow:['tvshow','tvshows','television','show','shows']
+  };
   const accepted = new Set([cfg.name, cfg.key, cfg.id].filter(Boolean).map(typeKey));
+  [...accepted].forEach(k => (aliases[k]||[]).forEach(a=>accepted.add(typeKey(a))));
   for (const raw of values){
     const n = typeKey(raw);
     if (accepted.has(n)) return true;
+    if ([...(aliases[n]||[])].some(a=>accepted.has(typeKey(a)))) return true;
     const linked = (adminTypes||[]).find(t => [t&&t.id, t&&t.key, t&&t.name].some(v => v && typeKey(v)===n));
     if (linked && [linked.name, linked.key, linked.id].some(v => v && accepted.has(typeKey(v)))) return true;
   }
@@ -395,7 +438,7 @@ function renderHomeTypeCards(items){
       const qualityBadge = qualityText ? `<span class="home-card-badge quality">${safeText(qualityText)}</span>` : '';
       return `<a class="home-type-card" href="${safeText(href)}" title="${safeText(title)}">
         <div class="home-type-card-poster">
-          <img class="ab-img-loading" src="${safeText(image)}" alt="${safeText(title)}" loading="lazy" decoding="async" fetchpriority="low" onerror="this.style.visibility='hidden'">
+          ${image ? `<img class="ab-img-loading" src="${safeText(image)}" alt="${safeText(title)}" loading="lazy" decoding="async" fetchpriority="low" onerror="this.style.visibility='hidden'">` : ''}
           <div class="home-card-badges">
             <div class="home-card-badge-row"><div class="home-card-badge-stack">${topLeft}</div>${qualityBadge}</div>
             <div class="home-card-badge-row">${ratingBadge}${typeBadge}</div>
@@ -529,6 +572,7 @@ function detailArray(item, keys){
 }
 
 function renderDetailsPage(id, seasonParam, episodeParam){
+  stopActiveWatchListeners();
   if (!contentFirstPaintDone){ showPageLoadingSkeleton('details'); return; }
   const item = (latestContentItems||[]).find(x =>
     String(x.id ?? x.key ?? x.contentId ?? '') === String(id) ||
@@ -684,7 +728,7 @@ function setupCommunityVote(contentId){
   const topLabel=document.getElementById('abVoteTopLabel');
   const topPercent=document.getElementById('abVoteTopPercent');
   const status=document.getElementById('abVoteStatus');
-  if(typeof db==='undefined' || !window.firebase || !firebase.database){
+  if(typeof db==='undefined' || !window.db){
     status.textContent='ভোট সিস্টেম সংযোগ করা যায়নি।';
     return;
   }
@@ -722,7 +766,7 @@ function setupCommunityVote(contentId){
     if(myVote) status.textContent='তুমি ইতিমধ্যে ভোট দিয়েছ: '+labels[myVote]+'.';
     else status.textContent='একটি অপশন বেছে নিয়ে ভোট দাও।';
   }
-  ref.on('value',snap=>render(snap.val()||{}),()=>{status.textContent='ভোটের ফলাফল লোড করা যায়নি। Firebase Database Rules পরীক্ষা করো।';});
+  ref.on('value',snap=>render(snap.val()||{}),()=>{status.textContent='ভোটের ফলাফল লোড করা যায়নি। Supabase Database Rules পরীক্ষা করো।';});
   root.querySelectorAll('[data-vote]').forEach(button=>{
     button.addEventListener('click',async()=>{
       const choice=button.dataset.vote;
@@ -749,7 +793,7 @@ function setupCommunityVote(contentId){
         }
         render(result.snapshot.val()||{});
       }catch(error){
-        status.textContent='ভোট জমা হয়নি। Firebase Database Rules-এ read/write অনুমতি পরীক্ষা করো।';
+        status.textContent='ভোট জমা হয়নি। Supabase Database Rules-এ read/write অনুমতি পরীক্ষা করো।';
       }finally{button.disabled=!!myVote;}
     });
   });
@@ -905,7 +949,7 @@ function setupAdminWatchPlayer(item,itemId,title,quality,language){
     if(!season) return [];
     const sid=String(season.id??'').trim();
     const byId=allEpisodes.filter(ep=>episodeSeasonKey(ep) && episodeSeasonKey(ep)===sid);
-    // Prefer the Admin's exact Firebase season ID. Fall back to season number
+    // Prefer the Admin's exact Supabase season ID. Fall back to season number
     // only when the data has no matching season-ID records (legacy records).
     let rows=byId.length ? byId : allEpisodes.filter(ep=>{
       const n=episodeSeasonNumber(ep);
@@ -993,17 +1037,23 @@ function setupAdminWatchPlayer(item,itemId,title,quality,language){
   });
 
   if(typeof db!=='undefined'){
-    db.ref('seasons/'+currentContentId).on('value',snap=>{
+    const seasonsRef = db.ref('seasons/'+currentContentId);
+    const seasonsCallback = snap=>{
       const previouslySelectedId=String(seasons[selectedSeason]?.id ?? '');
       seasons=sortWatchSeasons(normalizeSlideList(snap.val()).map(x=>({...x,id:String(x.id??x.key??'')})).filter(x=>x.enabled!==false && x.active!==false));
       const restoredIndex=previouslySelectedId ? seasons.findIndex(x=>String(x.id??'')===previouslySelectedId) : -1;
       selectedSeason=restoredIndex>=0 ? restoredIndex : Math.min(selectedSeason,Math.max(0,seasons.length-1));
       renderSeasonOptions(); renderEpisodes(); renderUserDownloadHub();
-    });
-    db.ref('episodes/'+currentContentId).on('value',snap=>{
+    };
+    seasonsRef.on('value', seasonsCallback);
+    activeWatchListeners.push({ref:seasonsRef,event:'value',callback:seasonsCallback});
+    const episodesRef = db.ref('episodes/'+currentContentId);
+    const episodesCallback = snap=>{
       allEpisodes=normalizeSlideList(snap.val()).map(x=>({...x,id:String(x.id??x.key??'')}));
       renderEpisodes(); renderUserDownloadHub();
-    });
+    };
+    episodesRef.on('value', episodesCallback);
+    activeWatchListeners.push({ref:episodesRef,event:'value',callback:episodesCallback});
   } else {
     seasons=sortWatchSeasons(normalizeWatchSeasons(null,item));
     renderSeasonOptions(); renderEpisodes();
@@ -1108,8 +1158,13 @@ function routePage(){
     const seg = path.slice(1).split('/')[0];
     if (allSlugs.includes(seg)) typeSlug = seg;
   }
+  if (!detailInfo) stopActiveWatchListeners();
   const leavingHome = detailInfo || path === '/search' || typeSlug || path === '/profile' || path === '/member-login' || path === '/leaderboard';
-  if (leavingHome && content.querySelector('.hero-wrap')) cachedHomeMarkup = content.innerHTML;
+  if (leavingHome && content.querySelector('.hero-wrap')) {
+    cachedHomeMarkup = content.innerHTML;
+    clearInterval(heroTimer);
+    heroTimer = null;
+  }
 
   if (path === '/search'){ showHomeSections(false); setActiveNav(''); renderSearchPage(); return; }
   if (detailInfo){ showHomeSections(false); setActiveNav(''); renderDetailsPage(detailInfo.id, detailInfo.season, detailInfo.episode); return; }
@@ -1119,9 +1174,12 @@ function routePage(){
   if (path === '/home' || path === '/'){
     showHomeSections(true); setActiveNav('home');
     if (!content.querySelector('.hero-wrap')){
-      if (cachedHomeMarkup) content.innerHTML = cachedHomeMarkup;
-      renderCustomTypeSections();
-      renderHomeTypeCards(latestContentItems);
+      if (cachedHomeMarkup) {
+        content.innerHTML = cachedHomeMarkup;
+        // Rebuild only admin-defined rails; the restored hero markup/state is left intact.
+        renderCustomTypeSections();
+        renderHomeTypeCards(latestContentItems);
+      }
     }
     const hs = document.getElementById('heroSlider');
     if (hs){
@@ -1138,8 +1196,27 @@ function routePage(){
 
 /* ---------- EVENTS ---------- */
 window.addEventListener('popstate', routePage);
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden){ clearInterval(heroTimer); heroTimer = null; }
+  else if (currentPath()==='/home' || currentPath()==='/') restartHeroTimer();
+});
 
 document.addEventListener('click', e => {
+  const heroWatch = e.target.closest('#heroWatch');
+  if (heroWatch){
+    e.preventDefault();
+    const slide = heroSlides[heroIndex] || {};
+    const target = firstValue(slide, ['link','detailUrl','route','contentUrl'], '');
+    const linkedCard = target && heroContentMap[String(target)];
+    if (target && /^https?:\/\//i.test(String(target))) location.href = target;
+    else if (linkedCard) navigateTo(contentUrl(linkedCard));
+    else if (target) navigateTo('/details/'+encodeURIComponent(String(target)));
+    return;
+  }
+  if (e.target.closest('#heroPrev')){ e.preventDefault(); moveHero(-1); restartHeroTimer(); return; }
+  if (e.target.closest('#heroNext')){ e.preventDefault(); moveHero(1); restartHeroTimer(); return; }
+  const heroDot = e.target.closest('[data-dot]');
+  if (heroDot){ e.preventDefault(); heroIndex = Number(heroDot.dataset.dot)||0; renderHero(); restartHeroTimer(); return; }
   const link = e.target.closest('a');
   if (!link) return;
   const href = link.getAttribute('href');
@@ -1181,35 +1258,21 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /* ============================================================
-   FIREBASE
+   SUPABASE CONNECTION (shared project with Admin)
    ============================================================ */
-const firebaseConfig = {
-  apiKey: "AIzaSyCivW6E7Nk2OE794_8vggiYFLn7x4ElrIQ",
-  authDomain: "ttttt-9bee0.firebaseapp.com",
-  databaseURL: "https://ttttt-9bee0-default-rtdb.firebaseio.com",
-  projectId: "ttttt-9bee0",
-  storageBucket: "ttttt-9bee0.firebasestorage.app",
-  messagingSenderId: "416509818110",
-  appId: "1:416509818110:web:cbefe7284695e8ea9261af"
-};
-if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+const db = window.db;
+const animeBoxAuth = window.animeBoxAuth;
 
-// Separate Firebase project reserved only for User Authentication.
-const authFirebaseConfig = {
-  apiKey: "AIzaSyCt0Ex7G_xpcklm6NN0P4Bc49enwvWc5dE",
-  authDomain: "vpnyt-ffb68.firebaseapp.com",
-  databaseURL: "https://vpnyt-ffb68-default-rtdb.firebaseio.com",
-  projectId: "vpnyt-ffb68",
-  storageBucket: "vpnyt-ffb68.firebasestorage.app",
-  messagingSenderId: "919770851500",
-  appId: "1:919770851500:web:54b1c43a8f9f2440d59709"
-};
-const authFirebaseApp = firebase.apps.find(app => app.name === "AnimeBoxAuth")
-  || firebase.initializeApp(authFirebaseConfig, "AnimeBoxAuth");
-const animeBoxAuth = authFirebaseApp.auth();
+// Paint the last successful Home data immediately; Supabase will refresh it live.
+(function hydrateHomeCache(){
+  const cached = readHomeCache();
+  if (!cached) return;
+  if (Array.isArray(cached.content)){ latestContentItems=cached.content; contentFirstPaintDone=true; applyContentSnapshot(cached.content); }
+  if (Array.isArray(cached.heroSlides)){ heroSlides=cached.heroSlides; try{lastHeroSnapshotJSON=JSON.stringify(cached.heroSlides)}catch(_){} heroDataLoaded=true; heroIndex=Math.max(0,Math.min(Number(cached.heroIndex)||0,Math.max(0,heroSlides.length-1))); renderHero(); }
+  writeHomeCache();
+})();
 
-/* ---------- USER AUTHENTICATION (separate Firebase project) ---------- */
+/* ---------- USER AUTHENTICATION (separate Supabase project) ---------- */
 let authViewMode = 'login';
 let authStatusMessage = '';
 let authStatusKind = 'info';
@@ -1221,14 +1284,16 @@ function authErrorText(error){
     'auth/user-not-found':'এই ইমেইলে কোনো অ্যাকাউন্ট পাওয়া যায়নি।',
     'auth/wrong-password':'পাসওয়ার্ড সঠিক নয়।',
     'auth/invalid-credential':'ইমেইল অথবা পাসওয়ার্ড সঠিক নয়।',
+    'auth/email-not-confirmed':'ইমেইলটি আগে Inbox থেকে Confirm করো, তারপর লগইন করো।',
+    'auth/provider-error':'Supabase থেকে ত্রুটি এসেছে: '+String(error && error.message || 'অনুগ্রহ করে আবার চেষ্টা করো।'),
     'auth/email-already-in-use':'এই ইমেইল দিয়ে আগে থেকেই অ্যাকাউন্ট আছে।',
     'auth/weak-password':'পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।',
     'auth/too-many-requests':'অনেকবার চেষ্টা করা হয়েছে। কিছুক্ষণ পরে আবার চেষ্টা করো।',
     'auth/network-request-failed':'ইন্টারনেট সংযোগ পরীক্ষা করে আবার চেষ্টা করো.',
-    'auth/operation-not-allowed':'Firebase Console-এ Email/Password sign-in চালু করতে হবে।',
+    'auth/operation-not-allowed':'Supabase Console-এ Email/Password sign-in চালু করতে হবে।',
     'auth/requires-recent-login':'নিরাপত্তার জন্য আবার লগইন করে চেষ্টা করো।'
   };
-  return map[code] || 'কাজটি সম্পন্ন হয়নি। Firebase Authentication সেটিংস এবং ইন্টারনেট সংযোগ পরীক্ষা করো।';
+  return map[code] || 'কাজটি সম্পন্ন হয়নি। Supabase Authentication সেটিংস এবং ইন্টারনেট সংযোগ পরীক্ষা করো।';
 }
 function setAuthMessage(message, kind='info'){
   authStatusMessage = message;
@@ -1299,32 +1364,24 @@ function renderLeaderboardPage(){
     podium.innerHTML=top.length?top.map((x,i)=>({x,rank:i+1})).sort((a,b)=>({2:0,1:1,3:2}[a.rank]-({2:0,1:1,3:2}[b.rank]))).map(({x,rank})=>`<div class="ab-lb-person rank-${rank}"><span class="ab-lb-rank">#${rank}</span>${x.photo?`<img src="${safeText(x.photo)}" alt="">`:`<div class="ab-lb-avatar">${safeText((x.name||'U').slice(0,2).toUpperCase())}</div>`}<b>${safeText(x.name)}</b><strong>◷ ${x.coins.toLocaleString()}</strong><small>COINS</small></div>`).join(''):'<div class="ab-lb-loading">No users yet. Create an account to appear here.</div>';
     list.innerHTML=rows.slice(3).map((x,i)=>`<div class="ab-lb-row"><span>#${i+4}</span>${x.photo?`<img src="${safeText(x.photo)}" alt="">`:`<div class="ab-lb-avatar">${safeText((x.name||'U').slice(0,2).toUpperCase())}</div>`}<b>${safeText(x.name)}</b><strong>◷ ${x.coins.toLocaleString()}</strong></div>`).join('');
   };
-  db.ref('users').on('value',snap=>{profiles=snap.val()||{};render();},()=>{const el=document.getElementById('abLbTop');if(el)el.innerHTML='<div class="ab-lb-loading">Live users could not load. Check Firebase Database rules.</div>';});
+  db.ref('users').on('value',snap=>{profiles=snap.val()||{};render();},()=>{const el=document.getElementById('abLbTop');if(el)el.innerHTML='<div class="ab-lb-loading">Live users could not load. Check Supabase Database rules.</div>';});
   db.ref('leaderboard').on('value',snap=>{coinRows=snap.val()||{};render();});
 }
 
-/* ---------- SECURE EMAIL OTP PASSWORD RESET ---------- */
-const ANIMEBOX_OTP_API = 'https://asia-southeast1-vpnyt-ffb68.cloudfunctions.net';
+/* ---------- SUPABASE PASSWORD RESET ---------- */
 let passwordResetEmail = '';
 function renderPasswordResetPage(email=''){
   const content=document.getElementById('pageContent'); if(!content)return;
   passwordResetEmail=String(email||'').trim();
-  let step='email';
-  const shell=(inner)=>`<section class="auth-page"><div class="auth-card ab-otp-card"><div class="auth-brand-mark auth-brand-left">AB <span>ACCOUNT RECOVERY</span></div>${inner}<p class="auth-terms">AB • AnimeBox Account Security</p></div></section>`;
-  const showMessage=(msg,kind='info')=>{const el=document.getElementById('abOtpMessage');if(el){el.textContent=msg;el.className='auth-status '+kind;el.hidden=!msg;}};
-  const render=()=>{
-    if(step==='email'){
-      content.innerHTML=shell(`<h1 class="auth-title">Forgot Password?</h1><p class="auth-subtitle">তোমার অ্যাকাউন্টের ইমেইল দাও। আমরা ৬ সংখ্যার OTP পাঠাব।</p><form id="abOtpEmailForm" class="auth-form"><input id="abOtpEmail" type="email" autocomplete="email" placeholder="Registered Email Address" value="${safeText(passwordResetEmail)}" required><div id="abOtpMessage" class="auth-status info" hidden></div><button class="auth-primary-btn" id="abOtpSend" type="submit">SEND OTP</button></form><button class="auth-secondary-btn" id="abOtpBack">Back to Login</button>`);
-      document.getElementById('abOtpBack')?.addEventListener('click',()=>{authViewMode='login';renderProfilePage();});
-      document.getElementById('abOtpEmailForm')?.addEventListener('submit',async e=>{e.preventDefault();passwordResetEmail=document.getElementById('abOtpEmail').value.trim();if(!passwordResetEmail){showMessage('ইমেইল লিখো।','error');return;}const btn=document.getElementById('abOtpSend');btn.disabled=true;btn.textContent='SENDING…';try{const r=await fetch(ANIMEBOX_OTP_API+'/sendPasswordResetOtp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:passwordResetEmail})});const d=await r.json();if(!r.ok)throw new Error(d.message||'OTP পাঠানো যায়নি।');step='verify';render();showMessage('ইমেইলটি যদি AnimeBox অ্যাকাউন্টে নিবন্ধিত থাকে, OTP পাঠানো হয়েছে। Inbox/Spam দেখো।','success');}catch(err){showMessage(err.message||'সার্ভারের সাথে সংযোগ করা যায়নি।','error');btn.disabled=false;btn.textContent='SEND OTP';}});
-    }else{
-      content.innerHTML=shell(`<h1 class="auth-title">Verify OTP</h1><p class="auth-subtitle">${safeText(passwordResetEmail)}<br>ইমেইলে পাওয়া ৬ সংখ্যার কোড এবং নতুন পাসওয়ার্ড দাও।</p><form id="abOtpVerifyForm" class="auth-form"><input id="abOtpCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" placeholder="6-Digit OTP" required><input id="abOtpNewPassword" type="password" autocomplete="new-password" minlength="6" placeholder="New Password (min 6 characters)" required><input id="abOtpConfirmPassword" type="password" autocomplete="new-password" minlength="6" placeholder="Confirm New Password" required><div id="abOtpMessage" class="auth-status info" hidden></div><button class="auth-primary-btn" id="abOtpVerify" type="submit">VERIFY & RESET PASSWORD</button></form><button class="auth-secondary-btn" id="abOtpResend">Resend OTP</button><button class="auth-secondary-btn" id="abOtpBack">Back to Login</button>`);
-      document.getElementById('abOtpBack')?.addEventListener('click',()=>{authViewMode='login';renderProfilePage();});
-      document.getElementById('abOtpResend')?.addEventListener('click',async()=>{const b=document.getElementById('abOtpResend');b.disabled=true;try{const r=await fetch(ANIMEBOX_OTP_API+'/sendPasswordResetOtp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:passwordResetEmail})});const d=await r.json();if(!r.ok)throw new Error(d.message||'আবার OTP পাঠানো যায়নি।');showMessage('OTP পাঠানো হয়েছে। Inbox/Spam দেখো।','success');}catch(err){showMessage(err.message,'error');}finally{b.disabled=false;}});
-      document.getElementById('abOtpVerifyForm')?.addEventListener('submit',async e=>{e.preventDefault();const otp=document.getElementById('abOtpCode').value.trim();const password=document.getElementById('abOtpNewPassword').value;const confirm=document.getElementById('abOtpConfirmPassword').value;if(!/^\d{6}$/.test(otp)){showMessage('৬ সংখ্যার OTP লিখো।','error');return;}if(password.length<6){showMessage('নতুন পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।','error');return;}if(password!==confirm){showMessage('দুইটি পাসওয়ার্ড এক নয়।','error');return;}const btn=document.getElementById('abOtpVerify');btn.disabled=true;btn.textContent='VERIFYING…';try{const r=await fetch(ANIMEBOX_OTP_API+'/verifyPasswordResetOtp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:passwordResetEmail,otp,password})});const d=await r.json();if(!r.ok)throw new Error(d.message||'OTP সঠিক নয় অথবা মেয়াদ শেষ।');step='done';content.innerHTML=shell(`<h1 class="auth-title">Password Updated</h1><p class="auth-subtitle">তোমার পাসওয়ার্ড সফলভাবে পরিবর্তন হয়েছে। এখন নতুন পাসওয়ার্ড দিয়ে Login করো।</p><div class="auth-status success">Password reset successful.</div><button class="auth-primary-btn" id="abOtpLogin">GO TO LOGIN</button>`);document.getElementById('abOtpLogin')?.addEventListener('click',()=>{authViewMode='login';authStatusMessage='নতুন পাসওয়ার্ড দিয়ে লগইন করো।';authStatusKind='success';renderProfilePage();});}catch(err){showMessage(err.message||'OTP যাচাই করা যায়নি।','error');btn.disabled=false;btn.textContent='VERIFY & RESET PASSWORD';}});
-    }
-  };
-  render();
+  content.innerHTML=`<section class="auth-page"><div class="auth-card"><div class="auth-brand-mark auth-brand-left">AB <span>ACCOUNT RECOVERY</span></div><h1 class="auth-title">Forgot Password?</h1><p class="auth-subtitle">তোমার AnimeBox অ্যাকাউন্টের ইমেইল দাও। Supabase থেকে password reset link পাঠানো হবে।</p><form id="abResetEmailForm" class="auth-form"><input id="abResetEmail" type="email" autocomplete="email" placeholder="Registered Email Address" value="${safeText(passwordResetEmail)}" required><div id="abResetMessage" class="auth-status info" hidden></div><button class="auth-primary-btn" id="abResetSend" type="submit">SEND RESET LINK</button></form><button class="auth-secondary-btn" id="abResetBack">Back to Login</button><p class="auth-terms">AB • AnimeBox Account Security</p></div></section>`;
+  const show=(msg,kind='info')=>{const el=document.getElementById('abResetMessage');if(el){el.textContent=msg;el.className='auth-status '+kind;el.hidden=!msg;}};
+  document.getElementById('abResetBack')?.addEventListener('click',()=>{authViewMode='login';renderProfilePage();});
+  document.getElementById('abResetEmailForm')?.addEventListener('submit',async e=>{e.preventDefault();passwordResetEmail=document.getElementById('abResetEmail').value.trim();const btn=document.getElementById('abResetSend');btn.disabled=true;btn.textContent='SENDING…';try{await animeBoxAuth.sendPasswordResetEmail(passwordResetEmail,location.origin+'/');show('ইমেইলটি যদি নিবন্ধিত থাকে, reset link পাঠানো হয়েছে। Inbox/Spam দেখো। লিংকে ক্লিক করে নতুন password সেট করো।','success');}catch(err){show(authErrorText(err),'error');}finally{btn.disabled=false;btn.textContent='SEND RESET LINK';}});
+}
+function renderSupabaseNewPasswordPage(){
+  const content=document.getElementById('pageContent');if(!content)return;
+  content.innerHTML=`<section class="auth-page"><div class="auth-card"><div class="auth-brand-mark auth-brand-left">AB <span>NEW PASSWORD</span></div><h1 class="auth-title">Set New Password</h1><p class="auth-subtitle">তোমার নতুন password লিখো।</p><form id="abNewPasswordForm" class="auth-form"><input id="abNewPassword" type="password" minlength="6" autocomplete="new-password" placeholder="New Password (min 6 characters)" required><input id="abConfirmNewPassword" type="password" minlength="6" autocomplete="new-password" placeholder="Confirm New Password" required><div id="abNewPasswordMessage" class="auth-status info" hidden></div><button class="auth-primary-btn" id="abSaveNewPassword" type="submit">UPDATE PASSWORD</button></form></div></section>`;
+  document.getElementById('abNewPasswordForm')?.addEventListener('submit',async e=>{e.preventDefault();const a=document.getElementById('abNewPassword').value,b=document.getElementById('abConfirmNewPassword').value,btn=document.getElementById('abSaveNewPassword'),msg=document.getElementById('abNewPasswordMessage');if(a.length<6||a!==b){msg.textContent=a!==b?'দুইটি password এক নয়।':'Password কমপক্ষে ৬ অক্ষরের হতে হবে।';msg.className='auth-status error';msg.hidden=false;return;}btn.disabled=true;try{await animeBoxAuth.updatePassword(a);msg.textContent='Password সফলভাবে পরিবর্তন হয়েছে।';msg.className='auth-status success';msg.hidden=false;setTimeout(()=>{authViewMode='login';renderProfilePage();},900);}catch(err){msg.textContent=authErrorText(err);msg.className='auth-status error';msg.hidden=false;}finally{btn.disabled=false;}});
 }
 
 function renderProfilePage(){
@@ -1337,7 +1394,7 @@ function renderProfilePage(){
     const initial = display.trim().charAt(0).toUpperCase() || 'U';
     let savedPhoto = user.photoURL || '';
     try { savedPhoto = localStorage.getItem('ab_profile_photo_' + (user.uid || 'user')) || savedPhoto; } catch(e) {}
-    // Firebase profile data is shared with the leaderboard; prefer the saved database photo.
+    // Supabase profile data is shared with the leaderboard; prefer the saved database photo.
     try { db.ref('users/' + user.uid + '/photo').once('value').then(snap => { const remotePhoto=snap.val(); if(remotePhoto){ try{localStorage.setItem('ab_profile_photo_'+user.uid,remotePhoto);}catch(_){} const el=document.getElementById('abPhotoAvatar'); if(el && animeBoxAuth.currentUser && animeBoxAuth.currentUser.uid===user.uid) el.innerHTML=`<img src="${safeText(remotePhoto)}" alt="Profile photo">`; } }).catch(err=>console.warn('Profile photo load failed:',err.message)); } catch(_) {}
     content.innerHTML = `
       <section class="auth-page"><div class="auth-card auth-profile-card ab-profile-layout">
@@ -1401,11 +1458,11 @@ function renderProfilePage(){
         // Resize before saving so the Realtime Database record stays small.
         const data=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onerror=()=>reject(new Error('ছবি পড়া যায়নি।'));reader.onload=()=>{const img=new Image();img.onerror=()=>reject(new Error('ছবিটি খোলা যায়নি।'));img.onload=()=>{const max=512,scale=Math.min(1,max/Math.max(img.width,img.height));const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(img.width*scale));canvas.height=Math.max(1,Math.round(img.height*scale));const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0,canvas.width,canvas.height);resolve(canvas.toDataURL('image/jpeg',0.78));};img.src=String(reader.result||'');};reader.readAsDataURL(file);});
         setAuthMessage('প্রোফাইল ছবি সেভ হচ্ছে…','info');
-        await db.ref('users/'+user.uid).update({photo:data,photoUpdatedAt:firebase.database.ServerValue.TIMESTAMP});
-        try{localStorage.setItem('ab_profile_photo_'+user.uid,data);}catch(_){/* Firebase remains the shared source */}
+        await db.ref('users/'+user.uid).update({photo:data,photoUpdatedAt:Date.now()});
+        try{localStorage.setItem('ab_profile_photo_'+user.uid,data);}catch(_){/* Supabase remains the shared source */}
         const avatar=document.getElementById('abPhotoAvatar');if(avatar)avatar.innerHTML=`<img src="${data}" alt="Profile photo">`;
         setAuthMessage('প্রোফাইল ছবি সেভ হয়েছে। Leaderboard-এও দেখা যাবে।','success');
-      }catch(err){console.error('Profile photo save failed:',err);setAuthMessage('ছবি সেভ হয়নি। Firebase Database rules/connection পরীক্ষা করো।','error');}
+      }catch(err){console.error('Profile photo save failed:',err);setAuthMessage('ছবি সেভ হয়নি। Supabase Database rules/connection পরীক্ষা করো।','error');}
     });
     document.getElementById('authLogoutBtn')?.addEventListener('click', async()=>{
       try { await animeBoxAuth.signOut(); authStatusMessage=''; navigateTo('/profile'); }
@@ -1452,9 +1509,9 @@ function renderProfilePage(){
     if(submit){submit.disabled=true;submit.textContent='অপেক্ষা করো…';}
     try{
       if(signup){
-        const credential=await animeBoxAuth.createUserWithEmailAndPassword(email,password);
-        if(name) await credential.user.updateProfile({displayName:name});
-        authStatusMessage='অ্যাকাউন্ট তৈরি হয়েছে।';authStatusKind='success';
+        const credential=await animeBoxAuth.createUserWithEmailAndPassword(email,password,name);
+        if(credential.confirmationRequired){authStatusMessage='অ্যাকাউন্ট তৈরি হয়েছে। ইমেইলে পাঠানো confirmation link-এ ক্লিক করে তারপর Login করো।';authStatusKind='success';}
+        else {authStatusMessage='অ্যাকাউন্ট তৈরি হয়েছে।';authStatusKind='success';}
       }else{
         await animeBoxAuth.signInWithEmailAndPassword(email,password);
         authStatusMessage='লগইন সফল হয়েছে।';authStatusKind='success';
@@ -1469,14 +1526,15 @@ function renderProfilePage(){
 function syncLiveUserProfile(user){
   if(!user)return;
   const ref=db.ref('users/'+user.uid);
-  // Do not overwrite a custom profile photo with an empty Firebase Auth photoURL.
+  // Do not overwrite a custom profile photo with an empty Supabase Auth photoURL.
   ref.once('value').then(snap=>{
     const existing=snap.val()||{};
-    const profile={uid:user.uid,name:user.displayName||(user.email?user.email.split('@')[0]:'AnimeBox User'),email:user.email||'',photo:user.photoURL||existing.photo||existing.photoURL||existing.avatar||'',online:true,lastSeen:firebase.database.ServerValue.TIMESTAMP,createdAt:(existing.createdAt||(user.metadata&&user.metadata.creationTime)||'')};
+    const profile={uid:user.uid,name:user.displayName||(user.email?user.email.split('@')[0]:'AnimeBox User'),email:user.email||'',photo:user.photoURL||existing.photo||existing.photoURL||existing.avatar||'',online:true,lastSeen:Date.now(),createdAt:(existing.createdAt||(user.metadata&&user.metadata.creationTime)||'')};
     return ref.update(profile);
-  }).then(()=>{ref.child('online').onDisconnect().set(false);}).catch(err=>console.warn('Live user profile sync failed:',err.message));
+  }).catch(err=>console.warn('Live user profile sync failed:',err.message));
 }
-animeBoxAuth.onAuthStateChanged(user=>{
+animeBoxAuth.onAuthStateChanged((user,event)=>{
+  if(event==='PASSWORD_RECOVERY'){renderSupabaseNewPasswordPage();return;}
   if(user)syncLiveUserProfile(user);
   const path=currentPath();
   if(path==='/profile'||path==='/member-login') renderProfilePage();
@@ -1488,21 +1546,29 @@ animeBoxAuth.onAuthStateChanged(user=>{
 
 
 function applyContentSnapshot(content){
+  const incoming = Array.isArray(content) ? content : [];
+  let signature = '';
+  try { signature = JSON.stringify(incoming); } catch (_) {}
+  const unchanged = !!signature && signature === lastContentSnapshotJSON;
+  if (signature) lastContentSnapshotJSON = signature;
   heroContentMap = {};
-  content.forEach(item => {
+  incoming.forEach(item => {
     const id = item.id || item.key;
     if (id !== undefined && id !== null) heroContentMap[String(id)] = item;
   });
-  renderHomeTypeCards(content);
-  const heroSlider = document.getElementById('heroSlider');
-  if (heroSlider && heroSlider.offsetParent !== null){
-    if (!heroIndex && heroSlides.length > 1) chooseRandomInitialSlide();
-    renderHero();
-    restartHeroTimer();
+  latestContentItems = incoming;
+  if (!unchanged) renderHomeTypeCards(incoming);
+  if (!unchanged) {
+    const heroSlider = document.getElementById('heroSlider');
+    if (heroSlider && heroSlider.offsetParent !== null){
+      renderHero(); // Keep heroIndex unchanged; never randomly reset on a content refresh.
+      restartHeroTimer();
+    }
   }
+  writeHomeCache();
 }
 
-// Live Admin-controlled Home Notice Line (Firebase: settings/homeNotice)
+// Live Admin-controlled Home Notice Line (Supabase: settings/homeNotice)
 function renderHomeNotice(cfg){
   const box=document.getElementById('homeNotice'); const text=document.getElementById('homeNoticeText');
   if(!box||!text)return; cfg=cfg&&typeof cfg==='object'?cfg:{};
@@ -1517,7 +1583,7 @@ function renderHomeNotice(cfg){
 }
 db.ref('settings/homeNotice').on('value',snap=>renderHomeNotice(snap.val()),err=>console.warn('Home notice load failed:',err));
 
-// One live Firebase listener handles both first paint and future updates (avoids duplicate full reads).
+// One live Supabase listener handles both first paint and future updates (avoids duplicate full reads).
 db.ref('content').on('value', snap => {
   applyContentSnapshot(normalizeSlideList(snap.val()));
   if (!contentFirstPaintDone){ contentFirstPaintDone = true; if (window.__hideSplashNow) window.__hideSplashNow(); routePage(); }
@@ -1533,12 +1599,17 @@ db.ref('heroSlides').on('value', snap => {
   const incoming = normalizeSlideList(snap.val())
     .filter(s => s && s.enabled!==false && s.active!==false && s.hidden!==true && s.published!==false)
     .sort((a,b) => Number(a.order ?? a.sortOrder ?? 0) - Number(b.order ?? b.sortOrder ?? 0));
-  const firstLoad = heroSlides.length === 0 && incoming.length > 0;
+  let signature = '';
+  try { signature = JSON.stringify(incoming); } catch (_) {}
+  const unchanged = !!signature && signature === lastHeroSnapshotJSON;
+  if (signature) lastHeroSnapshotJSON = signature;
+  const firstLoad = !heroDataLoaded && incoming.length > 0;
   heroSlides = incoming;
   heroDataLoaded = true;
   if (firstLoad) chooseRandomInitialSlide();
   else heroIndex = Math.min(heroIndex, Math.max(0, heroSlides.length - 1));
-  renderHero();
+  if (!unchanged) renderHero();
+  if (!unchanged) writeHomeCache();
   restartHeroTimer();
   // Let users see the page shell/hero while the larger content collection loads.
   if (window.__showAppShellNow) window.__showAppShellNow();
@@ -1548,7 +1619,7 @@ db.ref('heroSlides').on('value', snap => {
 
 /* ============================================================
    ANIMEBOX IN-SITE NOTIFICATIONS
-   Firebase RTDB project: ttttt-9bee0 (same database as Admin)
+   Supabase RTDB project: ttttt-9bee0 (same database as Admin)
    Background/browser push is intentionally not enabled in this phase.
    ============================================================ */
 const AB_NOTIFICATION_READ_KEY='animebox_notification_reads_v1';
@@ -1597,7 +1668,7 @@ function abShowNewNotificationToast(item){
 }
 function abInitNotifications(){
   const bell=document.getElementById('abNotificationBell');if(bell&&bell.dataset.bound!=='1'){bell.dataset.bound='1';bell.addEventListener('click',abOpenNotifications);}
-  // The same shared Firebase Realtime Database used by the Admin HTML.
+  // The same shared Supabase Realtime Database used by the Admin HTML.
   db.ref('notifications').limitToLast(60).on('value',snap=>{
     const raw=snap.val()||{};const incoming=Object.entries(raw).map(([id,v])=>({id,...(v||{})})).filter(n=>n.active!==false).sort((a,b)=>(Number(b.createdAt)||0)-(Number(a.createdAt)||0));
     if(!abNotificationFirstSnapshot){const newest=incoming.find(n=>!abNotificationSeenIds.has(n.id));if(newest)abShowNewNotificationToast(newest);}

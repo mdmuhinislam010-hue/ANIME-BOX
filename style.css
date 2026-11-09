@@ -224,7 +224,7 @@ body.search-active #pageContent{margin:0;padding:0;background:#09090f}
 @keyframes loadingFill{0%{width:0%}100%{width:100%}}
 
 
-/* User-facing download hub connected to the same Firebase Admin season/episode records. */
+/* User-facing download hub connected to the same Supabase Admin season/episode records. */
 .user-download-hub{width:calc(100% - 28px);max-width:1320px;margin:22px auto 0;padding:0;color:#f5f6f8;display:none;box-sizing:border-box}
 .user-download-block{display:none;margin:16px 0 0;padding:20px;background:#252a30;border:1px solid #3a414a;border-radius:16px}
 .user-download-block.has-items{display:block}
@@ -269,7 +269,7 @@ body.search-active #pageContent{margin:0;padding:0;background:#09090f}
 #detailsWatchArea .watch-screen iframe,#detailsWatchArea .watch-screen video,#detailsWatchArea .watch-screen embed,#detailsWatchArea .watch-screen object{display:block;box-sizing:border-box;width:100% !important;max-width:100% !important;height:100% !important;min-width:0;border:0}
 @media(max-width:700px){#detailsWatchArea .watch-screen{width:100%;aspect-ratio:16/10;min-height:190px;max-height:none}}
 
-/* Separate Firebase Email/Password Authentication profile page */
+/* Separate Supabase Email/Password Authentication profile page */
 .auth-page{min-height:calc(100vh - 130px);display:flex;align-items:center;justify-content:center;padding:28px 16px 50px;background:#080808;color:#f5f7fb;box-sizing:border-box}
 .auth-card{width:min(100%,368px);padding:24px 0;background:transparent;border:0;border-radius:0;box-shadow:none;box-sizing:border-box}
 .auth-brand-mark{display:flex;align-items:baseline;justify-content:center;gap:5px;font-size:29px;font-weight:950;letter-spacing:1px;color:#168cff;margin-bottom:24px}.auth-brand-mark span{font-size:10px;letter-spacing:1.5px;color:#b8dfff}.auth-brand-left{position:fixed;top:17px;left:18px;justify-content:flex-start;font-size:16px;margin:0}.auth-brand-left span{font-size:0;letter-spacing:0}
@@ -438,7 +438,7 @@ body.search-active #pageContent{margin:0;padding:0;background:#09090f}
  .ab-vote-count{font-size:9px;padding:4px 5px}.ab-vote-percent{right:6px;bottom:15px;font-size:8px}
 }
 
-/* Smooth first paint while Firebase content is being fetched */
+/* Smooth first paint while Supabase content is being fetched */
 .ab-card-skeleton{flex:0 0 clamp(112px,14vw,168px);min-width:0;display:flex;flex-direction:column;gap:8px;animation:abSkeletonPulse 1.25s ease-in-out infinite}
 .ab-card-skeleton-poster{width:100%;aspect-ratio:2/3;border-radius:8px;background:linear-gradient(100deg,#151922 20%,#202938 38%,#151922 56%);background-size:220% 100%;animation:abSkeletonShimmer 1.45s linear infinite}
 .ab-card-skeleton-line{height:9px;width:82%;border-radius:8px;background:#1b2330}.ab-card-skeleton-line.short{width:52%;height:7px;opacity:.7}
@@ -569,7 +569,7 @@ img.ab-img-loading {
 }
 
 
-/* Progressive rendering: text and admin badges render with the Firebase record;
+/* Progressive rendering: text and admin badges render with the Supabase record;
    each image independently swaps its shimmer for the real image on load. */
 .home-type-card-poster{background:#171b22;}
 .home-type-card-poster img.ab-img-loading,
