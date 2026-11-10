@@ -88,7 +88,6 @@ body{padding-bottom:0}
 .home-type-card-poster{position:relative;width:100%;aspect-ratio:2/3;overflow:hidden;border-radius:7px;background:#454545}
 .home-type-card img{display:block;width:100%;height:100%;object-fit:cover;background:#454545;border-radius:7px;border:1px solid #555}
 .home-card-badges{position:absolute;inset:5px 4px;display:flex;flex-direction:column;justify-content:space-between;pointer-events:none;gap:5px;z-index:2}
-.home-card-time{position:absolute;top:5px;right:5px;z-index:4;display:inline-flex;align-items:center;justify-content:center;max-width:calc(100% - 10px);padding:4px 6px;border:1px solid #ffffff55;border-radius:4px;background:#080b12dd;color:#fff;font-size:10px;font-weight:800;line-height:1;white-space:nowrap;backdrop-filter:blur(5px);pointer-events:none}
 .home-card-badge-row{display:flex;align-items:flex-start;justify-content:space-between;gap:4px;min-width:0}
 .home-card-badge-stack{display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-width:0}
 .home-card-badge{display:inline-flex;align-items:center;justify-content:center;max-width:100%;min-height:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px;line-height:1;font-weight:900;padding:3px 5px;border:1px solid currentColor;border-radius:3px;color:#fff;background:transparent}
@@ -580,3 +579,16 @@ img.ab-img-loading {
 .details-poster.ab-img-loading{visibility:visible!important;}
 .details-cast-card img.ab-img-loading{border-radius:50%;}
 @media(prefers-reduced-motion:reduce){.home-type-card-poster img.ab-img-loading,.details-poster.ab-img-loading,.details-cast-card img.ab-img-loading,.hero-poster.ab-img-loading{animation:none;}}
+
+
+/* Home card relative-update badge: sits directly above the title. */
+.ab-card-update-time{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:max-content;max-width:100%;margin:6px 0 2px;padding:3px 7px;
+  border:1px solid rgba(59,130,246,.34);border-radius:5px;
+  background:linear-gradient(135deg,rgba(37,99,235,.18),rgba(14,165,233,.10));
+  color:#8fc5ff;font-size:10px;font-weight:700;line-height:1.25;
+  letter-spacing:.15px;white-space:nowrap;
+}
+.home-type-card-title{margin-top:1px;}
+@media(max-width:650px){.ab-card-update-time{font-size:9px;padding:3px 6px;margin-top:5px;}}

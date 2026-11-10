@@ -381,30 +381,42 @@ function shuffleCards(list){
   for (let i = out.length-1; i > 0; i--){ const j = Math.floor(Math.random()*(i+1)); [out[i],out[j]]=[out[j],out[i]]; }
   return out;
 }
-function animeBoxRelativeTime(timestamp){
-  const value=Number(timestamp)||0;
-  if(!value) return '';
-  const diff=Math.max(0,Date.now()-value);
-  const minutes=Math.floor(diff/60000);
-  if(minutes<1) return 'Just now';
-  if(minutes<60) return `${minutes}m ago`;
-  const hours=Math.floor(minutes/60);
-  if(hours<24) return `${hours}h ago`;
-  const days=Math.floor(hours/24);
-  if(days<30) return `${days}d ago`;
-  const months=Math.floor(days/30);
-  if(days<365) return `${months}mo ago`;
-  const years=Math.floor(days/365);
-  return `${years}y ago`;
+// Relative update time for Home cards. Admin timestamps are preferred; a local
+// fingerprint fallback detects edits to embedded season/episode data without
+// changing or removing any existing content fields.
+function abParseTime(value){
+  if(value===undefined||value===null||value==='') return 0;
+  if(typeof value==='number'||/^\d+(\.\d+)?$/.test(String(value).trim())){
+    let n=Number(value); if(n>0&&n<1e12)n*=1000; return Number.isFinite(n)?n:0;
+  }
+  const n=Date.parse(String(value)); return Number.isFinite(n)?n:0;
 }
-function refreshHomeCardTimes(){
-  document.querySelectorAll('[data-card-time]').forEach(el=>{
-    const label=animeBoxRelativeTime(el.dataset.cardTime);
-    if(label) el.textContent=label;
-  });
+function abCardUpdateInfo(item){
+  const id=String(item?.id??item?.key??item?.contentId??cardTitle(item));
+  const explicit=firstValue(item,['updatedAt','lastUpdatedAt','modifiedAt','lastModified','updateTime','updated_at','createdAt','created_at','publishedAt','addedAt','timestamp'],0);
+  let stamp=abParseTime(explicit);
+  const nested=firstValue(item,['seasons','seasonList','seasonEpisodes','episodesBySeason','episodeData','episodes','episodeList'],'');
+  let fingerprint=''; try{fingerprint=JSON.stringify(nested||'')}catch(_){ }
+  const key='ab-card-update-v1:'+id;
+  try{
+    const old=JSON.parse(localStorage.getItem(key)||'null');
+    if(!stamp && old && old.fingerprint!==fingerprint){stamp=Date.now();}
+    if(!stamp && old?.time) stamp=Number(old.time)||0;
+    if(!stamp) stamp=Date.now();
+    if(!old || old.fingerprint!==fingerprint || (explicit && Number(old.time)!==stamp))
+      localStorage.setItem(key,JSON.stringify({fingerprint,time:stamp}));
+  }catch(_){if(!stamp)stamp=Date.now();}
+  return stamp;
 }
-if(!window.__animeBoxCardTimeTicker){
-  window.__animeBoxCardTimeTicker=setInterval(refreshHomeCardTimes,60000);
+function abTimeAgo(value){
+  const diff=Math.max(0,Date.now()-Number(value||0));
+  const minute=60000,hour=3600000,day=86400000,week=604800000,year=31536000000;
+  if(diff<minute)return 'Just now';
+  if(diff<hour){const n=Math.floor(diff/minute);return n+' min'+(n===1?'':'s')+' ago';}
+  if(diff<day){const n=Math.floor(diff/hour);return n+' hour'+(n===1?'':'s')+' ago';}
+  if(diff<week){const n=Math.floor(diff/day);return n+' day'+(n===1?'':'s')+' ago';}
+  if(diff<year){const n=Math.floor(diff/week);return n+' week'+(n===1?'':'s')+' ago';}
+  const n=Math.floor(diff/year);return n+' year'+(n===1?'':'s')+' ago';
 }
 
 function renderHomeTypeCards(items){
@@ -462,18 +474,15 @@ function renderHomeTypeCards(items){
       const ratingBadge = ratingText ? `<span class="home-card-badge rating">★ ${safeText(ratingText.replace(/^★\s*/,''))}</span>` : '';
       const typeBadge = typeText ? `<span class="home-card-badge type">${safeText(typeText)}</span>` : '';
       const qualityBadge = qualityText ? `<span class="home-card-badge quality">${safeText(qualityText)}</span>` : '';
-      // Show the timestamp of the last Admin update (fall back to original publish time).
-      const cardTimestamp=Number(item.updatedAt||item.createdAt)||0;
-      const cardTimeBadge=cardTimestamp?`<span class="home-card-time" data-card-time="${cardTimestamp}" title="Last updated: ${safeText(new Date(cardTimestamp).toLocaleString())}">${safeText(animeBoxRelativeTime(cardTimestamp))}</span>`:'';
       return `<a class="home-type-card" href="${safeText(href)}" title="${safeText(title)}">
         <div class="home-type-card-poster">
-          ${cardTimeBadge}
           ${image ? `<img class="ab-img-loading" src="${safeText(image)}" alt="${safeText(title)}" loading="lazy" decoding="async" fetchpriority="low" onerror="this.style.visibility='hidden'">` : ''}
           <div class="home-card-badges">
             <div class="home-card-badge-row"><div class="home-card-badge-stack">${topLeft}</div>${qualityBadge}</div>
             <div class="home-card-badge-row">${ratingBadge}${typeBadge}</div>
           </div>
         </div>
+        <div class="ab-card-update-time" data-update-time="${abCardUpdateInfo(item)}">${safeText(abTimeAgo(abCardUpdateInfo(item)))}</div>
         <div class="home-type-card-title">${safeText(title)}</div>
       </a>`;
     }).join('');
@@ -620,36 +629,19 @@ function renderDetailsPage(id, seasonParam, episodeParam){
   const quality=detailText(detailValue(item,['quality','resolution','videoQuality','qualityLabel'],''));
   const release=detailText(detailValue(item,['releaseDate','released','release_date','premiereDate'],year));
   const status=detailText(detailValue(item,['status','badge','contentStatus','showStatus'],item.comingSoon?'Coming Soon':'Ongoing'));
-  const addedAtValue=Number(item.createdAt)||0;
-  const addedAtLabel=addedAtValue?new Date(addedAtValue).toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'';
   const seasonNote=detailText(detailValue(item,['seasonEpisodeUpdate','episodeUpdate','latestEpisode','seasonInfo','episodeInfo'],''));
   const description=detailText(detailValue(item,['description','overview','storyline','plot','synopsis'],''),'No storyline added yet.');
   const cast=detailArray(item,['cast','actors','voiceActors','staff']);
   const trailer=detailText(detailValue(item,['trailerUrl','trailer','youtubeTrailer'],''));
   const myListKey='animebox_my_list'; let saved=[]; try{saved=JSON.parse(localStorage.getItem(myListKey)||'[]')}catch(_){}
   const itemId=String(item.id ?? item.key ?? item.contentId ?? id); const inList=saved.includes(itemId);
-  // Keep a local history and, after the visitor's one-time consent, send a private
-  // watch event to the Edge Function. The server derives the public IP from request headers.
+  // Keep a per-account watch history on this browser, newest first.
   try {
-    const activeUser=animeBoxAuth.currentUser;
-    const historyKey='animebox_watch_history_'+(activeUser?.uid || 'guest');
+    const historyKey='animebox_watch_history_'+(animeBoxAuth.currentUser?.uid || 'guest');
     let watchHistory=JSON.parse(localStorage.getItem(historyKey)||'[]');
     watchHistory=watchHistory.filter(x=>String(x.id)!==itemId);
     watchHistory.unshift({id:itemId,title,poster,type,url:contentUrl(item),watchedAt:Date.now()});
     localStorage.setItem(historyKey,JSON.stringify(watchHistory.slice(0,40)));
-    let consent=localStorage.getItem('animebox_private_watch_consent');
-    if(consent===null){
-      consent=confirm('AnimeBox-এর Watch History ও Public IP Admin Panel-এ নিরাপদভাবে সংরক্ষণ করা হবে। আপনি কি সম্মতি দিচ্ছেন?')?'yes':'no';
-      localStorage.setItem('animebox_private_watch_consent',consent);
-    }
-    if(consent==='yes' && window.animeBoxSupabase?.functions){
-      let actorId=activeUser?.uid||localStorage.getItem('animebox_guest_watch_id');
-      if(!actorId){actorId='guest_'+(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2));localStorage.setItem('animebox_guest_watch_id',actorId);}
-      window.animeBoxSupabase.functions.invoke('animebox-private',{body:{
-        action:'track_watch',actorId,contentId:itemId,title,poster,
-        contentType:type,contentUrl:contentUrl(item),displayName:activeUser?.displayName||''
-      }}).then(({error})=>{if(error)console.warn('Private watch history could not be saved:',error)});
-    }
   } catch(e) { console.warn('Watch history could not be saved:',e); }
   const castHtml=cast.length ? cast.map(person=>{const obj=typeof person==='object'&&person?person:{name:String(person)};const n=detailText(detailValue(obj,['name','actor','title','personName']),'Cast');const role=detailText(detailValue(obj,['role','character','as','voice'],'Cast'));const img=detailText(detailValue(obj,['image','photo','imageUrl','photoUrl','profile','avatar'],''));return `<div class="details-cast-card">${img?`<img class="ab-img-loading" src="${safeText(img)}" alt="${safeText(n)}" loading="lazy" decoding="async" onerror="this.outerHTML='<div class=\\'details-cast-placeholder\\'>${safeText(n.slice(0,1))}</div>'">`:`<div class="details-cast-placeholder">${safeText(n.slice(0,1))}</div>`}<div class="details-cast-name">${safeText(n)}</div><div class="details-cast-role">${safeText(role)}</div></div>`}).join('') : '<div class="details-cast-card"><div class="details-cast-placeholder">★</div><div class="details-cast-name">Cast not added</div><div class="details-cast-role">Admin content</div></div>';
   document.getElementById('pageContent').innerHTML=`<section class="details-page">
@@ -680,7 +672,6 @@ function renderDetailsPage(id, seasonParam, episodeParam){
           ${rating?`<div class="details-list-row">⭐ <b>IMDb:</b> ${safeText(rating)}${String(rating).includes('/')?'':'/10'}</div>`:''}
           ${genre?`<div class="details-list-row">🎬 <b>Genre:</b> ${safeText(genre)}</div>`:''}
           <div class="details-list-row">🔊 <b>Language:</b> ${safeText(language)}</div>
-          ${addedAtLabel?`<div class="details-list-row">🕒 <b>Added:</b> ${safeText(addedAtLabel)}</div>`:''}
           <div class="details-list-row">📺 <b>Quality:</b> ${safeText(quality)}</div>
           ${release?`<div class="details-list-row">🗓️ <b>Released:</b> ${safeText(release)}</div>`:''}
         </div>
@@ -823,31 +814,25 @@ function setupCommunityVote(contentId){
       if(!deviceId){status.textContent='ভোট দেওয়ার জন্য Local Storage অনুমতি প্রয়োজন।';return;}
       button.disabled=true;
       try{
-        const supabase=window.animeBoxSupabase;
-        if(!supabase) throw new Error('Supabase client পাওয়া যায়নি।');
-        const {data,error}=await supabase.rpc('animebox_submit_vote',{
-          p_content_id:safeId,
-          p_device_id:deviceId,
-          p_choice:choice
+        const result=await ref.transaction(current=>{
+          current=current&&typeof current==='object'?current:{};
+          current.voters=current.voters&&typeof current.voters==='object'?current.voters:{};
+          if(current.voters[deviceId])return;
+          current.voters[deviceId]=choice;
+          return current;
         });
-        if(error) throw error;
-        const voteData=data&&data.vote_data&&typeof data.vote_data==='object'?data.vote_data:{};
-        myVote=choice;
-        try{localStorage.setItem('ab_voted_'+safeId,choice);}catch(_){}
-        status.textContent=data&&data.committed
-          ?'তোমার ভোট গ্রহণ করা হয়েছে।'
-          :'এই ব্রাউজার থেকে আগে ভোট দেওয়া হয়েছে।';
-        render(voteData);
-      }catch(error){
-        console.error('AnimeBox vote submit failed:',error);
-        const message=String(error&&error.message||'');
-        if(/function .*animebox_submit_vote|schema cache|could not find the function/i.test(message)){
-          status.textContent='Vote RPC পাওয়া যায়নি। Supabase-এ নতুন AnimeBox_Supabase_Setup.sql চালাও।';
-        }else if(/row-level security|permission denied|not allowed/i.test(message)){
-          status.textContent='Supabase অনুমতি নেই। Setup SQL চালিয়ে RLS Policy ও RPC permission ঠিক করো।';
+        if(result.committed){
+          myVote=choice;
+          try{localStorage.setItem('ab_voted_'+safeId,choice);}catch(_){}
+          status.textContent='তোমার ভোট গ্রহণ করা হয়েছে।';
         }else{
-          status.textContent='ভোট জমা হয়নি: '+(message||'ইন্টারনেট ও Supabase সংযোগ পরীক্ষা করো।');
+          myVote=choice;
+          try{localStorage.setItem('ab_voted_'+safeId,choice);}catch(_){}
+          status.textContent='এই ব্রাউজার থেকে আগে ভোট দেওয়া হয়েছে।';
         }
+        render(result.snapshot.val()||{});
+      }catch(error){
+        status.textContent='ভোট জমা হয়নি। Supabase Database Rules-এ read/write অনুমতি পরীক্ষা করো।';
       }finally{button.disabled=!!myVote;}
     });
   });
@@ -1295,6 +1280,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('menuButton')?.addEventListener('click', () => alert('Menu controls will be added later.'));
   document.querySelectorAll('[data-go="profile"]').forEach(b => b.addEventListener('click', () => navigateTo(animeBoxAuth.currentUser ? '/profile' : '/member-login/')));
   window.addEventListener('resize', () => renderHomeTypeCards(latestContentItems));
+setInterval(()=>{document.querySelectorAll('.ab-card-update-time[data-update-time]').forEach(el=>{el.textContent=abTimeAgo(Number(el.dataset.updateTime)||0);});},60000);
 
   showHomeLoadingSkeletons();
   initImageLoadingEffects();
