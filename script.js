@@ -391,10 +391,16 @@ function abParseTime(value){
   }
   const n=Date.parse(String(value)); return Number.isFinite(n)?n:0;
 }
+// Separate Admin collections are watched too: seasons/{contentId} and
+// episodes/{contentId}. Their changes are tracked locally because legacy
+// records may not contain updatedAt fields.
+const abExternalUpdateTimes = Object.create(null);
 function abCardUpdateInfo(item){
   const id=String(item?.id??item?.key??item?.contentId??cardTitle(item));
   const explicit=firstValue(item,['updatedAt','lastUpdatedAt','modifiedAt','lastModified','updateTime','updated_at','createdAt','created_at','publishedAt','addedAt','timestamp'],0);
   let stamp=abParseTime(explicit);
+  const externalStamp=Number(abExternalUpdateTimes[id]||0);
+  if(externalStamp>stamp) stamp=externalStamp;
   const nested=firstValue(item,['seasons','seasonList','seasonEpisodes','episodesBySeason','episodeData','episodes','episodeList'],'');
   let fingerprint=''; try{fingerprint=JSON.stringify(nested||'')}catch(_){ }
   const key='ab-card-update-v1:'+id;
@@ -1622,6 +1628,40 @@ function renderHomeNotice(cfg){
   box.style.setProperty('--notice-duration',Math.max(8,Math.min(60,Number(cfg.duration)||18))+'s');
 }
 db.ref('settings/homeNotice').on('value',snap=>renderHomeNotice(snap.val()),err=>console.warn('Home notice load failed:',err));
+
+// Track season/episode changes even though Admin stores them outside content/.
+(function initExternalContentUpdateTracking(){
+  let seasonsReady=false, episodesReady=false;
+  let seasonRoot={}, episodeRoot={};
+  const storageKey='ab-external-content-update-v1';
+  function sync(){
+    if(!seasonsReady||!episodesReady) return;
+    let previous={};
+    try{previous=JSON.parse(localStorage.getItem(storageKey)||'{}')||{};}catch(_){}
+    const ids=new Set([...Object.keys(seasonRoot||{}),...Object.keys(episodeRoot||{}),...Object.keys(previous)]);
+    const next={};
+    ids.forEach(id=>{
+      const fingerprint=JSON.stringify({
+        seasons: seasonRoot && Object.prototype.hasOwnProperty.call(seasonRoot,id) ? seasonRoot[id] : null,
+        episodes: episodeRoot && Object.prototype.hasOwnProperty.call(episodeRoot,id) ? episodeRoot[id] : null
+      });
+      const old=previous[id]||null;
+      let time=Number(old?.time)||0;
+      if(old && old.fingerprint!==fingerprint) time=Date.now();
+      next[id]={fingerprint,time};
+      if(time) abExternalUpdateTimes[String(id)]=time;
+      else delete abExternalUpdateTimes[String(id)];
+    });
+    try{localStorage.setItem(storageKey,JSON.stringify(next));}catch(_){}
+    if(contentFirstPaintDone && Array.isArray(latestContentItems) && latestContentItems.length){
+      renderHomeTypeCards(latestContentItems);
+    }
+  }
+  db.ref('seasons').on('value',snap=>{seasonRoot=snap.val()||{};seasonsReady=true;sync();},
+    err=>console.warn('Season update-time tracking failed:',err));
+  db.ref('episodes').on('value',snap=>{episodeRoot=snap.val()||{};episodesReady=true;sync();},
+    err=>console.warn('Episode update-time tracking failed:',err));
+})();
 
 // One live Supabase listener handles both first paint and future updates (avoids duplicate full reads).
 db.ref('content').on('value', snap => {

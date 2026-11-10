@@ -4,10 +4,10 @@ ANIMEBOX WEB PACKAGE
 Files:
 - index.html: main page, including Movie, Trending, Anime, Series, and TV Show sections
 - style.css: all page styling
-- script.js: application logic, Supabase connection, type rendering, and clean URL router
+- script.js: application logic, Supabase connection, type rendering, clean URL router,
+  and Home-card relative update-time tracking (including separate season/episode data)
 - 404.html: GitHub Pages fallback for direct-route refreshes
 - _redirects: rewrite rule for Netlify-compatible static hosting
-- supabase.json: Supabase Hosting rewrite configuration
 
 DEPLOYMENT NOTES
 1) Keep all files together in the published root folder.
@@ -35,3 +35,16 @@ AUTHENTICATION CHECKLIST
 - If Confirm email is enabled, new users must click the confirmation link before signing in.
 - This package uses Supabase Auth for signup, login, logout, profile-name updates, and password reset. It no longer calls the old Firebase OTP Cloud Function.
 - The SQL file currently grants public app access to the shared JSON state table to preserve the legacy public website/Admin behavior. This is permissive: do not store secrets or private user data in that table. For production security, Admin writes should be moved behind authenticated server-side authorization and narrower RLS policies.
+
+
+HOME CARD RELATIVE UPDATE TIME
+- Home cards display a relative time label (for example, "2 hours ago").
+- The User Website now watches the separate Supabase paths seasons/{contentId}
+  and episodes/{contentId}, in addition to content/{contentId}.
+- When a season or episode is added, edited, or removed while the User Website
+  is open, the matching Home card's relative time refreshes.
+- For legacy season/episode records without updatedAt fields, the User Website
+  stores a per-browser change fingerprint in localStorage. This detects changes
+  since that browser's previous visit; it is not a server-wide audit timestamp.
+- For identical timestamps across every device, the Admin Panel must also write
+  updatedAt (ISO timestamp) on the affected content/season/episode record.
