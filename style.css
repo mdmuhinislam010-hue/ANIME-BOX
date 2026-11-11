@@ -619,14 +619,36 @@ img.ab-img-loading {
   background:linear-gradient(100deg,transparent,rgba(255,255,255,.28),transparent);transform:skewX(-18deg);animation:abSweep 4.8s ease-in-out infinite}
 .ab-card-update-time{position:relative;overflow:hidden}
 .ab-card-update-time.ab-ut-hot:after{animation-duration:3.2s}
-/* hover / focus: lift card, zoom poster, nudge badges */
-.home-type-card{transition:transform .28s cubic-bezier(.2,.8,.2,1)}
-.home-type-card-poster{transition:box-shadow .28s ease}
-.home-type-card-poster img{transition:transform .5s cubic-bezier(.2,.8,.2,1),filter .3s ease}
-@media(hover:hover){
-  .home-type-card:hover{transform:translateY(-4px)}
-  .home-type-card:hover .home-type-card-poster{box-shadow:0 10px 24px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.1)}
-  .home-type-card:hover .home-type-card-poster img{transform:scale(1.06);filter:brightness(1.08)}
+/* hover / focus: 3D tilt + glare + play button + "Watch now" hint + badge nudge */
+.home-type-card{--rx:0deg;--ry:0deg;--gx:50%;--gy:50%;transform-style:preserve-3d;will-change:transform;
+  transition:transform .45s cubic-bezier(.2,.8,.2,1)}
+.home-type-card-poster{transition:box-shadow .35s ease;transform-style:preserve-3d}
+.home-type-card-poster img{transition:transform .6s cubic-bezier(.2,.8,.2,1),filter .35s ease}
+/* glare that follows the pointer */
+.home-type-card-poster:before{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;opacity:0;transition:opacity .3s ease;
+  background:radial-gradient(circle at var(--gx) var(--gy),rgba(255,255,255,.34),transparent 55%);mix-blend-mode:soft-light}
+/* bottom shade so the hint stays readable */
+.home-type-card-poster:after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;opacity:0;transition:opacity .35s ease;
+  background:linear-gradient(to top,rgba(0,0,0,.78) 0,rgba(0,0,0,.25) 45%,transparent 70%)}
+.ab-card-play{position:absolute;left:50%;top:50%;z-index:3;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;display:grid;place-items:center;
+  background:rgba(242,212,0,.95);color:#111;opacity:0;transform:scale(.4);pointer-events:none;
+  transition:opacity .25s ease,transform .45s cubic-bezier(.3,1.6,.5,1);box-shadow:0 6px 22px rgba(242,212,0,.45)}
+.ab-card-play svg{width:20px;height:20px;margin-left:2px;fill:currentColor;border:0;border-radius:0;background:none}
+.ab-card-play:before{content:"";position:absolute;inset:0;border-radius:50%;border:2px solid rgba(242,212,0,.7);opacity:0}
+.ab-card-hint{position:absolute;left:0;right:0;bottom:30px;z-index:3;padding:0 8px;text-align:center;font-size:10px;font-weight:800;letter-spacing:.4px;
+  text-transform:uppercase;color:#fff;opacity:0;transform:translateY(10px);pointer-events:none;
+  transition:opacity .3s ease .05s,transform .4s cubic-bezier(.2,.8,.2,1) .05s}
+.home-card-badges{transition:transform .4s cubic-bezier(.2,.8,.2,1)}
+.home-type-card-title{transition:color .25s ease}
+@media(hover:hover) and (pointer:fine){
+  .home-type-card:hover{transform:perspective(900px) rotateX(var(--rx)) rotateY(var(--ry)) translateY(-6px) scale(1.03);z-index:2}
+  .home-type-card:hover .home-type-card-poster{box-shadow:0 16px 34px rgba(0,0,0,.6),0 0 0 1px rgba(242,212,0,.55),0 0 24px rgba(242,212,0,.18)}
+  .home-type-card:hover .home-type-card-poster img{transform:scale(1.12);filter:brightness(1.1) saturate(1.15)}
+  .home-type-card:hover .home-type-card-poster:before,.home-type-card:hover .home-type-card-poster:after{opacity:1}
+  .home-type-card:hover .ab-card-play{opacity:1;transform:scale(1)}
+  .home-type-card:hover .ab-card-play:before{animation:abRing 1.4s ease-out .2s infinite}
+  .home-type-card:hover .ab-card-hint{opacity:1;transform:none}
+  .home-type-card:hover .home-type-card-title{color:#f2d400}
   .home-type-card:hover .ab-card-season{transform:translateY(-1px);box-shadow:0 3px 10px rgba(251,191,36,.25)}
   .home-type-card:hover .ab-card-season.ab-done{box-shadow:0 3px 10px rgba(52,211,153,.25)}
   .home-type-card:hover .ab-card-update-time{transform:translateY(-1px)}
@@ -634,6 +656,9 @@ img.ab-img-loading {
 .home-type-card:active{transform:scale(.97)}
 .home-type-card:focus-visible{outline:2px solid #f2d400;outline-offset:3px;border-radius:7px}
 .ab-card-update-time{transition:transform .25s ease}
+/* room above the rail so the lifted card is not clipped by overflow:hidden */
+.home-type-rail{padding-top:8px;margin-top:-6px}
+@keyframes abRing{0%{transform:scale(1);opacity:.9}100%{transform:scale(1.7);opacity:0}}
 @keyframes abMetaIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 @keyframes abSweep{0%,55%{left:-60%}100%{left:130%}}
 @keyframes abCheck{to{stroke-dashoffset:0}}
@@ -641,7 +666,8 @@ img.ab-img-loading {
   .ab-card-meta{animation:none}
   .ab-card-season:after,.ab-card-update-time.ab-ut-hot:after{display:none}
   .ab-sn-check{animation:none;stroke-dashoffset:0}
-  .home-type-card,.home-type-card-poster img,.ab-card-season,.ab-card-update-time{transition:none}
+  .home-type-card,.home-type-card-poster img,.ab-card-season,.ab-card-update-time,.ab-card-play,.ab-card-hint,.home-card-badges{transition:none}
   .home-type-card:hover,.home-type-card:hover .home-type-card-poster img,.home-type-card:active{transform:none}
+  .home-type-card:hover .ab-card-play:before{animation:none!important}
 }
 @media(max-width:650px){.ab-card-season{font-size:9px;padding:2px 5px}}

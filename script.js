@@ -591,6 +591,7 @@ function renderHomeTypeCards(items){
       return `<a class="home-type-card" href="${safeText(href)}" title="${safeText(title)}">
         <div class="home-type-card-poster">
           ${image ? `<img class="ab-img-loading" src="${safeText(image)}" alt="${safeText(title)}" loading="lazy" decoding="async" fetchpriority="low" onerror="this.style.visibility='hidden'">` : ''}
+          <div class="ab-card-play" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5z"/></svg></div><div class="ab-card-hint" aria-hidden="true">Watch now</div>
           <div class="home-card-badges">
             <div class="home-card-badge-row"><div class="home-card-badge-stack">${topLeft}</div>${qualityBadge}</div>
             <div class="home-card-badge-row">${ratingBadge}${typeBadge}</div>
@@ -1867,3 +1868,24 @@ function abInitNotifications(){
   },err=>console.warn('AnimeBox notifications could not load:',err));
 }
 document.addEventListener('DOMContentLoaded',abInitNotifications);
+
+/* ===== Card hover: 3D tilt + glare follow the pointer (desktop mouse only) ===== */
+(function abCardTilt(){
+  if(window.__abCardTilt) return; window.__abCardTilt=true;
+  const fine=matchMedia('(hover:hover) and (pointer:fine)'), calm=matchMedia('(prefers-reduced-motion:reduce)');
+  document.addEventListener('pointermove',e=>{
+    if(!fine.matches||calm.matches||e.pointerType==='touch') return;
+    const card=e.target.closest&&e.target.closest('a.home-type-card'); if(!card) return;
+    const r=card.getBoundingClientRect(); if(!r.width||!r.height) return;
+    const x=(e.clientX-r.left)/r.width, y=(e.clientY-r.top)/r.height;
+    card.style.setProperty('--ry',((x-.5)*14).toFixed(2)+'deg');
+    card.style.setProperty('--rx',((.5-y)*14).toFixed(2)+'deg');
+    card.style.setProperty('--gx',(x*100).toFixed(1)+'%');
+    card.style.setProperty('--gy',(y*100).toFixed(1)+'%');
+  },{passive:true});
+  document.addEventListener('pointerout',e=>{
+    const card=e.target.closest&&e.target.closest('a.home-type-card');
+    if(!card||card.contains(e.relatedTarget)) return;
+    card.style.setProperty('--rx','0deg'); card.style.setProperty('--ry','0deg');
+  },{passive:true});
+})();
