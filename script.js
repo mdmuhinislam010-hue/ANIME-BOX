@@ -25,29 +25,6 @@ function stopActiveWatchListeners(){
   activeWatchListeners.forEach(({ref, event, callback})=>{ try{ ref.off(event, callback); }catch(_){} });
   activeWatchListeners = [];
 }
-// Delegated handlers (replace inline onerror/onclick attributes inside generated HTML).
-document.addEventListener('error',e=>{
-  const el=e.target; if(!el||el.tagName!=='IMG'||!el.dataset||!el.dataset.fail) return;
-  switch(el.dataset.fail){
-    case 'hide': el.style.display='none'; break;
-    case 'invisible': el.style.visibility='hidden'; break;
-    case 'hide-screenshot': { const p=el.closest('.episode-screenshot'); if(p) p.style.display='none'; break; }
-    case 'cast': { const d=document.createElement('div'); d.className='details-cast-placeholder'; d.textContent=el.dataset.initial||''; el.replaceWith(d); break; }
-  }
-},true);
-document.addEventListener('click',e=>{
-  const t=e.target.closest&&e.target.closest('[data-ab-open-notifications]');
-  if(t&&typeof abOpenNotifications==='function') abOpenNotifications();
-});
-// Secondary data (notifications, season/episode time tracking) loads only after the Home content is on screen.
-const abDeferredStarts=[]; let abDeferredFlushed=false;
-function abRunDeferredStarts(){
-  if(abDeferredFlushed) return; abDeferredFlushed=true;
-  const run=()=>abDeferredStarts.splice(0).forEach(fn=>{try{fn()}catch(e){console.warn(e)}});
-  if(window.requestIdleCallback) requestIdleCallback(run,{timeout:1500}); else setTimeout(run,300);
-}
-function abAfterFirstPaint(fn){ if(abDeferredFlushed) setTimeout(fn,0); else abDeferredStarts.push(fn); }
-setTimeout(abRunDeferredStarts,4000);
 const AB_HOME_CACHE_KEY = 'animebox_home_cache_v2';
 const AB_HOME_CACHE_TTL = 6 * 60 * 60 * 1000;
 function readHomeCache(){
@@ -199,9 +176,9 @@ function showPageLoadingSkeleton(kind='details'){
     const bar=(w='100%',h=12)=>`<i class="ab-detail-shimmer" style="width:${w};height:${h}px"></i>`;
     const cast=Array.from({length:8},()=>'<div class="ab-detail-cast-skeleton"><i></i>'+bar('75%',8)+bar('55%',6)+'</div>').join('');
     content.innerHTML=`<section class="details-page ab-details-loading" aria-label="Loading title details">
-      <div class="details-topbar"><span class="details-back ab-detail-shimmer"></span><span class="details-topbar-title ab-detail-shimmer ab-sk-w38p-h12"></span></div>
+      <div class="details-topbar"><span class="details-back ab-detail-shimmer"></span><span class="details-topbar-title ab-detail-shimmer" style="width:38%;height:12px"></span></div>
       <div class="details-shell">
-        <aside class="details-poster-wrap"><div class="details-poster ab-detail-shimmer"></div><div class="details-poster-badges"><div class="details-badge-row"><i class="ab-detail-shimmer ab-sk-w55px-h18"></i><i class="ab-detail-shimmer ab-sk-w48px-h18"></i></div></div></aside>
+        <aside class="details-poster-wrap"><div class="details-poster ab-detail-shimmer"></div><div class="details-poster-badges"><div class="details-badge-row"><i class="ab-detail-shimmer" style="width:55px;height:18px"></i><i class="ab-detail-shimmer" style="width:48px;height:18px"></i></div></div></aside>
         <article class="details-main ab-detail-main-loading">
           ${bar('62%',25)}<div class="ab-detail-status-loading">${bar('48px',18)}</div>
           <div class="ab-detail-facts-loading">${bar('42%',11)}${bar('42%',11)}</div>
@@ -295,7 +272,7 @@ function renderHero(){
   heroSlider.innerHTML = `
     <div class="hero-slide-bg" style="background-image:${background ? `url('${safeText(bgSafe)}')` : fallbackBg}"></div>
     <div class="hero-slide">
-      ${poster ? `<img class="hero-poster ab-img-loading" decoding="async" fetchpriority="high" src="${safeText(poster)}" alt="${safeText(title)} poster" loading="eager" data-fail="hide">` : ''}
+      ${poster ? `<img class="hero-poster ab-img-loading" decoding="async" fetchpriority="high" src="${safeText(poster)}" alt="${safeText(title)} poster" loading="eager" onerror="this.style.display='none'">` : ''}
       <div class="hero-info">
         <div class="hero-tags">
           <span class="hero-tag type">${safeText(type).toUpperCase()}</span>
@@ -404,9 +381,10 @@ function shuffleCards(list){
   for (let i = out.length-1; i > 0; i--){ const j = Math.floor(Math.random()*(i+1)); [out[i],out[j]]=[out[j],out[i]]; }
   return out;
 }
-// Relative update time for Home cards. Admin timestamps are preferred; a local
-// fingerprint fallback detects edits to embedded season/episode data without
-// changing or removing any existing content fields.
+// Relative update time for Home cards.
+// Single source of truth = timestamps saved by the Admin Panel (content.updatedAt,
+// plus updatedAt / ab_<time>_ ids inside seasons/{id} and episodes/{id}).
+// No per-browser guessing any more, so every device shows the same time.
 function abParseTime(value){
   if(value===undefined||value===null||value==='') return 0;
   if(typeof value==='number'||/^\d+(\.\d+)?$/.test(String(value).trim())){
@@ -414,18 +392,9 @@ function abParseTime(value){
   }
   const n=Date.parse(String(value)); return Number.isFinite(n)?n:0;
 }
-// Separate Admin collections are watched too: seasons/{contentId} and
-// episodes/{contentId}. Their changes are tracked here (see
-// initExternalContentUpdateTracking) and merged into the Home card time.
+// Newest season/episode time per content id (filled by initExternalContentUpdateTracking).
 const abExternalUpdateTimes = Object.create(null);
-const abLocalMemo = Object.create(null);
 const AB_TIME_FIELDS=['updatedAt','lastUpdatedAt','modifiedAt','lastModified','updateTime','updated_at','createdAt','created_at','publishedAt','addedAt','timestamp'];
-// Small stable hash so localStorage never stores whole season/episode JSON.
-function abHash(str){
-  let h=2166136261>>>0; str=String(str||'');
-  for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619)>>>0;}
-  return h.toString(36)+':'+str.length;
-}
 // Admin ids are created like ab_<base36 time>_<random>; decode the creation time.
 function abIdTime(id){
   const m=/^ab_([0-9a-z]+)_/i.exec(String(id||''));
@@ -433,7 +402,7 @@ function abIdTime(id){
   const n=parseInt(m[1],36);
   return (n>1.4e12&&n<4.1e12)?n:0;
 }
-// Newest timestamp found in a record (and its direct children) or in its id.
+// Newest timestamp found in a record (and its children) or in its ids.
 function abNewestStamp(obj,id){
   let best=abIdTime(id);
   const scan=o=>{
@@ -447,7 +416,7 @@ function abNewestStamp(obj,id){
       const kt=abIdTime(k); if(kt>best) best=kt;
       if(v&&typeof v==='object'){
         scan(v);
-        // one more level: season -> episodes, episode -> previews, etc.
+        // one more level: season -> episodes, episode -> dubs, etc.
         Object.keys(v).forEach(k2=>{
           const k2t=abIdTime(k2); if(k2t>best) best=k2t;
           if(v[k2]&&typeof v[k2]==='object') scan(v[k2]);
@@ -457,8 +426,8 @@ function abNewestStamp(obj,id){
   }
   return best;
 }
-// Returns a real timestamp (ms) for the card, or 0 when nothing is known.
-// Never invents "Just now" for items that have no timestamp.
+// Returns a real timestamp (ms) for the card, or 0 when nothing is known
+// (cards with no known time simply show no badge).
 function abCardUpdateInfo(item){
   const id=String(item?.id??item?.key??item?.contentId??cardTitle(item));
   let stamp=0;
@@ -468,29 +437,45 @@ function abCardUpdateInfo(item){
   if(externalStamp>stamp) stamp=externalStamp;
   const nested=firstValue(item,['seasons','seasonList','seasonEpisodes','episodesBySeason','episodeData','episodes','episodeList'],'');
   if(nested&&typeof nested==='object'){const nt=abNewestStamp(nested,''); if(nt>stamp) stamp=nt;}
-  let fp=''; try{fp=abHash(JSON.stringify(nested||''))}catch(_){ }
-  const key='ab-card-update-v2:'+id;
-  try{
-    let old=abLocalMemo[id];
-    if(old===undefined){ old=JSON.parse(localStorage.getItem(key)||'null'); }
-    let local=Number(old?.time)||0;
-    if(old && old.fp!==fp) local=Date.now(); // embedded season/episode data changed since last visit
-    if(local>stamp) stamp=local;
-    if(!old || old.fp!==fp){ const rec={fp,time:local}; abLocalMemo[id]=rec; localStorage.setItem(key,JSON.stringify(rec)); }
-    else abLocalMemo[id]=old;
-  }catch(_){}
+  const now=Date.now(); if(stamp>now) stamp=now; // clock skew: never show a future time
   return stamp;
 }
 function abTimeAgo(value){
-  if(!Number(value)) return '';
-  const diff=Math.max(0,Date.now()-Number(value||0));
-  const minute=60000,hour=3600000,day=86400000,week=604800000,year=31536000000;
-  if(diff<minute)return 'Just now';
-  if(diff<hour){const n=Math.floor(diff/minute);return n+' min'+(n===1?'':'s')+' ago';}
-  if(diff<day){const n=Math.floor(diff/hour);return n+' hour'+(n===1?'':'s')+' ago';}
-  if(diff<week){const n=Math.floor(diff/day);return n+' day'+(n===1?'':'s')+' ago';}
-  if(diff<year){const n=Math.floor(diff/week);return n+' week'+(n===1?'':'s')+' ago';}
-  const n=Math.floor(diff/year);return n+' year'+(n===1?'':'s')+' ago';
+  const t=Number(value)||0;
+  if(!t) return '';
+  const diff=Math.max(0,Date.now()-t);
+  const minute=60000,hour=3600000,day=86400000,week=604800000,month=2592000000,year=31536000000;
+  const plural=(n,w)=>n+' '+w+(n===1?'':'s')+' ago';
+  if(diff<minute) return 'Just now';
+  if(diff<hour) return plural(Math.floor(diff/minute),'min');
+  if(diff<day) return plural(Math.floor(diff/hour),'hour');
+  if(diff<2*day) return 'Yesterday';
+  if(diff<week) return plural(Math.floor(diff/day),'day');
+  if(diff<month) return plural(Math.floor(diff/week),'week');
+  if(diff<year) return plural(Math.floor(diff/month),'month');
+  return plural(Math.floor(diff/year),'year');
+}
+// Freshness tier drives the badge colour: hot (<1h), new (<24h), recent (<7d), old.
+function abTimeTier(value){
+  const diff=Math.max(0,Date.now()-(Number(value)||0));
+  if(diff<3600000) return 'hot';
+  if(diff<86400000) return 'new';
+  if(diff<604800000) return 'recent';
+  return 'old';
+}
+const AB_CLOCK_SVG='<svg class="ab-ut-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
+function abTimeBadgeHtml(stamp){
+  if(!stamp) return '';
+  const full=new Date(stamp).toLocaleString();
+  return `<div class="ab-card-update-time ab-ut-${abTimeTier(stamp)}" data-update-time="${stamp}" title="Updated ${safeText(full)}">${AB_CLOCK_SVG}<span class="ab-ut-text">${safeText(abTimeAgo(stamp))}</span></div>`;
+}
+function abRefreshTimes(){
+  document.querySelectorAll('.ab-card-update-time[data-update-time]').forEach(el=>{
+    const t=Number(el.dataset.updateTime)||0; if(!t) return;
+    const label=abTimeAgo(t), tier='ab-ut-'+abTimeTier(t);
+    const txt=el.querySelector('.ab-ut-text'); if(txt&&txt.textContent!==label) txt.textContent=label;
+    if(!el.classList.contains(tier)){el.classList.remove('ab-ut-hot','ab-ut-new','ab-ut-recent','ab-ut-old');el.classList.add(tier);}
+  });
 }
 
 function renderHomeTypeCards(items){
@@ -551,13 +536,13 @@ function renderHomeTypeCards(items){
       const updateStamp = abCardUpdateInfo(item);
       return `<a class="home-type-card" href="${safeText(href)}" title="${safeText(title)}">
         <div class="home-type-card-poster">
-          ${image ? `<img class="ab-img-loading" src="${safeText(image)}" alt="${safeText(title)}" loading="lazy" decoding="async" fetchpriority="low" data-fail="invisible">` : ''}
+          ${image ? `<img class="ab-img-loading" src="${safeText(image)}" alt="${safeText(title)}" loading="lazy" decoding="async" fetchpriority="low" onerror="this.style.visibility='hidden'">` : ''}
           <div class="home-card-badges">
             <div class="home-card-badge-row"><div class="home-card-badge-stack">${topLeft}</div>${qualityBadge}</div>
             <div class="home-card-badge-row">${ratingBadge}${typeBadge}</div>
           </div>
         </div>
-        ${updateStamp?`<div class="ab-card-update-time" data-update-time="${updateStamp}">${safeText(abTimeAgo(updateStamp))}</div>`:''}
+        ${abTimeBadgeHtml(updateStamp)}
         <div class="home-type-card-title">${safeText(title)}</div>
       </a>`;
     }).join('');
@@ -718,12 +703,12 @@ function renderDetailsPage(id, seasonParam, episodeParam){
     watchHistory.unshift({id:itemId,title,poster,type,url:contentUrl(item),watchedAt:Date.now()});
     localStorage.setItem(historyKey,JSON.stringify(watchHistory.slice(0,40)));
   } catch(e) { console.warn('Watch history could not be saved:',e); }
-  const castHtml=cast.length ? cast.map(person=>{const obj=typeof person==='object'&&person?person:{name:String(person)};const n=detailText(detailValue(obj,['name','actor','title','personName']),'Cast');const role=detailText(detailValue(obj,['role','character','as','voice'],'Cast'));const img=detailText(detailValue(obj,['image','photo','imageUrl','photoUrl','profile','avatar'],''));return `<div class="details-cast-card">${img?`<img class="ab-img-loading" src="${safeText(img)}" alt="${safeText(n)}" loading="lazy" decoding="async" data-fail="cast" data-initial="${safeText(n.slice(0,1))}">`:`<div class="details-cast-placeholder">${safeText(n.slice(0,1))}</div>`}<div class="details-cast-name">${safeText(n)}</div><div class="details-cast-role">${safeText(role)}</div></div>`}).join('') : '<div class="details-cast-card"><div class="details-cast-placeholder">★</div><div class="details-cast-name">Cast not added</div><div class="details-cast-role">Admin content</div></div>';
+  const castHtml=cast.length ? cast.map(person=>{const obj=typeof person==='object'&&person?person:{name:String(person)};const n=detailText(detailValue(obj,['name','actor','title','personName']),'Cast');const role=detailText(detailValue(obj,['role','character','as','voice'],'Cast'));const img=detailText(detailValue(obj,['image','photo','imageUrl','photoUrl','profile','avatar'],''));return `<div class="details-cast-card">${img?`<img class="ab-img-loading" src="${safeText(img)}" alt="${safeText(n)}" loading="lazy" decoding="async" onerror="this.outerHTML='<div class=\\'details-cast-placeholder\\'>${safeText(n.slice(0,1))}</div>'">`:`<div class="details-cast-placeholder">${safeText(n.slice(0,1))}</div>`}<div class="details-cast-name">${safeText(n)}</div><div class="details-cast-role">${safeText(role)}</div></div>`}).join('') : '<div class="details-cast-card"><div class="details-cast-placeholder">★</div><div class="details-cast-name">Cast not added</div><div class="details-cast-role">Admin content</div></div>';
   document.getElementById('pageContent').innerHTML=`<section class="details-page">
     <div class="details-topbar"><button class="details-back" type="button" id="detailsBack">← Back</button><span class="details-topbar-title">${safeText(title)}</span></div>
     <div class="details-shell">
       <aside class="details-poster-wrap">
-        ${poster?`<img class="details-poster ab-img-loading" src="${safeText(poster)}" alt="${safeText(title)} poster" loading="eager" decoding="async" fetchpriority="high" data-fail="invisible">`:'<div class="details-poster"></div>'}
+        ${poster?`<img class="details-poster ab-img-loading" src="${safeText(poster)}" alt="${safeText(title)} poster" loading="eager" decoding="async" fetchpriority="high" onerror="this.style.visibility='hidden'">`:'<div class="details-poster"></div>'}
         <div class="details-poster-badges">
           ${quality?`<div class="details-badge-row"><span class="details-badge quality">${safeText(quality)}</span></div>`:""}
           <div class="details-badge-row"><span class="details-badge language">${safeText(language)}</span><span class="details-badge type">${safeText(type.toUpperCase())}</span></div>
@@ -783,7 +768,7 @@ function renderDetailsPage(id, seasonParam, episodeParam){
         <iframe id="adminVideoFrame" src="" title="${safeText(title)} video player" allow="autoplay; fullscreen; picture-in-picture; encrypted-media" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
         <div class="watch-placeholder" id="watchPlaceholder">Admin Panel থেকে Video Player Website / Embed URL এবং episode link যোগ করলে এখানে চালু হবে।</div>
       </div>
-      <div class="episode-completion-notice" id="episodeCompletionNotice" role="note"><span class="episode-completion-icon">ℹ️</span><div><strong class="episode-completion-title">Content Update Notice</strong><div class="episode-completion-message" id="episodeCompletionMessage"></div></div></div>
+      <div class="episode-completion-notice" id="episodeCompletionNotice" style="display:none" role="note"><span class="episode-completion-icon">ℹ️</span><div><strong class="episode-completion-title">Content Update Notice</strong><div class="episode-completion-message" id="episodeCompletionMessage"></div></div></div>
       <div class="episode-head"><h3 class="episode-heading">Episodes</h3><select class="season-select" id="watchSeasonSelect" aria-label="Select season"><option value="0">Season 1</option></select></div>
       <div class="episode-grid" id="watchEpisodeGrid"><div class="episode-empty">Admin থেকে Season ও Episode data লোড হচ্ছে…</div></div>
       <div class="watch-controls">
@@ -794,7 +779,7 @@ function renderDetailsPage(id, seasonParam, episodeParam){
       </div>
       <section class="episode-screenshots" id="episodeScreenshots" aria-label="Selected episode screenshots"><h3 class="episode-screenshots-title">SCREENSHOTS</h3><div class="episode-screenshot-list" id="episodeScreenshotList"></div></section>
     </section>
-    <section class="user-download-hub" id="userDownloadHub" aria-label="Download links">
+    <section class="user-download-hub" id="userDownloadHub" style="display:none" aria-label="Download links">
       <section class="user-download-block" id="userSeasonZipBlock"><h2 class="user-download-heading">📦 Season ZIP Downloads</h2><div class="user-download-grid" id="userSeasonZipList"></div></section>
       <section class="user-download-block" id="userEpisodeDownloadBlock"><h2 class="user-download-heading">⬇️ Episode Downloads</h2><div class="user-download-grid" id="userEpisodeDownloadList"></div></section>
     </section>
@@ -1013,7 +998,7 @@ function setupAdminWatchPlayer(item,itemId,title,quality,language){
       const image=String(shot.imageUrl||shot.image||shot.thumbnail||'').trim();
       const click=String(shot.clickUrl||shot.url||shot.link||'').trim();
       const name=String(shot.name||('Screenshot '+(i+1)));
-      const img=`<img src="${safeText(image)}" alt="${safeText(name)}" loading="lazy" data-fail="hide-screenshot">`;
+      const img=`<img src="${safeText(image)}" alt="${safeText(name)}" loading="lazy" onerror="this.closest('.episode-screenshot').style.display='none'">`;
       return click&&/^https?:\/\//i.test(click)
         ? `<a class="episode-screenshot" href="${safeText(click)}" target="_blank" rel="noopener noreferrer">${img}<span class="episode-screenshot-name">${safeText(name)}</span></a>`
         : `<div class="episode-screenshot">${img}<span class="episode-screenshot-name">${safeText(name)}</span></div>`;
@@ -1195,8 +1180,7 @@ function renderTypeListPage(typeName, page=0){
   const includes = (val, needle) => !needle || val.toLowerCase().includes(needle.toLowerCase());
   matched=matched.filter(x=>includes(genreOf(x),state.genre)&&includes(yearOf(x),state.year)&&includes(audioOf(x),state.audio)&&includes(qualityOf(x),state.quality));
   const yearValue=x=>{const n=parseInt(yearOf(x),10);return Number.isFinite(n)?n:0;};
-  const stampMap=new Map(matched.map(x=>[x,abCardUpdateInfo(x)]));
-  const cmpDate=(a,b)=>((stampMap.get(a)||0)-(stampMap.get(b)||0))||(yearValue(a)-yearValue(b));
+  const cmpDate=(a,b)=>(abCardUpdateInfo(a)-abCardUpdateInfo(b))||(yearValue(a)-yearValue(b));
   if(state.sort==='oldest') matched.sort((a,b)=>cmpDate(a,b));
   else if(state.sort==='title') matched.sort((a,b)=>String(firstValue(a,['title','name'],'')).localeCompare(String(firstValue(b,['title','name'],''))));
   else if(state.sort==='rating') matched.sort((a,b)=>Number(firstValue(b,['rating','imdbRating','score'],0))-Number(firstValue(a,['rating','imdbRating','score'],0)));
@@ -1357,8 +1341,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('menuButton')?.addEventListener('click', () => alert('Menu controls will be added later.'));
   document.querySelectorAll('[data-go="profile"]').forEach(b => b.addEventListener('click', () => navigateTo(animeBoxAuth.currentUser ? '/profile' : '/member-login/')));
   window.addEventListener('resize', () => renderHomeTypeCards(latestContentItems));
-const abRefreshTimes=()=>document.querySelectorAll('.ab-card-update-time[data-update-time]').forEach(el=>{el.textContent=abTimeAgo(Number(el.dataset.updateTime)||0);});
-  setInterval(abRefreshTimes,30000);
+setInterval(abRefreshTimes,30000);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)abRefreshTimes();});
 
   showHomeLoadingSkeletons();
@@ -1517,7 +1500,7 @@ function renderProfilePage(){
     try { db.ref('users/' + user.uid + '/photo').once('value').then(snap => { const remotePhoto=snap.val(); if(remotePhoto){ try{localStorage.setItem('ab_profile_photo_'+user.uid,remotePhoto);}catch(_){} const el=document.getElementById('abPhotoAvatar'); if(el && animeBoxAuth.currentUser && animeBoxAuth.currentUser.uid===user.uid) el.innerHTML=`<img src="${safeText(remotePhoto)}" alt="Profile photo">`; } }).catch(err=>console.warn('Profile photo load failed:',err.message)); } catch(_) {}
     content.innerHTML = `
       <section class="auth-page"><div class="auth-card auth-profile-card ab-profile-layout">
-        <div class="ab-profile-top"><span class="ab-active-dot">● Account Active</span><div class="ab-profile-tools"><button type="button" aria-label="Notifications" data-ab-open-notifications="1">♧</button><button type="button" aria-label="Settings">⚙</button></div></div>
+        <div class="ab-profile-top"><span class="ab-active-dot">● Account Active</span><div class="ab-profile-tools"><button type="button" aria-label="Notifications" onclick="abOpenNotifications()">♧</button><button type="button" aria-label="Settings">⚙</button></div></div>
         <div class="ab-profile-hero"><div class="ab-photo-wrap"><div class="auth-avatar ab-photo-avatar" id="abPhotoAvatar">${savedPhoto ? `<img src="${savedPhoto}" alt="Profile photo">` : safeText(initial)}</div><button class="ab-photo-edit" type="button" id="abPhotoEdit" aria-label="Change profile photo">📷</button><input type="file" id="abPhotoInput" accept="image/*" hidden></div>
         <div class="ab-profile-name-row"><h1 class="ab-profile-name" id="abProfileName">${safeText(display)}</h1><button class="ab-name-edit" id="abNameEdit" type="button" aria-label="Edit profile name" title="Edit profile name">✎</button></div><p class="auth-subtitle">${safeText(user.email || '')}</p><button class="ab-logout-btn" id="authLogoutBtn" type="button">⏻ &nbsp; Logout</button></div>
         <section class="ab-watch-history"><div class="ab-history-heading"><h2>🕘 Watch History</h2><button type="button" id="abClearHistory">Clear</button></div><div class="ab-history-grid" id="abWatchHistoryList"><p class="ab-history-empty">তোমার দেখা Movie ও Anime এখানে দেখা যাবে।</p></div></section>
@@ -1702,54 +1685,43 @@ function renderHomeNotice(cfg){
 }
 db.ref('settings/homeNotice').on('value',snap=>renderHomeNotice(snap.val()),err=>console.warn('Home notice load failed:',err));
 
-// Track season/episode changes even though Admin stores them outside content/.
+// Season/episode records live outside content/, so watch them and keep the newest
+// admin timestamp (updatedAt / ab_<time>_ id) per card.
 (function initExternalContentUpdateTracking(){
-  let seasonRoot={}, episodeRoot={};
-  const storageKey='ab-external-content-update-v2';
-  let timer=null;
+  let seasonRoot={}, episodeRoot={}, lastSig='', timer=null;
   function sync(){
-    let previous={};
-    try{previous=JSON.parse(localStorage.getItem(storageKey)||'{}')||{};}catch(_){}
-    const ids=new Set([...Object.keys(seasonRoot||{}),...Object.keys(episodeRoot||{}),...Object.keys(previous)]);
+    const ids=new Set([...Object.keys(seasonRoot||{}),...Object.keys(episodeRoot||{})]);
     const next={};
     ids.forEach(id=>{
-      const s=seasonRoot&&Object.prototype.hasOwnProperty.call(seasonRoot,id)?seasonRoot[id]:null;
-      const e=episodeRoot&&Object.prototype.hasOwnProperty.call(episodeRoot,id)?episodeRoot[id]:null;
-      const fp=abHash(JSON.stringify({s,e}));
-      const old=previous[id]||null;
-      let local=Number(old?.time)||0;
-      if(old && old.fp!==fp) local=Date.now();
-      // Server-wide time: newest updatedAt/createdAt or ab_<time>_ id inside seasons/episodes.
-      const server=Math.max(abNewestStamp(s,''),abNewestStamp(e,''));
-      const time=Math.max(local,server);
-      next[id]={fp,time:local};
-      if(time) abExternalUpdateTimes[String(id)]=time; else delete abExternalUpdateTimes[String(id)];
+      const t=Math.max(abNewestStamp(seasonRoot&&seasonRoot[id],''),abNewestStamp(episodeRoot&&episodeRoot[id],''));
+      if(t) next[id]=t;
     });
-    try{localStorage.setItem(storageKey,JSON.stringify(next));}catch(_){}
+    const sig=Object.keys(next).sort().map(k=>k+':'+next[k]).join('|');
+    if(sig===lastSig) return; // nothing changed: no re-render, no flicker
+    lastSig=sig;
+    Object.keys(abExternalUpdateTimes).forEach(k=>delete abExternalUpdateTimes[k]);
+    Object.assign(abExternalUpdateTimes,next);
     clearTimeout(timer);
     timer=setTimeout(()=>{
       if(Array.isArray(latestContentItems) && latestContentItems.length){
-        // Re-render only the visible card rails so time labels refresh; keep the current page.
-        if(typeof currentPath==='function' && /^\/(home)?$/.test(currentPath())) renderHomeTypeCards(latestContentItems);
-        else document.querySelectorAll('.ab-card-update-time[data-update-time]').forEach(el=>{el.textContent=abTimeAgo(Number(el.dataset.updateTime)||0);});
+        const path=(typeof currentPath==='function')?currentPath():'/home';
+        if(/^\/(home)?$/.test(path)) renderHomeTypeCards(latestContentItems);
+        else abRefreshTimes();
       }
     },150);
   }
-  // Loaded after the Home page is visible so it never delays first paint.
-  abAfterFirstPaint(()=>{
+  // A failed listener must not block the other one.
   db.ref('seasons').on('value',snap=>{seasonRoot=snap.val()||{};sync();},
     err=>{console.warn('Season update-time tracking failed:',err);});
   db.ref('episodes').on('value',snap=>{episodeRoot=snap.val()||{};sync();},
     err=>{console.warn('Episode update-time tracking failed:',err);});
-  });
 })();
 
 // One live Supabase listener handles both first paint and future updates (avoids duplicate full reads).
 db.ref('content').on('value', snap => {
   applyContentSnapshot(normalizeSlideList(snap.val()));
-  if (!contentFirstPaintDone){ contentFirstPaintDone = true; routePage(); }
-  abRunDeferredStarts();
-}, err => { console.warn('Content load failed:', err); if (!contentFirstPaintDone){contentFirstPaintDone=true;routePage();} abRunDeferredStarts(); });
+  if (!contentFirstPaintDone){ contentFirstPaintDone = true; if (window.__hideSplashNow) window.__hideSplashNow(); routePage(); }
+}, err => { console.warn('Content load failed:', err); if (!contentFirstPaintDone){contentFirstPaintDone=true;if(window.__hideSplashNow)window.__hideSplashNow();routePage();} });
 
 db.ref('types').on('value', snap => {
   const raw = snap.val();
@@ -1773,8 +1745,10 @@ db.ref('heroSlides').on('value', snap => {
   if (!unchanged) renderHero();
   if (!unchanged) writeHomeCache();
   restartHeroTimer();
+  // Let users see the page shell/hero while the larger content collection loads.
+  if (window.__showAppShellNow) window.__showAppShellNow();
   if (!contentFirstPaintDone && typeof routePage === 'function') routePage();
-}, () => { heroSlides = []; heroDataLoaded = true; renderHero(); });
+}, () => { heroSlides = []; heroDataLoaded = true; renderHero(); if (window.__showAppShellNow) window.__showAppShellNow(); });
 
 
 /* ============================================================
@@ -1807,7 +1781,7 @@ function abRenderNotifications(){
   if(subtitle)subtitle.textContent=unread?`${unread} unread · Latest AnimeBox updates`:'You are all caught up';
   if(!abNotificationItems.length){list.innerHTML='<div class="ab-notification-empty"><span>🔔</span><b>No notifications yet</b><small>New Movie, Anime and Series updates will appear here.</small></div>';return;}
   list.innerHTML=abNotificationItems.slice(0,50).map(n=>{
-    const isRead=read.has(n.id);const image=n.image?`<img src="${abNotificationEscape(n.image)}" alt="" loading="lazy" data-fail="hide">`:'<div class="ab-notification-thumb-fallback">🔔</div>';
+    const isRead=read.has(n.id);const image=n.image?`<img src="${abNotificationEscape(n.image)}" alt="" loading="lazy" onerror="this.style.display='none'">`:'<div class="ab-notification-thumb-fallback">🔔</div>';
     const time=n.createdAt?new Date(Number(n.createdAt)).toLocaleString():'Recently';
     return `<button type="button" class="ab-notification-item ${isRead?'is-read':'is-unread'}" data-notification-id="${abNotificationEscape(n.id)}">${image}<span class="ab-notification-copy"><b>${abNotificationEscape(n.title||'AnimeBox Update')}</b><span>${abNotificationEscape(n.message||'')}</span><small>${abNotificationEscape(n.type||'Update')} · ${abNotificationEscape(time)}</small></span>${isRead?'':'<i aria-label="Unread"></i>'}</button>`;
   }).join('');
@@ -1828,11 +1802,11 @@ function abShowNewNotificationToast(item){
 }
 function abInitNotifications(){
   const bell=document.getElementById('abNotificationBell');if(bell&&bell.dataset.bound!=='1'){bell.dataset.bound='1';bell.addEventListener('click',abOpenNotifications);}
-  // The same shared Supabase Realtime Database used by the Admin HTML (loaded after first paint).
-  abAfterFirstPaint(()=>db.ref('notifications').limitToLast(60).on('value',snap=>{
+  // The same shared Supabase Realtime Database used by the Admin HTML.
+  db.ref('notifications').limitToLast(60).on('value',snap=>{
     const raw=snap.val()||{};const incoming=Object.entries(raw).map(([id,v])=>({id,...(v||{})})).filter(n=>n.active!==false).sort((a,b)=>(Number(b.createdAt)||0)-(Number(a.createdAt)||0));
     if(!abNotificationFirstSnapshot){const newest=incoming.find(n=>!abNotificationSeenIds.has(n.id));if(newest)abShowNewNotificationToast(newest);}
     abNotificationItems=incoming;abNotificationSeenIds=new Set(incoming.map(n=>n.id));abNotificationFirstSnapshot=false;abRenderNotifications();
-  },err=>console.warn('AnimeBox notifications could not load:',err)));
+  },err=>console.warn('AnimeBox notifications could not load:',err));
 }
 document.addEventListener('DOMContentLoaded',abInitNotifications);

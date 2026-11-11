@@ -1,22 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta name="robots" content="noindex">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#000000">
-
 <title>AnimeBox - Bangla, Hindi & English HD Movies, Series, Anime Download</title>
-<link rel="preconnect" href="https://mkvlazekxmbkfmkylnov.supabase.co" crossorigin>
-<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-
 <link rel="icon" type="image/png" href="https://cdn.imageurlgenerator.com/uploads/ce68f4a9-a8e6-42f7-9cde-64dd6467ccd1.png">
-
-<link rel="stylesheet" href="/style.css?v=20261111-fast-clean">
-
+<link rel="stylesheet" href="/style.css?v=20261110-update-time-fix">
 </head>
 <body>
-
 
 <header class="topbar">
   <button class="icon-btn menu-btn" type="button" aria-label="Open menu" id="menuButton">
@@ -28,11 +20,9 @@
     <a class="nav-link" href="/movie" data-page="movies"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4m-4 6h4m10-6h4m-4 6h4"/></svg>Movies</a>
     <a class="nav-link" href="/anime" data-page="anime"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 10h.01M16 10h.01M8 15c2.5 2 5.5 2 8 0"/></svg>Anime</a>
     <a class="nav-link" href="/series" data-page="series"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="15" rx="2"/><path d="M17 2l-5 5-5-5"/></svg>Series</a>
-    <a class="nav-link" href="/tv-show" data-page="tv-show"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 22h8M12 19v3M8 9l3 3-3 3M14 9h3"/></svg>TV Show</a>
     <a class="nav-link" href="/profile" data-page="profile"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Profile</a>
   </nav>
   <div class="top-actions">
-    <button class="icon-btn ab-notification-bell" type="button" id="abNotificationBell" aria-label="Notifications" title="Notifications"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg><span id="abNotificationCount" class="ab-notification-count" hidden>0</span></button>
     <button class="icon-btn profile-top" type="button" aria-label="Profile" data-go="profile"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></button>
     <button class="icon-btn" type="button" aria-label="Search" id="searchButton"><svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg></button>
   </div>
@@ -42,13 +32,11 @@
   <section class="hero-wrap" aria-label="Featured slider">
     <div class="hero-slider" id="heroSlider"><div class="hero-empty">Loading featured content…</div></div>
   </section>
-  <section id="homeNotice" class="home-notice" aria-label="Site notice" hidden><span class="home-notice-icon">📢</span><div class="home-notice-viewport"><div id="homeNoticeText" class="home-notice-text"></div></div></section>
   <section class="home-types" aria-label="Home content categories">
     <section class="home-type-section" data-type-section="Movie"><h2 class="home-type-heading">Movie</h2><div class="home-type-rail" id="homeTypeMovie" aria-label="Movie cards"></div><div class="home-type-empty" id="homeTypeMovieEmpty">No Movie cards yet.</div></section>
     <section class="home-type-section" data-type-section="Trending"><h2 class="home-type-heading">Trending</h2><div class="home-type-rail" id="homeTypeTrending" aria-label="Trending cards"></div><div class="home-type-empty" id="homeTypeTrendingEmpty">No Trending cards yet.</div></section>
     <section class="home-type-section" data-type-section="Anime"><h2 class="home-type-heading">Anime</h2><div class="home-type-rail" id="homeTypeAnime" aria-label="Anime cards"></div><div class="home-type-empty" id="homeTypeAnimeEmpty">No Anime cards yet.</div></section>
     <section class="home-type-section" data-type-section="Series"><h2 class="home-type-heading">Series</h2><div class="home-type-rail" id="homeTypeSeries" aria-label="Series cards"></div><div class="home-type-empty" id="homeTypeSeriesEmpty">No Series cards yet.</div></section>
-    <section class="home-type-section" data-type-section="TV Show"><h2 class="home-type-heading">TV Show</h2><div class="home-type-rail" id="homeTypeTVShow" aria-label="TV Show cards"></div><div class="home-type-empty" id="homeTypeTVShowEmpty">No TV Show cards yet.</div></section>
   </section>
 </main>
 
@@ -57,12 +45,11 @@
   <a class="nav-link" href="/movie" data-page="movies"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4m-4 6h4m10-6h4m-4 6h4"/></svg><span>Movies</span></a>
   <a class="nav-link" href="/anime" data-page="anime"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 10h.01M16 10h.01M8 15c2.5 2 5.5 2 8 0"/></svg><span>Anime</span></a>
   <a class="nav-link" href="/series" data-page="series"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="15" rx="2"/><path d="M17 2l-5 5-5-5"/></svg><span>Series</span></a>
-  <a class="nav-link" href="/tv-show" data-page="tv-show"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 22h8M12 19v3M8 9l3 3-3 3M14 9h3"/></svg><span>TV Show</span></a>
   <a class="nav-link" href="/profile" data-page="profile"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Profile</span></a>
 </nav>
 
-<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script defer src="/supabase-adapter.js?v=20261111-fast-clean"></script>
-<script src="/script.js?v=20261111-fast-clean" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/supabase-adapter.js?v=20261110-update-time-fix"></script>
+<script src="/script.js?v=20261110-update-time-fix" defer></script>
 </body>
 </html>

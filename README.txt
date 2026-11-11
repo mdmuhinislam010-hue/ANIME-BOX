@@ -8,8 +8,6 @@ Files:
   and Home-card relative update-time tracking (including separate season/episode data)
 - 404.html: GitHub Pages fallback for direct-route refreshes
 - _redirects: rewrite rule for Netlify-compatible static hosting
-- supabase-adapter.js: database/auth/storage layer (loads only the data each page needs)
-- AnimeBox_Supabase_Setup.sql: Supabase tables, policies and the atomic-save function
 
 DEPLOYMENT NOTES
 1) Keep all files together in the published root folder.
@@ -39,44 +37,19 @@ AUTHENTICATION CHECKLIST
 - The SQL file currently grants public app access to the shared JSON state table to preserve the legacy public website/Admin behavior. This is permissive: do not store secrets or private user data in that table. For production security, Admin writes should be moved behind authenticated server-side authorization and narrower RLS policies.
 
 
-HOME CARD RELATIVE UPDATE TIME (fixed 2026-11-11)
-- Card time is the newest of: updatedAt/createdAt-type fields on the content record,
-  the creation time encoded in Admin ids (ab_<time>_<rand>), the newest timestamp or
-  id time inside seasons/{contentId} and episodes/{contentId}, and a per-browser
-  change detector (hash based) for edits that carry no timestamp.
-- Cards with no known time now show no label (before, they all showed "Just now").
-- The seasons and episodes listeners no longer wait for each other, so one failing
-  listener cannot stop the time from updating.
-- localStorage now stores short hashes (keys ab-card-update-v2 / ab-external-content-update-v2)
-  instead of full season/episode JSON, which could exceed the storage quota.
-- Type list pages: Newest/Oldest sort now uses the update time first, then release year.
-- Labels refresh every 30 seconds and when the tab becomes visible again.
-- For identical times on every device, the Admin Panel should also write updatedAt (ISO).
-
-
-CLEANUP AND SPEED UPDATE (2026-11-11)
-Cleanup
-- Removed unused CSS (old loading screen, old OTP card, old account info box, old detail
-  skeleton rules and their keyframes). CSS used by generated HTML (for example rank-1/2/3)
-  was kept. No JS function or variable was unused; only the dead splash/app-shell calls
-  (window.__hideSplashNow / __showAppShellNow, never defined) were removed.
-- Static inline style="" attributes moved into style.css (the two display:none boxes and
-  the fixed-size loading placeholders). Values that change per item (poster background,
-  social colors, placeholder widths) must stay inline.
-- Inline onerror/onclick attributes replaced by one delegated handler in script.js
-  (data-fail / data-ab-open-notifications attributes).
-- 404.html now uses the same page shell as index.html (it was missing TV Show, the notice
-  line and the notification bell that script.js expects).
-Faster data loading
-- The website no longer downloads the whole shared JSON document. The first request fetches
-  only content, heroSlides, types and the home notice. Notifications and the season/episode
-  time tracking load after the Home page is on screen. The details page loads only the
-  seasons/episodes of the opened title. Users and leaderboard load only on the Profile page.
-- Realtime events update the local copy directly (no extra download), and a listener is
-  called only when its own data actually changed, so unrelated changes no longer re-render Home.
-- Scripts use defer, the Supabase CDN file has a pinned version, and the browser preconnects
-  to Supabase and the CDN.
-- Run the updated AnimeBox_Supabase_Setup.sql once more. The save function now returns a tiny
-  marker instead of the whole document, which makes every save much faster. The website works
-  with the old function too, only slower.
-- If a partial load ever fails, the adapter falls back to loading the full document.
+HOME CARD RELATIVE UPDATE TIME (rewritten 2026-11-11, v3)
+- The Admin Panel (use the supplied Admin index.html) now stamps content/<cardId>/updatedAt
+  every time a Card, Season, Episode, Dub or Download link is saved. New cards also get createdAt.
+  Drag/drop ordering, enabled/trending toggles, malId, cast, counters and deletes do NOT change the time.
+- The User Website shows the newest of: content.updatedAt/createdAt, newest updatedAt or ab_<time>_ id
+  inside seasons/{id} and episodes/{id}. Old cards without updatedAt fall back to their ab_ id time.
+- The per-browser guessing (localStorage hash + Date.now()) was removed: it made different devices show
+  different times and made cards flip to "Just now". Every device now shows the same time.
+- Cards with no known time show no badge. Future timestamps (wrong admin clock) are clamped to "Just now".
+- Type list pages: Newest/Oldest sort uses this time first, then release year (no more localStorage work per compare).
+- New badge: clock icon + glass pill, colour by freshness
+  (green pulsing < 1 hour, blue < 24 hours, violet < 7 days, grey older). Tooltip shows the exact date/time.
+- Labels: Just now / N mins ago / N hours ago / Yesterday / N days / weeks / months / years ago.
+  They refresh every 30 seconds and when the tab becomes visible again.
+- IMPORTANT: deploy BOTH the new Admin index.html and this User package. Time updates start from the
+  next save done in the new Admin.

@@ -1,131 +1,38 @@
-/* AnimeBox Supabase adapter v2026-11-11 (fast partial loading)
-   Same legacy database-style API (db.ref(...).on/once/set/update/transaction/remove),
-   but only the paths a page actually needs are downloaded instead of the whole
-   shared JSON document. Realtime updates patch the local cache directly. */
+/* AnimeBox Supabase adapter v2026-11-10:
+   legacy database-style API backed by one Supabase project.
+   Root realtime listeners support User-side season/episode update-time tracking. */
 (function(){
   const SUPABASE_URL='https://mkvlazekxmbkfmkylnov.supabase.co';
   const SUPABASE_PUBLISHABLE_KEY='sb_publishable_7ALLh1SO0L-OUmZhCUNihg_110YoImg';
   const client=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
   window.animeBoxSupabase=client;
   const TABLE='animebox_state';
-  const SAFE=/^[A-Za-z0-9_-]+$/;
   let rootCache={};
-  let fullLoaded=false;                 // true when rootCache holds the complete document
-  const loadedPaths=new Set();          // partial paths already in rootCache (e.g. "content", "seasons/abc")
-  const inflight=new Map();             // path -> promise (de-duplicates identical requests)
-  let queue=[], flushScheduled=false;
-  let realtimeChannel=null, subscribedBefore=false;
+  let realtimeChannel=null;
   const listeners=new Set();
-  let writeQueue=Promise.resolve();     // serialize writes in each page
+  let refreshPromise=null;
+  // Serialize writes in each page so rapid Admin actions cannot overwrite one another.
+  let writeQueue=Promise.resolve();
   const clone=v=>v==null?v:JSON.parse(JSON.stringify(v));
   function parts(path){return String(path||'').split('/').filter(Boolean)}
   function getAt(root,path){let v=root;for(const k of parts(path)){if(v==null)return null;v=v[k]}return v==null?null:v}
-  function setAt(root,path,value){const p=parts(path);if(!p.length)return clone(value);let cur=root;for(let i=0;i<p.length-1;i++){if(!cur[p[i]]||typeof cur[p[i]]!=='object'||Array.isArray(cur[p[i]]))cur[p[i]]={};cur=cur[p[i]]}if(value===null||value===undefined)delete cur[p[p.length-1]];else cur[p[p.length-1]]=clone(value);return root}
-
-  // Only the first two path segments are ever fetched on their own; deeper reads use that subtree.
-  function fetchParts(p){const out=[];for(const seg of p.slice(0,2)){if(!SAFE.test(seg))break;out.push(seg)}return out}
-  function covered(p){
-    if(fullLoaded)return true;
-    for(let i=1;i<=p.length;i++)if(loadedPaths.has(p.slice(0,i).join('/')))return true;
-    return false;
-  }
-  async function loadFull(){
-    const {data,error}=await client.from(TABLE).select('data').eq('id',1).maybeSingle();
-    if(error)throw error;
-    rootCache=data?.data&&typeof data.data==='object'?data.data:{};
-    fullLoaded=true;loadedPaths.clear();
-    return rootCache;
-  }
-  async function runBatch(items){
-    const cols=items.map((it,i)=>'p'+i+':data'+it.parts.map(s=>'->'+s).join('')).join(',');
-    const {data,error}=await client.from(TABLE).select(cols).eq('id',1).maybeSingle();
-    if(error)throw error;
-    items.forEach((it,i)=>{
-      const value=data?data['p'+i]:null;
-      setAt(rootCache,it.key,value===undefined?null:value);
-      loadedPaths.add(it.key);
-    });
-  }
-  async function flush(){
-    flushScheduled=false;
-    const items=queue;queue=[];
-    if(!items.length)return;
-    try{
-      await runBatch(items);
-    }catch(e){
-      // Safety net: if partial selects are not supported, fall back to the full document once.
-      console.warn('Partial load failed, loading full document:',e);
-      try{await loadFull()}catch(e2){items.forEach(it=>it.reject(e2));return}
-    }
-    items.forEach(it=>it.resolve());
-  }
-  // Make sure the data for a path is in the cache (batches all calls made in the same tick).
-  function ensure(path,force=false){
-    const p=fetchParts(parts(path));
-    if(!p.length){return force||!fullLoaded?loadFull():Promise.resolve()}
-    const key=p.join('/');
-    if(!force&&covered(p))return Promise.resolve();
-    if(!force&&inflight.has(key))return inflight.get(key);
-    const promise=new Promise((resolve,reject)=>queue.push({key,parts:p,resolve,reject}));
-    inflight.set(key,promise);
-    promise.then(()=>inflight.delete(key),()=>inflight.delete(key));
-    if(!flushScheduled){flushScheduled=true;Promise.resolve().then(flush)}
-    return promise;
-  }
-  // Write one JSON path atomically on the database side.
+  function setAt(root,path,value){const p=parts(path);if(!p.length)return clone(value);let cur=root;for(let i=0;i<p.length-1;i++){if(!cur[p[i]]||typeof cur[p[i]]!=='object'||Array.isArray(cur[p[i]]))cur[p[i]]={};cur=cur[p[i]]}if(value===null)delete cur[p[p.length-1]];else cur[p[p.length-1]]=clone(value);return root}
+  async function loadRoot(){const {data,error}=await client.from(TABLE).select('data').eq('id',1).maybeSingle();if(error)throw error;rootCache=data?.data&&typeof data.data==='object'?data.data:{};return rootCache}
+  async function saveRoot(next){const {error}=await client.from(TABLE).upsert({id:1,data:next,updated_at:new Date().toISOString()},{onConflict:'id'});if(error)throw error;rootCache=next;notify();return next}
+  // Use a database-side atomic JSON path update. This prevents a User tab from
+  // replacing unrelated Admin changes with an older copy of the whole document.
   async function savePath(path,value,remove=false){
     const cleanPath=parts(path);
     const {data,error}=await client.rpc('animebox_set_path',{p_path:cleanPath,p_value:remove?null:value,p_delete:!!remove});
     if(error)throw error;
-    if(data&&data.__ab_ok===true){
-      setAt(rootCache,cleanPath.join('/'),remove?null:value);          // new tiny SQL function: patch local cache
-    }else if(data&&typeof data==='object'){
-      rootCache=data;fullLoaded=true;loadedPaths.clear();               // old SQL function: whole document returned
-    }else{
-      await ensure(cleanPath.join('/'),true);
-    }
+    if(data&&typeof data==='object')rootCache=data;
+    else await loadRoot();
     notify();
     return getAt(rootCache,cleanPath.join('/'));
   }
-  // Tell each listener only when its own value really changed.
-  function notify(){
-    for(const l of [...listeners]){
-      if(!l.active||!l.ready)continue;
-      try{
-        const v=new Ref(l.path,l.query)._value();
-        const sig=JSON.stringify(v===undefined?null:v);
-        if(sig===l.sig)continue;
-        l.sig=sig;
-        l.cb(new Snapshot(v));
-      }catch(e){console.error(e)}
-    }
-  }
-  let notifyTimer=null;
-  function scheduleNotify(){clearTimeout(notifyTimer);notifyTimer=setTimeout(notify,60)}
-  async function refreshLoaded(){
-    try{
-      if(fullLoaded)await loadFull();
-      else if(loadedPaths.size){
-        const items=[...loadedPaths].map(key=>({key,parts:key.split('/')}));
-        await runBatch(items);
-      }
-      notify();
-    }catch(e){console.error('Supabase data refresh failed:',e);for(const l of listeners){if(l.active&&l.err)l.err(e)}}
-  }
-  function onRealtime(payload){
-    const next=payload&&payload.new&&payload.new.data;
-    if(next&&typeof next==='object'){            // the changed row arrives with the event: no extra request
-      rootCache=next;fullLoaded=true;loadedPaths.clear();scheduleNotify();
-    }else{
-      clearTimeout(onRealtime.t);onRealtime.t=setTimeout(refreshLoaded,120);
-    }
-  }
-  function ensureRealtime(){
-    if(realtimeChannel)return;
-    realtimeChannel=client.channel('animebox-state-live')
-      .on('postgres_changes',{event:'*',schema:'public',table:TABLE},onRealtime)
-      .subscribe(status=>{if(status==='SUBSCRIBED'){if(subscribedBefore)refreshLoaded();subscribedBefore=true}});
-  }
+  function notify(){for(const l of [...listeners]){if(!l.active)continue;try{l.cb(new Snapshot(new Ref(l.path,l.query)._value()))}catch(e){console.error(e)}}}
+  function refresh(){if(refreshPromise)return refreshPromise;refreshPromise=loadRoot().then(()=>notify()).catch(e=>{console.error('Supabase data refresh failed:',e);for(const l of listeners){if(l.active&&l.err)l.err(e)}}).finally(()=>refreshPromise=null);return refreshPromise}
+  function ensureRealtime(){if(realtimeChannel)return;realtimeChannel=client.channel('animebox-state-live').on('postgres_changes',{event:'*',schema:'public',table:TABLE},()=>refresh()).subscribe();}
   class Snapshot{constructor(v){this.value=clone(v)}val(){return clone(this.value)}exists(){return this.value!==null&&this.value!==undefined}forEach(fn){const v=this.value||{};for(const [key,value] of Object.entries(v)){if(fn({key,val:()=>clone(value)})===true)return true}return false}}
   class Ref{
     constructor(path='',query={}){this.path=parts(path).join('/');this.query=query;this.key=parts(path).slice(-1)[0]||null}
@@ -135,25 +42,14 @@
     equalTo(value){return new Ref(this.path,{...this.query,equalTo:value})}
     limitToLast(n){return new Ref(this.path,{...this.query,limitLast:n})}
     _value(){let v=getAt(rootCache,this.path);if(v&&typeof v==='object'&&!Array.isArray(v)){let entries=Object.entries(v);if(this.query.orderChild){entries=entries.filter(([,x])=>x&&x[this.query.orderChild]===this.query.equalTo)}if(this.query.limitLast)entries=entries.slice(-this.query.limitLast);v=Object.fromEntries(entries)}return v}
-    async once(event){await ensure(this.path,true);return new Snapshot(this._value())}
-    on(event,cb,err){
-      const l={path:this.path,query:this.query,cb,err,active:true,ready:false,sig:undefined};
-      listeners.add(l);ensureRealtime();
-      ensure(this.path).then(()=>{
-        if(!l.active)return;
-        const v=this._value();
-        l.sig=JSON.stringify(v===undefined?null:v);
-        l.ready=true;
-        cb(new Snapshot(v));
-      }).catch(e=>err&&err(e));
-      return cb;
-    }
+    async once(event){await loadRoot();return new Snapshot(this._value())}
+    on(event,cb,err){const l={path:this.path,query:this.query,cb,err,active:true};listeners.add(l);ensureRealtime();loadRoot().then(()=>{if(l.active)cb(new Snapshot(this._value()))}).catch(e=>err&&err(e));return cb}
     off(event,cb){for(const l of [...listeners])if(l.path===this.path&&(!cb||l.cb===cb)){l.active=false;listeners.delete(l)}}
     _enqueueWrite(work){const job=writeQueue.then(work);writeQueue=job.catch(()=>{});return job}
-    async set(value){return this._enqueueWrite(async()=>{await savePath(this.path,value,value===null);return new Snapshot(getAt(rootCache,this.path))})}
-    async update(values){return this._enqueueWrite(async()=>{for(const [k,v] of Object.entries(values||{})){const childPath=[this.path,k].filter(Boolean).join('/');await savePath(childPath,v,v===null)}return new Snapshot(getAt(rootCache,this.path))})}
+    async set(value){return this._enqueueWrite(async()=>{await loadRoot();await savePath(this.path,value,value===null);return new Snapshot(getAt(rootCache,this.path))})}
+    async update(values){return this._enqueueWrite(async()=>{await loadRoot();for(const [k,v] of Object.entries(values||{})){const childPath=[this.path,k].filter(Boolean).join('/');await savePath(childPath,v,v===null)}return new Snapshot(getAt(rootCache,this.path))})}
     async remove(){return this.set(null)}
-    async transaction(updater){return this._enqueueWrite(async()=>{await ensure(this.path,true);const current=clone(getAt(rootCache,this.path));const proposed=updater(current);if(proposed===undefined)return {committed:false,snapshot:new Snapshot(current)};await savePath(this.path,proposed,proposed===null);return {committed:true,snapshot:new Snapshot(getAt(rootCache,this.path))}})}
+    async transaction(updater){return this._enqueueWrite(async()=>{await loadRoot();const current=clone(getAt(rootCache,this.path));const proposed=updater(current);if(proposed===undefined)return {committed:false,snapshot:new Snapshot(current)};await savePath(this.path,proposed,proposed===null);return {committed:true,snapshot:new Snapshot(getAt(rootCache,this.path))}})}
   }
   window.db={ref:path=>new Ref(path||'')};
   // Supabase Storage adapter compatible with the Admin uploader.
@@ -163,6 +59,5 @@
   const auth={get currentUser(){return asUser(window.__abSessionUser)},onAuthStateChanged(cb){let active=true;client.auth.getSession().then(({data,error})=>{if(error)console.warn('Supabase session restore failed:',error);window.__abSessionUser=data?.session?.user||null;if(active)cb(asUser(window.__abSessionUser))});const {data:{subscription}}=client.auth.onAuthStateChange((event,s)=>{window.__abSessionUser=s?.user||null;if(active)cb(asUser(window.__abSessionUser),event)});return ()=>{active=false;subscription.unsubscribe()}},async createUserWithEmailAndPassword(email,password,displayName=''){const fallback=String(email).split('@')[0];const name=String(displayName||fallback);const {data,error}=await client.auth.signUp({email,password,options:{data:{full_name:name,display_name:name}}});if(error)throw authError(error);window.__abSessionUser=data.session?.user||null;return {user:asUser(data.user),session:data.session,confirmationRequired:!data.session}},async signInWithEmailAndPassword(email,password){const {data,error}=await client.auth.signInWithPassword({email,password});if(error)throw authError(error);window.__abSessionUser=data.session?.user||data.user||null;return {user:asUser(data.user),session:data.session}},async sendPasswordResetEmail(email,redirectTo){const {error}=await client.auth.resetPasswordForEmail(email,{redirectTo});if(error)throw authError(error)},async updatePassword(password){const {data,error}=await client.auth.updateUser({password});if(error)throw authError(error);window.__abSessionUser=data.user;return asUser(data.user)},async signOut(){const {error}=await client.auth.signOut();if(error)throw authError(error);window.__abSessionUser=null}};
   function authError(e){const map={'invalid_credentials':'auth/invalid-credential','email_not_confirmed':'auth/email-not-confirmed','user_already_exists':'auth/email-already-in-use','weak_password':'auth/weak-password','invalid_email':'auth/invalid-email','over_email_send_rate_limit':'auth/too-many-requests','email_address_invalid':'auth/invalid-email','signup_disabled':'auth/operation-not-allowed','user_banned':'auth/user-disabled'};e.code=map[e.code]||e.code||'auth/provider-error';return e}
   window.animeBoxAuth=auth;
-  // Start downloading the data the Home page needs right away (one request), while script.js is still loading.
-  ['content','heroSlides','types','settings/homeNotice'].forEach(p=>ensure(p).catch(e=>console.error('Supabase setup required:',e)));
+  loadRoot().catch(e=>console.error('Supabase setup required:',e));
 })();
