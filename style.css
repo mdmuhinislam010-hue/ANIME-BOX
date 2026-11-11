@@ -586,7 +586,7 @@ img.ab-img-loading {
 .ab-card-update-time{
   --ut:#7dd3fc;--ut-bg1:rgba(14,165,233,.20);--ut-bg2:rgba(37,99,235,.10);--ut-bd:rgba(56,189,248,.38);
   display:inline-flex;align-items:center;gap:4px;
-  width:max-content;max-width:100%;margin:7px 0 3px;padding:3px 8px 3px 6px;
+  width:max-content;max-width:100%;margin:0;padding:3px 8px 3px 6px;
   border:1px solid var(--ut-bd);border-radius:999px;
   background:linear-gradient(135deg,var(--ut-bg1),var(--ut-bg2));
   color:var(--ut);font-size:10px;font-weight:700;line-height:1.2;letter-spacing:.2px;
@@ -603,4 +603,45 @@ img.ab-img-loading {
 @keyframes abUtPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.55;transform:scale(.88)}}
 @media(prefers-reduced-motion:reduce){.ab-card-update-time.ab-ut-hot .ab-ut-icon{animation:none}}
 .home-type-card-title{margin-top:1px;}
-@media(max-width:650px){.ab-card-update-time{font-size:9px;gap:3px;padding:2px 6px 2px 5px;margin-top:5px}.ab-card-update-time .ab-ut-icon{width:10px;height:10px}}
+@media(max-width:650px){.ab-card-update-time{font-size:9px;gap:3px;padding:2px 6px 2px 5px}.ab-card-update-time .ab-ut-icon{width:10px;height:10px}}
+
+/* ===== Card meta row: update time + season/episode, with extra motion ===== */
+.ab-card-meta{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin:7px 0 3px;min-width:0;animation:abMetaIn .45s cubic-bezier(.2,.8,.2,1) both}
+@media(max-width:650px){.ab-card-meta{margin-top:5px;gap:3px}}
+.ab-card-season{position:relative;display:inline-flex;align-items:center;gap:3px;max-width:100%;padding:3px 7px;border-radius:5px;overflow:hidden;
+  font-size:10px;font-weight:800;line-height:1.2;white-space:nowrap;color:#fbbf24;background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.38);
+  transition:transform .25s ease,box-shadow .25s ease,background .25s ease}
+.ab-card-season i{font-style:normal;opacity:.55;font-weight:600}
+.ab-card-season.ab-done{color:#34d399;background:rgba(52,211,153,.12);border-color:rgba(52,211,153,.38)}
+.ab-sn-check{width:10px;height:10px;flex:none;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:24;stroke-dashoffset:24;animation:abCheck .6s .35s ease-out forwards}
+/* light sweep across the badges */
+.ab-card-season:after,.ab-card-update-time.ab-ut-hot:after{content:"";position:absolute;top:0;bottom:0;left:-60%;width:40%;pointer-events:none;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.28),transparent);transform:skewX(-18deg);animation:abSweep 4.8s ease-in-out infinite}
+.ab-card-update-time{position:relative;overflow:hidden}
+.ab-card-update-time.ab-ut-hot:after{animation-duration:3.2s}
+/* hover / focus: lift card, zoom poster, nudge badges */
+.home-type-card{transition:transform .28s cubic-bezier(.2,.8,.2,1)}
+.home-type-card-poster{transition:box-shadow .28s ease}
+.home-type-card-poster img{transition:transform .5s cubic-bezier(.2,.8,.2,1),filter .3s ease}
+@media(hover:hover){
+  .home-type-card:hover{transform:translateY(-4px)}
+  .home-type-card:hover .home-type-card-poster{box-shadow:0 10px 24px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.1)}
+  .home-type-card:hover .home-type-card-poster img{transform:scale(1.06);filter:brightness(1.08)}
+  .home-type-card:hover .ab-card-season{transform:translateY(-1px);box-shadow:0 3px 10px rgba(251,191,36,.25)}
+  .home-type-card:hover .ab-card-season.ab-done{box-shadow:0 3px 10px rgba(52,211,153,.25)}
+  .home-type-card:hover .ab-card-update-time{transform:translateY(-1px)}
+}
+.home-type-card:active{transform:scale(.97)}
+.home-type-card:focus-visible{outline:2px solid #f2d400;outline-offset:3px;border-radius:7px}
+.ab-card-update-time{transition:transform .25s ease}
+@keyframes abMetaIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes abSweep{0%,55%{left:-60%}100%{left:130%}}
+@keyframes abCheck{to{stroke-dashoffset:0}}
+@media(prefers-reduced-motion:reduce){
+  .ab-card-meta{animation:none}
+  .ab-card-season:after,.ab-card-update-time.ab-ut-hot:after{display:none}
+  .ab-sn-check{animation:none;stroke-dashoffset:0}
+  .home-type-card,.home-type-card-poster img,.ab-card-season,.ab-card-update-time{transition:none}
+  .home-type-card:hover,.home-type-card:hover .home-type-card-poster img,.home-type-card:active{transform:none}
+}
+@media(max-width:650px){.ab-card-season{font-size:9px;padding:2px 5px}}

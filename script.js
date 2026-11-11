@@ -469,6 +469,60 @@ function abTimeBadgeHtml(stamp){
   const full=new Date(stamp).toLocaleString();
   return `<div class="ab-card-update-time ab-ut-${abTimeTier(stamp)}" data-update-time="${stamp}" title="Updated ${safeText(full)}">${AB_CLOCK_SVG}<span class="ab-ut-text">${safeText(abTimeAgo(stamp))}</span></div>`;
 }
+// Season / episode progress for Home cards (S2 · EP 12).
+// Source: seasons/{id} + episodes/{id} records saved by the Admin Panel; falls back to
+// season/episode fields on the content card itself. Cards with neither show no badge.
+const abExternalProgress = Object.create(null);
+function abPosNum(v){ const n=Number(String(v??'').trim()); return Number.isFinite(n)&&n>0?n:0; }
+function abSeasonNo(s,i){
+  const d=abPosNum(s?.number??s?.seasonNumber??s?.groupNumber); if(d) return d;
+  const m=String(s?.name||s?.title||s?.seasonName||'').match(/(\d+)/); return m?Number(m[1]):i+1;
+}
+function abEpisodeNo(e,i){
+  const d=abPosNum(e?.episodeNumber??e?.number??e?.episode??e?.ep); if(d) return d;
+  const m=String(e?.name||e?.title||e?.episodeName||'').match(/(\d+)/); return m?Number(m[1]):i+1;
+}
+function abComputeProgress(seasonRaw,episodeRaw){
+  const on=x=>x&&x.enabled!==false&&x.active!==false&&x.hidden!==true;
+  const seasons=normalizeSlideList(seasonRaw).filter(on);
+  const eps=normalizeSlideList(episodeRaw).filter(on);
+  if(!seasons.length&&!eps.length) return null;
+  const rows=seasons.map((s,i)=>({s,no:abSeasonNo(s,i),id:String(s.id??s.key??''),eps:[]}));
+  const loose=[];
+  eps.forEach((e,i)=>{
+    const sid=String(firstValue(e,['seasonId','parentSeasonId','groupId'],'')).trim();
+    let row=sid&&rows.find(r=>r.id===sid);
+    if(!row){const n=abPosNum(firstValue(e,['season','seasonNumber','groupNumber','parentSeasonNumber'],0)); if(n) row=rows.find(r=>r.no===n)||(rows.push({s:{},no:n,id:'',eps:[]}),rows[rows.length-1]);}
+    if(!row&&rows.length===1) row=rows[0];
+    (row?row.eps:loose).push(abEpisodeNo(e,i));
+  });
+  if(loose.length) rows.push({s:{},no:1,id:'',eps:loose});
+  const withEps=rows.filter(r=>r.eps.length);
+  const pool=withEps.length?withEps:rows;
+  const cur=pool.reduce((a,b)=>b.no>a.no?b:a);
+  const ep=cur.eps.length?Math.max(...cur.eps):0;
+  const total=abPosNum(firstValue(cur.s,['totalEpisodes','episodeCount','episodesTotal','totalEp','total'],0));
+  return {season:cur.no,ep,total};
+}
+function abCardProgress(item){
+  const id=String(item?.id??item?.key??item?.contentId??cardTitle(item));
+  const ext=abExternalProgress[id];
+  if(ext&&(ext.ep||ext.season)) return ext;
+  const season=abPosNum(firstValue(item,['season','seasonNumber','currentSeason','latestSeason'],0));
+  const ep=abPosNum(firstValue(item,['episode','episodeNumber','currentEpisode','latestEpisode','ep'],0));
+  const total=abPosNum(firstValue(item,['totalEpisodes','episodeCount','episodesTotal','totalEp'],0));
+  return (season||ep)?{season:season||1,ep,total}:null;
+}
+function abSeasonBadgeHtml(p){
+  if(!p||(!p.ep&&!p.season)) return '';
+  const done=p.total>0&&p.ep>=p.total;
+  const label='Season '+p.season+(p.ep?', episode '+p.ep+(p.total?' of '+p.total:''):'');
+  return `<span class="ab-card-season${done?' ab-done':''}" title="${safeText(label)}">S${p.season}${p.ep?` <i>·</i> EP ${p.ep}${p.total?'/'+p.total:''}`:''}${done?'<svg class="ab-sn-check" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>':''}</span>`;
+}
+function abMetaHtml(stamp,progress){
+  const t=abTimeBadgeHtml(stamp), s=abSeasonBadgeHtml(progress);
+  return (t||s)?`<div class="ab-card-meta">${t}${s}</div>`:'';
+}
 function abRefreshTimes(){
   document.querySelectorAll('.ab-card-update-time[data-update-time]').forEach(el=>{
     const t=Number(el.dataset.updateTime)||0; if(!t) return;
@@ -542,7 +596,7 @@ function renderHomeTypeCards(items){
             <div class="home-card-badge-row">${ratingBadge}${typeBadge}</div>
           </div>
         </div>
-        ${abTimeBadgeHtml(updateStamp)}
+        ${abMetaHtml(updateStamp,abCardProgress(item))}
         <div class="home-type-card-title">${safeText(title)}</div>
       </a>`;
     }).join('');
@@ -1691,16 +1745,19 @@ db.ref('settings/homeNotice').on('value',snap=>renderHomeNotice(snap.val()),err=
   let seasonRoot={}, episodeRoot={}, lastSig='', timer=null;
   function sync(){
     const ids=new Set([...Object.keys(seasonRoot||{}),...Object.keys(episodeRoot||{})]);
-    const next={};
+    const next={}, prog={};
     ids.forEach(id=>{
       const t=Math.max(abNewestStamp(seasonRoot&&seasonRoot[id],''),abNewestStamp(episodeRoot&&episodeRoot[id],''));
       if(t) next[id]=t;
+      try{const p=abComputeProgress(seasonRoot&&seasonRoot[id],episodeRoot&&episodeRoot[id]); if(p) prog[id]=p;}catch(e){console.warn('Season/episode badge failed for',id,e);}
     });
-    const sig=Object.keys(next).sort().map(k=>k+':'+next[k]).join('|');
+    const sig=Object.keys(next).sort().map(k=>k+':'+next[k]).join('|')+'#'+Object.keys(prog).sort().map(k=>k+':'+prog[k].season+'.'+prog[k].ep+'.'+prog[k].total).join('|');
     if(sig===lastSig) return; // nothing changed: no re-render, no flicker
     lastSig=sig;
     Object.keys(abExternalUpdateTimes).forEach(k=>delete abExternalUpdateTimes[k]);
     Object.assign(abExternalUpdateTimes,next);
+    Object.keys(abExternalProgress).forEach(k=>delete abExternalProgress[k]);
+    Object.assign(abExternalProgress,prog);
     clearTimeout(timer);
     timer=setTimeout(()=>{
       if(Array.isArray(latestContentItems) && latestContentItems.length){

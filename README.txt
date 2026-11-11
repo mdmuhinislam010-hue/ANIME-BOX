@@ -53,3 +53,12 @@ HOME CARD RELATIVE UPDATE TIME (rewritten 2026-11-11, v3)
   They refresh every 30 seconds and when the tab becomes visible again.
 - IMPORTANT: deploy BOTH the new Admin index.html and this User package. Time updates start from the
   next save done in the new Admin.
+
+
+HOME CARD SEASON/EPISODE BADGE + MOTION (2026-11-11, v4)
+- New badge next to the update-time pill: "S2 · EP 12". Season = highest enabled season that has episodes,
+  EP = highest episode number in it, read from seasons/{id} and episodes/{id} (same data the Admin already saves).
+- If a season record has totalEpisodes / episodeCount and EP reaches it, the badge turns green with an animated check.
+- Fallback: season/episode/totalEpisodes fields on the content card itself. No data = no badge.
+- Extra motion: badges fade up, light sweep on badges, hover lift + poster zoom, press feedback.
+  All of it is disabled under prefers-reduced-motion.
