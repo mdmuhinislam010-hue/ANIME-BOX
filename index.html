@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#000000">
-<script>try{var t=localStorage.getItem("ab_theme");document.documentElement.setAttribute("data-theme",t==="light"?"light":"dark");if(t==="light"){document.querySelector('meta[name="theme-color"]').content="#f1f4f9"}}catch(e){document.documentElement.setAttribute("data-theme","dark")}</script>
 
+<script src="/theme.js?v=20261111-theme2"></script>
 <title>AnimeBox - Bangla, Hindi & English HD Movies, Series, Anime Download</title>
 <meta name="description" content="Explore AnimeBox for Bangla, Hindi and English movies, anime, series and TV shows. Browse titles, details and available episodes.">
 <link rel="canonical" href="https://animebox1.onrender.com/">
@@ -16,7 +16,7 @@
 
 <link rel="icon" type="image/png" href="https://cdn.imageurlgenerator.com/uploads/ce68f4a9-a8e6-42f7-9cde-64dd6467ccd1.png">
 
-<link rel="stylesheet" href="/style.css?v=20261111-theme">
+<link rel="stylesheet" href="/style.css?v=20261111-theme2">
 
 <!-- Google Site Verification -->
 <meta name="google-site-verification" content="-TX39Fio2ZJRII7l5FufFgaSEb0cyavKlAhyzqv9zu4" />
@@ -69,26 +69,8 @@
   <a class="nav-link" href="/profile" data-page="profile"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Profile</span></a>
 </nav>
 
-<script>
-(function(){
-  var root=document.documentElement;
-  function apply(t,save){
-    root.setAttribute("data-theme",t);
-    var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="light"?"#f1f4f9":"#000000";
-    document.querySelectorAll(".ab-theme-toggle").forEach(function(b){b.setAttribute("aria-label",t==="light"?"Switch to dark mode":"Switch to light mode")});
-    if(save){try{localStorage.setItem("ab_theme",t)}catch(e){}}
-  }
-  document.addEventListener("click",function(e){
-    var b=e.target.closest(".ab-theme-toggle");if(!b)return;
-    b.classList.remove("ab-spin");void b.offsetWidth;b.classList.add("ab-spin");
-    apply(root.getAttribute("data-theme")==="light"?"dark":"light",true);
-  });
-  new MutationObserver(function(){apply(root.getAttribute("data-theme"),false)}).observe(document.getElementById("pageContent"),{childList:true,subtree:true});
-  apply(root.getAttribute("data-theme")||"dark",false);
-})();
-</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="/supabase-adapter.js?v=20261111-theme"></script>
-<script src="/script.js?v=20261111-theme" defer></script>
+<script src="/supabase-adapter.js?v=20261111-theme2"></script>
+<script src="/script.js?v=20261111-theme2" defer></script>
 </body>
 </html>

@@ -6,6 +6,7 @@ Files:
 - style.css: all page styling
 - script.js: application logic, Supabase connection, type rendering, clean URL router,
   and Home-card relative update-time tracking (including separate season/episode data)
+- theme.js: dark/light mode (saved in localStorage + cookie, injects the toggle button on every page incl. 404.html)
 - 404.html: GitHub Pages fallback for direct-route refreshes
 - _redirects: rewrite rule for Netlify-compatible static hosting
 
