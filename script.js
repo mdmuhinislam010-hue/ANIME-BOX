@@ -22,6 +22,7 @@ let lastHeroSnapshotJSON = '';
 // Keep only one pair of live watch-data listeners for the active detail page.
 let activeWatchListeners = [];
 function stopActiveWatchListeners(){
+  if (typeof abViewTracker!=='undefined') abViewTracker.stop();
   activeWatchListeners.forEach(({ref, event, callback})=>{ try{ ref.off(event, callback); }catch(_){} });
   activeWatchListeners = [];
 }
@@ -57,6 +58,136 @@ const builtinTypeConfig = [
   {name:'Series',   rail:'homeTypeSeries',   empty:'homeTypeSeriesEmpty',  page:0},
   {name:'TV Show',  rail:'homeTypeTVShow',   empty:'homeTypeTVShowEmpty', page:0}
 ];
+
+/* ============================================================
+   VIEW COUNTER
+   Data (shared Supabase document, own top-level node, never touches content/seasons/episodes):
+     views/{contentId}/total                 total views of a movie / anime / series
+     views/{contentId}/episodes/{episodeId}  views of one episode
+   A view is counted ONLY after an episode's player has been active for 60 seconds
+   (page visible, player loaded, episode selected). One view per visitor + episode per
+   30-minute viewing session; refreshing never adds another view.
+   ============================================================ */
+const AB_VIEW_SECONDS = 60;                 // active player time needed for ONE view
+const AB_VIEW_SESSION_MS = 30 * 60 * 1000;  // same visitor + same episode inside this window = same viewing session
+const AB_VIEW_ARM_ON_PLAYER_CLICK = true;   // a click inside the player (pressing play) also counts as "selected"
+const AB_VIEW_CACHE_KEY = 'animebox_view_totals_v1';
+const AB_VIEW_SEEN_KEY = 'animebox_view_seen_v1';
+const AB_VIEW_ID_KEY = 'animebox_visitor_id';
+const abViewTotals = Object.create(null);   // contentId -> total views (live from the database)
+let abViewsReady = false;
+(function(){ try{ const c = JSON.parse(localStorage.getItem(AB_VIEW_CACHE_KEY) || 'null'); if (c && typeof c==='object') Object.assign(abViewTotals, c); }catch(_){} })();
+
+function abCardId(item){ return String(item?.id ?? item?.key ?? item?.contentId ?? cardTitle(item)); }
+function abFmtViews(n){
+  n = Math.max(0, Math.floor(Number(n) || 0));
+  if (n < 1000) return String(n);
+  const short = (v, unit) => (v < 10 ? v.toFixed(1).replace(/\.0$/,'') : String(Math.floor(v))) + unit;
+  return n < 1e6 ? short(n/1e3,'K') : short(n/1e6,'M');
+}
+function abViewLabel(id){
+  const n = abViewTotals[id];
+  return n === undefined ? (abViewsReady ? '0' : '\u2013') : abFmtViews(n);
+}
+const AB_EYE_SVG = '<svg class="ab-views-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+function abViewBadgeHtml(id){
+  const n = abViewTotals[id] || 0;
+  return `<span class="ab-card-views" data-view-id="${safeText(id)}" title="${Number(n).toLocaleString()} views">${AB_EYE_SVG}<b>${safeText(abViewLabel(id))}</b></span>`;
+}
+// Update every visible card in place (no re-render, no flicker).
+function abApplyViewTotals(){
+  document.querySelectorAll('.ab-card-views[data-view-id]').forEach(el => {
+    const id = el.dataset.viewId, b = el.querySelector('b'), label = abViewLabel(id);
+    if (b && b.textContent !== label) b.textContent = label;
+    el.title = Number(abViewTotals[id] || 0).toLocaleString() + ' views';
+  });
+}
+
+const abViewTracker = (function(){
+  const mem = {};
+  const lsGet = k => { try{ return localStorage.getItem(k); }catch(_){ return mem[k] || null; } };
+  const lsSet = (k,v) => { try{ localStorage.setItem(k,v); }catch(_){ mem[k] = v; } };
+  function visitorId(){
+    let v = lsGet(AB_VIEW_ID_KEY);
+    if (!v || v.length < 8){
+      v = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : 'v' + Date.now().toString(36) + Math.random().toString(36).slice(2,12);
+      lsSet(AB_VIEW_ID_KEY, v);
+    }
+    return v;
+  }
+  const readSeen = () => { try{ const m = JSON.parse(lsGet(AB_VIEW_SEEN_KEY) || '{}'); return m && typeof m==='object' ? m : {}; }catch(_){ return {}; } };
+  function seenRecently(key){ const t = Number(readSeen()[key] || 0); return !!t && Date.now() - t < AB_VIEW_SESSION_MS; }
+  function markSeen(key, on){
+    const m = readSeen(), now = Date.now();
+    Object.keys(m).forEach(k => { if (now - Number(m[k]) >= AB_VIEW_SESSION_MS) delete m[k]; });
+    if (on) m[key] = now; else delete m[key];
+    lsSet(AB_VIEW_SEEN_KEY, JSON.stringify(m));
+  }
+
+  let cur = null, timer = null;
+  function clearTimer(){ if (timer){ clearInterval(timer); timer = null; } }
+  function stop(){ if (cur) clearTimeout(cur.fallback); clearTimer(); cur = null; }
+
+  // A new player navigation started. Previous episode's progress is discarded (never counted).
+  function begin(o){
+    stop();
+    if (!o || !o.contentId || !o.episodeId || !o.frame) return;
+    if (seenRecently(o.contentId + '|' + o.episodeId)) return; // already counted this session
+    cur = { contentId:String(o.contentId), episodeId:String(o.episodeId), frame:o.frame,
+            armed:!!o.armed, assigned:false, loaded:false, ms:0, last:0, fallback:null };
+  }
+  function urlAssigned(){
+    if (!cur) return;
+    const c = cur; c.assigned = true; clearTimeout(c.fallback);
+    // Safety net for players whose load event never fires.
+    c.fallback = setTimeout(() => { if (cur === c && !c.loaded){ c.loaded = true; resume(); } }, 10000);
+  }
+  function onFrameLoad(frame){
+    if (!cur || cur.frame !== frame || !cur.assigned || cur.loaded) return;
+    cur.loaded = true; clearTimeout(cur.fallback); resume();
+  }
+  function arm(opts){
+    if (!cur || cur.armed) return;
+    if (opts && opts.movieOnly && cur.episodeId !== 'main') return;
+    cur.armed = true; resume();
+  }
+  function resume(){
+    if (!cur || !cur.armed || !cur.loaded || timer) return;
+    cur.last = performance.now();
+    timer = setInterval(tick, 1000);
+  }
+  function tick(){
+    if (!cur){ clearTimer(); return; }
+    if (!cur.frame.isConnected){ stop(); return; }            // player left the page
+    const now = performance.now(), dt = now - cur.last; cur.last = now;
+    if (document.visibilityState !== 'visible') return;       // hidden tab = no active viewing time
+    cur.ms += Math.min(dt, 2000);                             // clamp: sleep / throttling never adds a big jump
+    if (cur.ms >= AB_VIEW_SECONDS * 1000) commit();
+  }
+  function commit(){
+    const c = cur; stop();
+    if (!c) return;
+    const key = c.contentId + '|' + c.episodeId;
+    if (seenRecently(key)) return;
+    markSeen(key, true);                                      // blocks refresh / re-select / second tab
+    const bucket = Math.floor(Date.now() / AB_VIEW_SESSION_MS);
+    send(c.contentId, c.episodeId, visitorId() + ':' + key.replace('|',':') + ':' + bucket, 0, key);
+  }
+  // Same viewKey on every retry => the database counts it at most once.
+  function send(contentId, episodeId, viewKey, attempt, seenKey){
+    const api = window.animeBoxViews; if (!api) return;
+    api.register(contentId, episodeId, viewKey).catch(err => {
+      if (attempt < 3) setTimeout(() => send(contentId, episodeId, viewKey, attempt + 1, seenKey), [5000, 15000, 45000][attempt]);
+      else { markSeen(seenKey, false); console.warn('View could not be saved:', err); }
+    });
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (!cur || !timer) return;
+    if (document.hidden) tick(); else cur.last = performance.now();
+  });
+  window.addEventListener('pagehide', stop);
+  return { begin, urlAssigned, onFrameLoad, arm, stop };
+})();
 
 /* ---------- SMALL POPUP WINDOW FOR OPENED PAGES ---------- */
 (function initSmallPagePopup(){
@@ -593,7 +724,7 @@ function renderHomeTypeCards(items){
           ${image ? `<img class="ab-img-loading" src="${safeText(image)}" alt="${safeText(title)}" loading="lazy" decoding="async" fetchpriority="low" onerror="this.style.visibility='hidden'">` : ''}
           <div class="ab-card-play" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5z"/></svg></div><div class="ab-card-hint" aria-hidden="true">Watch now</div>
           <div class="home-card-badges">
-            <div class="home-card-badge-row"><div class="home-card-badge-stack">${topLeft}</div>${qualityBadge}</div>
+            <div class="home-card-badge-row"><div class="home-card-badge-stack">${topLeft}</div><div class="ab-card-right">${abViewBadgeHtml(abCardId(item))}${qualityBadge}</div></div>
             <div class="home-card-badge-row">${ratingBadge}${typeBadge}</div>
           </div>
         </div>
@@ -849,7 +980,7 @@ function renderDetailsPage(id, seasonParam, episodeParam){
     document.getElementById('detailsSave').textContent = idx>=0?'+ My List':'✓ Added to My List';
   });
   document.getElementById('detailsTrailer')?.addEventListener('click',()=>{ if(trailer) window.open(trailer,'_blank','noopener'); });
-  document.getElementById('detailsWatch')?.addEventListener('click',()=>{ document.getElementById('detailsWatchArea')?.scrollIntoView({behavior:'smooth',block:'start'}); });
+  document.getElementById('detailsWatch')?.addEventListener('click',()=>{ abViewTracker.arm({movieOnly:true}); document.getElementById('detailsWatchArea')?.scrollIntoView({behavior:'smooth',block:'start'}); });
   setupAdminWatchPlayer(item,itemId,title,quality,language);
   setupCommunityVote(itemId);
 
@@ -1061,12 +1192,33 @@ function setupAdminWatchPlayer(item,itemId,title,quality,language){
     section.classList.add('show');
   }
   let frameLoadToken=0;
+  // View counter hooks. userPick is true ONLY while a user-chosen episode (episode card,
+  // Previous / Next) is being applied; automatic loads (page open, season change, live data
+  // refresh) never start a view count.
+  let userPick=false, loadedKey='';
+  frame.addEventListener('load',()=>abViewTracker.onFrameLoad(frame));
+  if(AB_VIEW_ARM_ON_PLAYER_CLICK){
+    const onWinBlur=()=>{
+      if(!frame.isConnected){ window.removeEventListener('blur',onWinBlur); return; }
+      setTimeout(()=>{ if(document.activeElement===frame) abViewTracker.arm(); },0); // user clicked inside the player
+    };
+    window.addEventListener('blur',onWinBlur);
+  }
   function setFrame(url,episode){
     renderEpisodeScreenshots(episode);
     const safeUrl=String(url||'').trim();
     const ready=document.getElementById('watchReady');
     const placeholder=document.getElementById('watchPlaceholder');
     if (safeUrl && /^https?:\/\//i.test(safeUrl)){
+      const epKey=episode ? String(episode.id??episode.key??'') || ('s'+selectedSeason+'e'+selectedEpisode) : 'main';
+      const sameAsLoaded=(epKey+'|'+safeUrl)===loadedKey;
+      if(sameAsLoaded && !userPick){
+        // Same episode + same URL already loaded (e.g. a live data refresh): do not
+        // reload the player, so playback and the view timer are not interrupted.
+        placeholder.style.display='none';
+      } else {
+      loadedKey=epKey+'|'+safeUrl;
+      abViewTracker.begin({contentId:currentContentId,episodeId:epKey,frame,armed:!!(episode&&userPick)});
       // Clear the previous document first so selecting another episode always
       // creates a fresh iframe navigation, even when the host URL is reused.
       const token=++frameLoadToken;
@@ -1076,10 +1228,14 @@ function setupAdminWatchPlayer(item,itemId,title,quality,language){
       requestAnimationFrame(()=>{
         if(token!==frameLoadToken) return;
         frame.src=safeUrl;
+        abViewTracker.urlAssigned();
         ready.textContent='● Player Loaded';
       });
+      }
     } else {
       ++frameLoadToken;
+      loadedKey='';
+      abViewTracker.stop();
       frame.src='about:blank';
       placeholder.textContent=episode
         ? 'এই Episode-এর Website URL Admin Panel থেকে যোগ করুন।'
@@ -1172,21 +1328,21 @@ function setupAdminWatchPlayer(item,itemId,title,quality,language){
       const btn=event.target.closest('[data-watch-ep]');
       if(!btn || !grid.contains(btn)) return;
       selectedEpisode=Number(btn.dataset.watchEp);
-      playSelectedEpisode(true);
+      userPick=true; try{ playSelectedEpisode(true); } finally { userPick=false; }
     });
   }
   seasonSelect.addEventListener('change',()=>{selectedSeason=Number(seasonSelect.value)||0;selectedEpisode=0;showAllEpisodes=false;renderEpisodes();renderUserDownloadHub()});
   document.getElementById('watchPrevious').addEventListener('click',()=>{
     if(selectedEpisode>0) selectedEpisode--;
     else if(selectedSeason>0){selectedSeason--;selectedEpisode=Math.max(0,selectedEpisodes().length-1);seasonSelect.value=String(selectedSeason)}
-    renderEpisodes();
+    userPick=true; try{ renderEpisodes(); } finally { userPick=false; }
     renderUserDownloadHub();
   });
   document.getElementById('watchNext').addEventListener('click',()=>{
     const eps=selectedEpisodes();
     if(selectedEpisode<eps.length-1) selectedEpisode++;
     else if(selectedSeason<seasons.length-1){selectedSeason++;selectedEpisode=0;seasonSelect.value=String(selectedSeason)}
-    renderEpisodes();
+    userPick=true; try{ renderEpisodes(); } finally { userPick=false; }
     renderUserDownloadHub();
   });
 
@@ -1774,6 +1930,22 @@ db.ref('settings/homeNotice').on('value',snap=>renderHomeNotice(snap.val()),err=
   db.ref('episodes').on('value',snap=>{episodeRoot=snap.val()||{};sync();},
     err=>{console.warn('Episode update-time tracking failed:',err);});
 })();
+
+// Live view totals (synced across users and devices through the shared document).
+db.ref('views').on('value', snap => {
+  const root = snap.val(), next = {};
+  if (root && typeof root==='object') Object.keys(root).forEach(id => {
+    const row = root[id]; if (!row || typeof row!=='object') return;
+    let t = Number(row.total);
+    if (!Number.isFinite(t)) t = Object.values(row.episodes || {}).reduce((a,b) => a + (Number(b) || 0), 0);
+    next[id] = Math.max(0, t);
+  });
+  Object.keys(abViewTotals).forEach(k => delete abViewTotals[k]);
+  Object.assign(abViewTotals, next);
+  abViewsReady = true;
+  try{ localStorage.setItem(AB_VIEW_CACHE_KEY, JSON.stringify(next)); }catch(_){}
+  abApplyViewTotals();
+}, err => { abViewsReady = true; abApplyViewTotals(); console.warn('View counts could not load:', err); });
 
 // One live Supabase listener handles both first paint and future updates (avoids duplicate full reads).
 db.ref('content').on('value', snap => {

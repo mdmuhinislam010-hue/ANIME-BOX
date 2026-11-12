@@ -791,3 +791,23 @@ html[data-theme="light"] .ab-notification-count{border-color:#fff}
 html[data-theme="light"] .ab-card-skeleton-poster,html[data-theme="light"] .ab-type-loading,html[data-theme="light"] .ab-type-loading-head{background:linear-gradient(100deg,#e3e8f0 20%,#f1f4f9 38%,#e3e8f0 56%);background-size:200% 100%}
 html[data-theme="light"] .ab-card-skeleton-line{background:#e3e8f0}
 html[data-theme="light"] img.ab-img-loading,html[data-theme="light"] .home-type-card-poster img.ab-img-loading{background:linear-gradient(105deg,#e3e8f0 8%,#f1f4f9 18%,#e3e8f0 33%);background-size:200% 100%}
+
+/* ============================================================
+   CARD VIEW COUNTER (right side of every card, Quality badge directly below it)
+   The poster size, colours and the other badges are unchanged.
+   ============================================================ */
+.ab-card-right{display:flex;flex-direction:column;align-items:flex-end;gap:3px;min-width:0;max-width:58%;flex:0 1 auto;margin-left:auto}
+.ab-card-right .home-card-badge{max-width:100%}
+.ab-card-views{display:inline-flex;align-items:center;justify-content:center;gap:3px;max-width:100%;min-height:16px;padding:3px 5px;border-radius:3px;
+  font-size:10px;line-height:1;font-weight:900;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;
+  color:#fff;background:rgba(8,10,16,.72);border:1px solid rgba(255,255,255,.38);text-shadow:0 1px 2px rgba(0,0,0,.6);
+  -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+.ab-card-views b{font-weight:900;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.ab-views-icon{flex:0 0 auto;width:11px;height:11px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+/* The badges sit on top of the poster image, so the same glass pill reads well in Dark and Light mode. */
+html[data-theme="light"] .ab-card-views{color:#fff;background:rgba(14,20,32,.78);border-color:rgba(255,255,255,.5)}
+@media(max-width:640px){
+  .ab-card-right{gap:2px;max-width:60%}
+  .ab-card-views{font-size:8px;min-height:13px;padding:2px 3px;border-radius:2px;gap:2px}
+  .ab-views-icon{width:9px;height:9px;stroke-width:2.4}
+}

@@ -1,4 +1,4 @@
-/* AnimeBox Supabase adapter v2026-11-10:
+/* AnimeBox Supabase adapter v2026-11-12 (+view counter, per-listener change detection):
    legacy database-style API backed by one Supabase project.
    Root realtime listeners support User-side season/episode update-time tracking. */
 (function(){
@@ -25,12 +25,19 @@
     const cleanPath=parts(path);
     const {data,error}=await client.rpc('animebox_set_path',{p_path:cleanPath,p_value:remove?null:value,p_delete:!!remove});
     if(error)throw error;
-    if(data&&typeof data==='object')rootCache=data;
+    // The SQL function returns only a tiny {__ab_ok:true} marker (not the whole document),
+    // so patch the local copy ourselves instead of replacing it with the marker.
+    if(data&&data.__ab_ok){setAt(rootCache,cleanPath.join('/'),remove?null:value)}
+    else if(data&&typeof data==='object')rootCache=data;
     else await loadRoot();
     notify();
     return getAt(rootCache,cleanPath.join('/'));
   }
-  function notify(){for(const l of [...listeners]){if(!l.active)continue;try{l.cb(new Snapshot(new Ref(l.path,l.query)._value()))}catch(e){console.error(e)}}}
+  // A listener is only called when the data at ITS path changed. Without this, every
+  // write anywhere (e.g. another viewer's counted view) re-ran every listener, which
+  // re-rendered the episode grid and reloaded the video player.
+  function sigOf(v){try{return JSON.stringify(v===undefined?null:v)}catch(_){return null}}
+  function notify(){for(const l of [...listeners]){if(!l.active)continue;try{const v=new Ref(l.path,l.query)._value();const sig=sigOf(v);if(sig!==null&&sig===l.sig)continue;l.sig=sig;l.cb(new Snapshot(v))}catch(e){console.error(e)}}}
   function refresh(){if(refreshPromise)return refreshPromise;refreshPromise=loadRoot().then(()=>notify()).catch(e=>{console.error('Supabase data refresh failed:',e);for(const l of listeners){if(l.active&&l.err)l.err(e)}}).finally(()=>refreshPromise=null);return refreshPromise}
   function ensureRealtime(){if(realtimeChannel)return;realtimeChannel=client.channel('animebox-state-live').on('postgres_changes',{event:'*',schema:'public',table:TABLE},()=>refresh()).subscribe();}
   class Snapshot{constructor(v){this.value=clone(v)}val(){return clone(this.value)}exists(){return this.value!==null&&this.value!==undefined}forEach(fn){const v=this.value||{};for(const [key,value] of Object.entries(v)){if(fn({key,val:()=>clone(value)})===true)return true}return false}}
@@ -43,7 +50,7 @@
     limitToLast(n){return new Ref(this.path,{...this.query,limitLast:n})}
     _value(){let v=getAt(rootCache,this.path);if(v&&typeof v==='object'&&!Array.isArray(v)){let entries=Object.entries(v);if(this.query.orderChild){entries=entries.filter(([,x])=>x&&x[this.query.orderChild]===this.query.equalTo)}if(this.query.limitLast)entries=entries.slice(-this.query.limitLast);v=Object.fromEntries(entries)}return v}
     async once(event){await loadRoot();return new Snapshot(this._value())}
-    on(event,cb,err){const l={path:this.path,query:this.query,cb,err,active:true};listeners.add(l);ensureRealtime();loadRoot().then(()=>{if(l.active)cb(new Snapshot(this._value()))}).catch(e=>err&&err(e));return cb}
+    on(event,cb,err){const l={path:this.path,query:this.query,cb,err,active:true};listeners.add(l);ensureRealtime();loadRoot().then(()=>{if(l.active){const v=this._value();l.sig=sigOf(v);cb(new Snapshot(v))}}).catch(e=>err&&err(e));return cb}
     off(event,cb){for(const l of [...listeners])if(l.path===this.path&&(!cb||l.cb===cb)){l.active=false;listeners.delete(l)}}
     _enqueueWrite(work){const job=writeQueue.then(work);writeQueue=job.catch(()=>{});return job}
     async set(value){return this._enqueueWrite(async()=>{await loadRoot();await savePath(this.path,value,value===null);return new Snapshot(getAt(rootCache,this.path))})}
@@ -52,6 +59,21 @@
     async transaction(updater){return this._enqueueWrite(async()=>{await loadRoot();const current=clone(getAt(rootCache,this.path));const proposed=updater(current);if(proposed===undefined)return {committed:false,snapshot:new Snapshot(current)};await savePath(this.path,proposed,proposed===null);return {committed:true,snapshot:new Snapshot(getAt(rootCache,this.path))}})}
   }
   window.db={ref:path=>new Ref(path||'')};
+  // View counter: one atomic database call (animebox_register_view). The database
+  // ignores a repeated viewKey, so retries/double requests can never count twice.
+  async function registerView(contentId,episodeId,viewKey){
+    const {data,error}=await client.rpc('animebox_register_view',{p_content:String(contentId),p_episode:String(episodeId),p_view_key:String(viewKey)});
+    if(error)throw error;
+    if(data&&data.counted){
+      // Patch the local copy so this device updates instantly; realtime syncs everyone else.
+      const base='views/'+contentId;
+      setAt(rootCache,base+'/total',data.total);
+      setAt(rootCache,base+'/episodes/'+episodeId,data.episode);
+      notify();
+    }
+    return data;
+  }
+  window.animeBoxViews={register:registerView};
   // Supabase Storage adapter compatible with the Admin uploader.
   window.storage={ref:()=>({child:path=>({put(file){const bucket='animebox-media';let callback=null;const task={on(event,progress,error,complete){callback={progress,error,complete};(async()=>{try{callback?.progress?.({bytesTransferred:0,totalBytes:file.size});const {error:upErr}=await client.storage.from(bucket).upload(path,file,{upsert:true,contentType:file.type||'application/octet-stream'});if(upErr)throw upErr;callback?.progress?.({bytesTransferred:file.size,totalBytes:file.size});callback?.complete?.()}catch(e){callback?.error?.(e)}})();return task;}};return task},getDownloadURL:async()=>{const {data}=client.storage.from('animebox-media').getPublicUrl(path);return data.publicUrl}})})};
   // Auth compatibility facade powered by Supabase Auth.

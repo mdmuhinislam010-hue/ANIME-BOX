@@ -63,3 +63,59 @@ HOME CARD SEASON/EPISODE BADGE + MOTION (2026-11-11, v4)
 - Fallback: season/episode/totalEpisodes fields on the content card itself. No data = no badge.
 - Extra motion: badges fade up, light sweep on badges, hover lift + poster zoom, press feedback.
   All of it is disabled under prefers-reduced-motion.
+
+
+CARD VIEW COUNTER SYSTEM (2026-11-12)
+=====================================
+WHAT YOU SEE
+- Every card (Home rails, Search, "See All" type pages) shows an eye icon + view count on the RIGHT side of the
+  poster. The Quality badge sits directly BELOW it. Poster size, colours and all other badges are unchanged.
+  Numbers are compact (1.2K, 2.5M), work in Dark and Light mode and on mobile, and update live without a refresh.
+
+WHEN A VIEW IS COUNTED (exactly ONE view per episode)
+- NOT counted: opening a details page, opening/changing a season, the episode list, an episode that was only
+  auto-loaded, selecting an episode and leaving/switching before 60 s, a hidden/background tab, page refresh.
+- Counted: the user SELECTS an episode (episode card, Previous/Next, or a click inside the player) and that
+  episode's player stays loaded and the tab visible for 60 s of active time. Switching episodes resets the timer
+  and each episode must reach its own 60 s.
+- Movies / content without episodes: counted as the "main" player after "Watch Now" (or a click inside the player)
+  + 60 s.
+- Session rule: the same visitor + same episode counts once per 30-minute viewing session (stored in this
+  browser). The database also ignores a repeated request with the same view key, so retries or double requests
+  can never count twice. Tunable constants are at the top of the VIEW COUNTER block in script.js
+  (AB_VIEW_SECONDS, AB_VIEW_SESSION_MS, AB_VIEW_ARM_ON_PLAYER_CLICK).
+
+WHERE IT IS STORED (same Supabase project, same shared JSON document)
+  views/{contentId}/total                   total views of the movie / anime / series
+  views/{contentId}/episodes/{episodeId}    views of one episode  ("main" = movie player)
+  views/{contentId}/lastViewAt              ms timestamp of the last counted view
+- Own top-level node: content, seasons and episodes records are never modified. Counting uses the new atomic SQL
+  function animebox_register_view (row-locked increment, so simultaneous viewers never overwrite each other).
+
+*** REQUIRED STEP: run the UPDATED AnimeBox_Supabase_Setup.sql again in Supabase > SQL Editor. ***
+It is idempotent and adds the animebox_view_events table + animebox_register_view function. Until it is run,
+cards show 0 and views are not saved (the site keeps working normally).
+
+ADMIN PANEL (admin-view-stats.js)
+- The Admin Panel HTML is NOT part of this ZIP, so it could not be edited here. Instead, a read-only drop-in module is
+  included. In your Admin index.html add, after the supabase-adapter.js line:
+      <script src="/admin-view-stats.js"></script>
+  A "Views" button appears bottom-right: total views per movie/anime/series, expandable per-episode counts, and a
+  "Most viewed episodes" ranking with search. It only reads views/content/episodes/seasons (never writes), so no
+  existing Admin feature is affected. window.AnimeBoxViewStats.open() opens it from your own menu button.
+  Upload it next to the Admin index.html (and supabase-adapter.js if the Admin uses its own copy: replace that
+  copy with the updated one).
+
+FIXES MADE TO THE EXISTING SYSTEM WHILE INTEGRATING
+- supabase-adapter.js: listeners are now called only when THEIR data changed. Before, any write anywhere re-ran
+  every listener; with live view counts that would have re-rendered the episode list and reloaded the video player
+  for everybody watching.
+- supabase-adapter.js: after an atomic save, the local cache is patched instead of being replaced by the tiny
+  {__ab_ok:true} marker the SQL function returns (this could briefly blank cached data after a vote/profile save).
+- script.js (player): a data refresh no longer reloads an episode that is already loaded with the same URL, so
+  playback and the 60 s timer are not interrupted. Clicking the episode again still reloads it, as before.
+
+KNOWN LIMITATION
+- The shared state table is publicly writable by design (see AUTHENTICATION CHECKLIST), and the player is a
+  third-party iframe, so play/pause cannot be detected: "active" means loaded + selected + tab visible. Counts are
+  therefore a strong engagement signal but not tamper-proof against someone scripting the public API.
