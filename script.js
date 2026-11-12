@@ -138,9 +138,15 @@ const abViewTracker = (function(){
   }
   function urlAssigned(){
     if (!cur) return;
-    const c = cur; c.assigned = true; clearTimeout(c.fallback);
-    // Safety net for players whose load event never fires.
-    c.fallback = setTimeout(() => { if (cur === c && !c.loaded){ c.loaded = true; resume(); } }, 10000);
+    const c = cur;
+    c.assigned = true;
+    clearTimeout(c.fallback);
+    // The player is a third-party WebView/iframe. Cross-origin playback state
+    // cannot be inspected, so count active time from the user's explicit
+    // episode selection once the episode URL has been assigned.
+    // The episode must remain selected and this page must stay visible.
+    c.loaded = true;
+    resume();
   }
   function onFrameLoad(frame){
     if (!cur || cur.frame !== frame || !cur.assigned || cur.loaded) return;
