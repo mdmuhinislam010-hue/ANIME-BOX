@@ -21,16 +21,6 @@ let lastContentSnapshotJSON = '';
 let lastHeroSnapshotJSON = ''; 
 // Keep only one pair of live watch-data listeners for the active detail page.
 let activeWatchListeners = [];
-window.__abDefaultPlayerEnabled = window.__abDefaultPlayerEnabled===true;
-if(window.db?.ref && !window.__abDefaultPlayerSettingListener){
-  window.__abDefaultPlayerSettingListener=true;
-  window.db.ref('settings/playback/defaultPlayer').on('value',snap=>{
-    const next=snap.val()===true;
-    const changed=next!==window.__abDefaultPlayerEnabled;
-    window.__abDefaultPlayerEnabled=next;
-    if(changed && typeof window.__abRefreshWatchPlayer==='function') window.__abRefreshWatchPlayer();
-  },()=>{});
-}
 function stopActiveWatchListeners(){
   if (typeof abViewTracker!=='undefined') abViewTracker.stop();
   activeWatchListeners.forEach(({ref, event, callback})=>{ try{ ref.off(event, callback); }catch(_){} });
@@ -1139,7 +1129,6 @@ function setupAdminWatchPlayer(item,itemId,title,quality,language){
   const frame=document.getElementById('adminVideoFrame');
   if(!seasonSelect||!grid||!frame) return;
   let seasons=[], allEpisodes=[], selectedSeason=0, selectedEpisode=0, showAllEpisodes=false;
-  const useAnimeBoxDefaultPlayer=window.__abDefaultPlayerEnabled===true;
   const directUrl=watchUrlOf(firstValue(item,['playerUrl','videoPlayerUrl','videoPlayerWebsiteUrl','videoPlayerWebsite','playerWebsite','videoWebsiteUrl','videoWebsite','webviewUrl','videoPlayerEmbedUrl','videoEmbedUrl','embedUrl','videoUrl','videoURL','watchUrl','streamUrl','linkVideo','websiteUrl'],''));
   const currentContentId=String(item?.id ?? item?.key ?? item?.contentId ?? itemId ?? '').trim();
   const completionNotice=document.getElementById('episodeCompletionNotice');
@@ -1238,11 +1227,9 @@ function setupAdminWatchPlayer(item,itemId,title,quality,language){
       ready.textContent='● Loading Player…';
       requestAnimationFrame(()=>{
         if(token!==frameLoadToken) return;
-        frame.src=useAnimeBoxDefaultPlayer
-          ? '/player.html?url='+encodeURIComponent(safeUrl)
-          : safeUrl;
+        frame.src=safeUrl;
         abViewTracker.urlAssigned();
-        ready.textContent=useAnimeBoxDefaultPlayer?'● AnimeBox Player Loaded':'● Player Loaded';
+        ready.textContent='● Player Loaded';
       });
       }
     } else {
@@ -1307,7 +1294,6 @@ function setupAdminWatchPlayer(item,itemId,title,quality,language){
     document.getElementById('watchNext').disabled=(selectedSeason===seasons.length-1 && selectedEpisode>=eps.length-1);
     if(scroll) document.getElementById('detailsWatchArea')?.scrollIntoView({behavior:'smooth',block:'start'});
   }
-  window.__abRefreshWatchPlayer=()=>playSelectedEpisode(false);
   function renderEpisodes(){
     const eps=selectedEpisodes();
     if(!eps.length){
