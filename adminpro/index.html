@@ -379,37 +379,8 @@ video::cue{font-size:var(--subtitle-size,18px);color:var(--subtitle-color,#fff);
 .publish-result a{color:#59c7ff;font-size:13px}
 .publish-help{font-size:11px!important;color:#888!important;margin-top:14px!important}
 </style>
-
-<style>
-/* Admin login gate */
-body:not(.ab-authenticated) .publish-screen,
-body:not(.ab-authenticated) #player{display:none!important}
-.ab-login-screen{position:fixed;inset:0;z-index:99999;display:grid;place-items:center;padding:20px;background:radial-gradient(ellipse at top,#20202a,#050505 70%);font-family:Arial,sans-serif;color:#fff}
-.ab-login-card{width:min(390px,100%);padding:28px 24px;border:1px solid #383844;border-radius:18px;background:#111118;box-shadow:0 18px 55px #000b;text-align:center}
-.ab-login-logo{font-size:22px;font-weight:900;letter-spacing:2px;background:linear-gradient(90deg,#ff315d,#ffca28,#35e6a1,#32caff,#a56bff);-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:9px}
-.ab-login-card h2{font-size:20px;margin:0 0 7px}
-.ab-login-card p{font-size:12px;color:#aaa;margin:0 0 22px}
-.ab-login-card input{width:100%;padding:14px;border:1px solid #444;border-radius:9px;background:#08080d;color:#fff;font-size:15px;outline:none}
-.ab-login-card input:focus{border-color:#35cfff}
-.ab-login-card button{width:100%;margin-top:13px;padding:13px;border-radius:9px;background:linear-gradient(100deg,#e53955,#a52cff);color:#fff;font-size:14px;font-weight:700}
-.ab-login-error{min-height:18px;margin-top:12px;color:#ff687b;font-size:12px}
-.ab-login-screen[hidden]{display:none!important}
-</style>
-
 </head>
 <body>
-
-<div class="ab-login-screen" id="abLoginScreen">
-  <form class="ab-login-card" id="abLoginForm">
-    <div class="ab-login-logo">AB PLAY</div>
-    <h2>Admin Login</h2>
-    <p>Enter your password to continue</p>
-    <input id="abLoginPassword" type="password" placeholder="Enter admin password" autocomplete="current-password" required>
-    <button type="submit">LOGIN</button>
-    <div class="ab-login-error" id="abLoginError" role="alert"></div>
-  </form>
-</div>
-
 <section class="publish-screen" id="publishScreen">
   <div class="publish-card">
     <h1>Publish Video Player</h1>
@@ -572,32 +543,6 @@ body:not(.ab-authenticated) #player{display:none!important}
 </div>
 </div>
 <script>
-
-// Simple client-side login gate. This is an access screen, not secure server authentication.
-(function(){
- const form=document.getElementById('abLoginForm');
- const screen=document.getElementById('abLoginScreen');
- const input=document.getElementById('abLoginPassword');
- const error=document.getElementById('abLoginError');
- function unlock(){
-   document.body.classList.add('ab-authenticated');
-   screen.hidden=true;
- }
- if(sessionStorage.getItem('abplay_admin_logged_in')==='yes') unlock();
- form.addEventListener('submit',function(e){
-   e.preventDefault();
-   if(input.value==='admin@123'){
-     sessionStorage.setItem('abplay_admin_logged_in','yes');
-     error.textContent='';
-     unlock();
-   }else{
-     error.textContent='Incorrect password. Please try again.';
-     input.value='';
-     input.focus();
-   }
- });
-})();
-
 const player=document.getElementById('player'),video=document.getElementById('video');
 // Default aspect ratio: Fill (cover).
 video.style.objectFit='cover';
@@ -1030,498 +975,81 @@ if(video.readyState>=1)detectAudio();
 
 </script>
 <script>
-
 (function initPublishPlayer(){
-  const params = new URLSearchParams(location.search);
+  const params = new URLSearchParams(window.location.search);
   const videoUrl = params.get('src');
   const publishScreen = document.getElementById('publishScreen');
   const playerEl = document.getElementById('player');
   const sourceEl = document.getElementById('videoSource');
   const videoEl = document.getElementById('video');
+  const form = document.getElementById('publishForm');
+  const input = document.getElementById('videoUrlInput');
+  const result = document.getElementById('publishResult');
+  const link = document.getElementById('publishedLink');
+  const copyBtn = document.getElementById('copyPlayerLink');
+
+  function showPlayer(url){
+    publishScreen.hidden = true;
+    playerEl.hidden = false;
+    document.body.style.overflow = 'hidden';
+    sourceEl.src = url;
+    videoEl.load();
+  }
 
   if (videoUrl) {
-    let parsed;
-    try { parsed = new URL(videoUrl); } catch (_) {}
-    if (!parsed || !['http:', 'https:'].includes(parsed.protocol)) {
+    try {
+      const parsed = new URL(videoUrl);
+      if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('Invalid protocol');
+      showPlayer(parsed.href);
+    } catch (_) {
       publishScreen.hidden = false;
       playerEl.hidden = true;
       document.body.style.overflow = 'auto';
-      return;
+      input.value = videoUrl;
+      const help = document.querySelector('.publish-help');
+      if (help) help.textContent = 'The saved video URL is invalid. Please enter a valid direct video URL.';
     }
-    publishScreen.hidden = true;
-    playerEl.hidden = false;
-    sourceEl.src = videoUrl;
-    videoEl.load();
   } else {
     publishScreen.hidden = false;
     playerEl.hidden = true;
     document.body.style.overflow = 'auto';
   }
 
-  document.getElementById('publishForm').addEventListener('submit', function(event) {
+  form.addEventListener('submit', function(event){
     event.preventDefault();
-    const raw = document.getElementById('videoUrlInput').value.trim();
+    const raw = input.value.trim();
     let parsed;
     try { parsed = new URL(raw); } catch (_) {}
     if (!parsed || !['http:', 'https:'].includes(parsed.protocol)) {
-      alert('Please enter a valid http:// or https:// video URL.');
+      alert('Please enter a complete video URL beginning with https:// or http://');
+      input.focus();
       return;
     }
-    const shareUrl = new URL(location.href);
+
+    // Keep this same hosted player page and place the video URL in the src query.
+    const shareUrl = new URL(window.location.href);
     shareUrl.search = '';
     shareUrl.hash = '';
-    shareUrl.searchParams.set('src', raw);
-    const result = document.getElementById('publishResult');
-    const link = document.getElementById('publishedLink');
+    shareUrl.searchParams.set('src', parsed.href);
+
     link.href = shareUrl.toString();
     link.textContent = shareUrl.toString();
     result.hidden = false;
+    result.scrollIntoView({behavior:'smooth', block:'nearest'});
   });
 
-  document.getElementById('copyPlayerLink').addEventListener('click', async function() {
-    const link = document.getElementById('publishedLink').href;
+  copyBtn.addEventListener('click', async function(){
+    const playerLink = link.href;
+    if (!playerLink || playerLink === '#') return;
     try {
-      await navigator.clipboard.writeText(link);
-      this.textContent = 'Copied!';
-      setTimeout(() => this.textContent = 'Copy Player Link', 1600);
+      await navigator.clipboard.writeText(playerLink);
+      copyBtn.textContent = 'Copied!';
+      setTimeout(() => copyBtn.textContent = 'Copy Player Link', 1600);
     } catch (_) {
-      prompt('Copy your player link:', link);
+      window.prompt('Copy your player link:', playerLink);
     }
   });
 })();
-
-
-const player=document.getElementById('player'),video=document.getElementById('video');
-// Default aspect ratio: Fill (cover).
-video.style.objectFit='cover';
-player.addEventListener('contextmenu',e=>e.preventDefault());
-const playBtn=document.getElementById('playBtn'),playIcon=document.getElementById('playIcon');
-const centerPlayBtn=document.getElementById('centerPlayBtn');
-const volume=document.getElementById('volume'),volumeBtn=document.getElementById('volumeBtn');
-const volumePopup=document.getElementById('volumePopup'),progressWrap=document.getElementById('progressWrap');
-const played=document.getElementById('played'),buffered=document.getElementById('buffered'),knob=document.getElementById('knob');
-const current=document.getElementById('current'),duration=document.getElementById('duration');
-const settingsBtn=document.getElementById('settingsBtn');
-const settingsPanel=document.getElementById('settingsPanel');
-let hideTimer;
-settingsBtn.addEventListener('click',e=>{
- e.stopPropagation();
- settingsPanel.hidden=!settingsPanel.hidden;
- showControls();
-});
-settingsPanel.addEventListener('click',e=>e.stopPropagation());
-document.addEventListener('click',e=>{
- if(!settingsPanel.contains(e.target)&&e.target!==settingsBtn)settingsPanel.hidden=true;
-});
-
-// Settings tabs
-document.querySelectorAll('.settings-tab').forEach(tab=>{
- tab.addEventListener('click',()=>{
-  document.querySelectorAll('.settings-tab').forEach(t=>{
-   const active=t===tab;t.classList.toggle('active',active);t.setAttribute('aria-selected',String(active));
-  });
-  document.querySelectorAll('.settings-tab-panel').forEach(panelTab=>{
-   panelTab.hidden=panelTab.dataset.panel!==tab.dataset.tab;
-  });
- });
-});
-
-// Playback preferences and controls
-let skipSeconds=10,introSeconds=85,doubleTapSeconds=10,abStart=null,abEnd=null,sleepTimer=null,wakeLock=null,subtitleDelay=0;
-const activeButton=(container,selector,button)=>container.querySelectorAll(selector).forEach(b=>b.classList.toggle('active',b===button));
-function jumpBy(seconds){video.currentTime=Math.max(0,Math.min(Number.isFinite(video.duration)?video.duration:Infinity,video.currentTime+seconds));showControls()}
-document.querySelectorAll('[data-speed]').forEach(b=>b.addEventListener('click',()=>{video.playbackRate=Number(b.dataset.speed);activeButton(b.parentElement,'[data-speed]',b)}));
-document.querySelectorAll('[data-skip]').forEach(b=>b.addEventListener('click',()=>{skipSeconds=Number(b.dataset.skip);doubleTapSeconds=skipSeconds;activeButton(b.parentElement,'[data-skip]',b)}));
-document.querySelectorAll('[data-double]').forEach(b=>b.addEventListener('click',()=>{doubleTapSeconds=b.dataset.double==='same'?skipSeconds:Number(b.dataset.double);activeButton(b.parentElement,'[data-double]',b)}));
-document.querySelectorAll('[data-intro]').forEach(b=>b.addEventListener('click',()=>{introSeconds=Number(b.dataset.intro);document.getElementById('skipIntroBtn').textContent=`⏭  Skip intro (+${introSeconds}s)`;activeButton(b.parentElement,'[data-intro]',b)}));
-document.getElementById('skipIntroBtn').addEventListener('click',()=>jumpBy(introSeconds));
-document.getElementById('setABtn').addEventListener('click',()=>{abStart=video.currentTime;abEnd=null;document.getElementById('abStatus').textContent='A set: '+fmt(abStart);document.getElementById('setABtn').classList.add('active');document.getElementById('setBBtn').classList.remove('active')});
-document.getElementById('setBBtn').addEventListener('click',()=>{if(abStart===null){document.getElementById('abStatus').textContent='Set point A first';return}abEnd=video.currentTime;if(abEnd<=abStart){document.getElementById('abStatus').textContent='Point B must be after A';return}document.getElementById('abStatus').textContent=`A ${fmt(abStart)}  →  B ${fmt(abEnd)}`;document.getElementById('setBBtn').classList.add('active')});
-document.getElementById('clearABBtn').addEventListener('click',()=>{abStart=abEnd=null;document.getElementById('abStatus').textContent='Off';document.querySelectorAll('#setABtn,#setBBtn').forEach(b=>b.classList.remove('active'));document.getElementById('clearABBtn').classList.add('active')});
-document.getElementById('loopToggle').addEventListener('change',e=>video.loop=e.target.checked);
-document.getElementById('resumeToggle').addEventListener('change',e=>{if(e.target.checked){const saved=Number(localStorage.getItem('abplay-last-time')||0);if(saved>0&&(!video.duration||saved<video.duration))video.currentTime=saved}});
-video.addEventListener('timeupdate',()=>{if(abStart!==null&&abEnd!==null&&video.currentTime>=abEnd)video.currentTime=abStart;if(document.getElementById('resumeToggle').checked&&!video.seeking)localStorage.setItem('abplay-last-time',String(video.currentTime))});
-video.addEventListener('ended',()=>{if(document.getElementById('autoplayToggle').checked)player.dispatchEvent(new CustomEvent('animebox:autoplay-next'))});
-// Tools
-let hideDelay=3,swipeStart=null;
-document.querySelectorAll('[data-hide]').forEach(b=>b.addEventListener('click',()=>{hideDelay=Number(b.dataset.hide);activeButton(b.parentElement,'[data-hide]',b)}));
-function showControls(){player.classList.remove('hide-controls');clearTimeout(hideTimer);if(!video.paused)hideTimer=setTimeout(()=>player.classList.add('hide-controls'),hideDelay*1000)}
-document.querySelectorAll('[data-sleep]').forEach(b=>b.addEventListener('click',()=>{clearTimeout(sleepTimer);const mins=Number(b.dataset.sleep);activeButton(b.parentElement,'[data-sleep]',b);document.getElementById('sleepStatus').textContent=mins?`Playback will stop in ${mins} minutes.`:'';if(mins)sleepTimer=setTimeout(()=>video.pause(),mins*60000)}));
-document.getElementById('remainingToggle').addEventListener('change',e=>{document.getElementById('duration').dataset.remaining=e.target.checked?'1':'0';updateTimeDisplay()});
-function updateTimeDisplay(){const d=document.getElementById('duration');d.textContent=document.getElementById('remainingToggle').checked&&Number.isFinite(video.duration)?'-'+fmt(Math.max(0,video.duration-video.currentTime)):fmt(video.duration)}
-document.getElementById('wakeToggle').addEventListener('change',async e=>{try{if(e.target.checked&&navigator.wakeLock)wakeLock=await navigator.wakeLock.request('screen');else if(wakeLock){await wakeLock.release();wakeLock=null}}catch(err){document.getElementById('toolsStatus').textContent='Screen wake lock is not supported here.'}});
-document.getElementById('statsToggle').addEventListener('change',e=>{let el=document.getElementById('statsOverlay');if(e.target.checked){if(!el){el=document.createElement('div');el.id='statsOverlay';el.className='stats-overlay';player.appendChild(el)}const update=()=>{if(el.isConnected)el.textContent=`${video.videoWidth}×${video.videoHeight}  •  ${video.currentTime.toFixed(1)}s`};video.addEventListener('timeupdate',update);update()}else el?.remove()});
-document.getElementById('fullscreenPlayToggle').addEventListener('change',e=>{player.dataset.fullscreenOnPlay=e.target.checked?'1':'0'});
-document.getElementById('dataSaverToggle').addEventListener('change',e=>{video.preload=e.target.checked?'none':'metadata';document.getElementById('toolsStatus').textContent=e.target.checked?'Data saver enabled.':'Data saver disabled.'});
-video.addEventListener('play',()=>{if(player.dataset.fullscreenOnPlay==='1'&&!document.fullscreenElement)player.requestFullscreen?.().catch(()=>{})});
-document.getElementById('screenshotBtn').addEventListener('click',()=>{try{const c=document.createElement('canvas');c.width=video.videoWidth;c.height=video.videoHeight;c.getContext('2d').drawImage(video,0,0);const a=document.createElement('a');a.href=c.toDataURL('image/png');a.download='AB-PLAY-screenshot.png';a.click();document.getElementById('toolsStatus').textContent='Screenshot saved.'}catch(e){document.getElementById('toolsStatus').textContent='Screenshot blocked by the video host (CORS).'}});
-document.getElementById('miniPlayerBtn').addEventListener('click',async()=>{try{if(document.pictureInPictureEnabled)await video.requestPictureInPicture();else document.getElementById('toolsStatus').textContent='Mini player is not supported by this browser.'}catch(e){document.getElementById('toolsStatus').textContent='Mini player could not be opened.'}});
-function setControlsLocked(locked){
-  player.classList.toggle('controls-locked',locked);
-  const shortcut=document.getElementById('lockShortcutBtn');
-  shortcut.setAttribute('aria-pressed',String(locked));
-  shortcut.setAttribute('aria-label',locked?'Unlock screen':'Lock screen');
-  shortcut.title=locked?'Unlock screen':'Lock screen';
-  // The lock shortcut stays in its original toolbar position and changes to an open-lock icon.
-  shortcut.innerHTML=locked
-    ? '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M9 10V7a3 3 0 0 1 6 0"/></svg>'
-    : '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>';
-  if(locked)settingsPanel.hidden=true;
-  const status=document.getElementById('toolsStatus');
-  if(status)status.textContent=locked?'Screen locked. Press the lock button in the toolbar to unlock.':'Screen unlocked.';
-}
-document.getElementById('lockScreenBtn').addEventListener('click',()=>setControlsLocked(!player.classList.contains('controls-locked')));
-document.getElementById('lockShortcutBtn').addEventListener('click',e=>{
-  e.preventDefault();e.stopPropagation();
-  setControlsLocked(!player.classList.contains('controls-locked'));
-  if(!player.classList.contains('controls-locked'))showControls();
-});
-document.getElementById('resetSettingsBtn').addEventListener('click',()=>{video.playbackRate=1;video.loop=false;video.preload='metadata';['loopToggle','resumeToggle','swipeToggle','wakeToggle','statsToggle','fullscreenPlayToggle','dataSaverToggle','subtitleBgToggle'].forEach(id=>{const el=document.getElementById(id);if(el)el.checked=['swipeToggle','wakeToggle','subtitleBgToggle'].includes(id)});document.getElementById('remainingToggle').checked=false;document.getElementById('autoplayToggle').checked=true;document.getElementById('abStatus').textContent='Off';abStart=abEnd=null;setControlsLocked(false);document.getElementById('toolsStatus').textContent='Settings reset.'});
-// Show the Subtitles tab only when this video really has subtitle tracks.
-const subtitleTab=document.querySelector('.settings-tab[data-tab="subtitles"]');
-const subtitlePanel=document.querySelector('.settings-tab-panel[data-panel="subtitles"]');
-const subtitleOptions=document.getElementById('subtitleTrackOptions');
-function refreshSubtitleTracks(){
- const tracks=Array.from(video.textTracks||[]);
- const available=tracks.filter(t=>t.kind==='subtitles'||t.kind==='captions');
- const hasTracks=available.length>0;
- const wasActive=subtitleTab.classList.contains('active');
- subtitleTab.hidden=!hasTracks;
- subtitlePanel.hidden=true;
- if(wasActive&&!hasTracks){
-  subtitleTab.classList.remove('active');subtitleTab.setAttribute('aria-selected','false');
-  const displayTab=document.querySelector('.settings-tab[data-tab="display"]');
-  displayTab.classList.add('active');displayTab.setAttribute('aria-selected','true');
-  document.querySelectorAll('.settings-tab-panel').forEach(p=>p.hidden=p.dataset.panel!=='display');
- }
- const visibleTabs=Array.from(document.querySelectorAll('.settings-tab')).filter(t=>!t.hidden).length;
- document.querySelector('.settings-tabs').style.gridTemplateColumns=`repeat(${visibleTabs},minmax(0,1fr))`;
- subtitleOptions.innerHTML='';
- if(!hasTracks){document.getElementById('subtitleStatus').textContent='No subtitle track is available for this video.';return;}
- const off=document.createElement('button');off.type='button';off.className='preset-btn active';off.textContent='Off';off.dataset.subtitle='off';
- off.addEventListener('click',()=>{available.forEach(t=>t.mode='disabled');activeButton(subtitleOptions,'[data-subtitle]',off);document.getElementById('subtitleStatus').textContent='Subtitles off.'});
- subtitleOptions.appendChild(off);
- available.forEach((track,index)=>{
-  const b=document.createElement('button');b.type='button';b.className='preset-btn';
-  b.textContent=track.label||track.language||`Subtitle ${index+1}`;b.dataset.subtitleIndex=String(index);
-  b.addEventListener('click',()=>{available.forEach((t,i)=>t.mode=i===index?'showing':'disabled');activeButton(subtitleOptions,'[data-subtitle-index]',b);document.getElementById('subtitleStatus').textContent='Playing: '+b.textContent});
-  subtitleOptions.appendChild(b);
- });
- document.getElementById('subtitleStatus').textContent=available.length+' subtitle track'+(available.length===1?'':'s')+' available.';
-}
-video.addEventListener('loadedmetadata',refreshSubtitleTracks);
-video.addEventListener('loadstart',refreshSubtitleTracks);
-video.addEventListener('emptied',refreshSubtitleTracks);
-video.addEventListener('durationchange',refreshSubtitleTracks);
-try{
- video.textTracks?.addEventListener('addtrack',refreshSubtitleTracks);
- video.textTracks?.addEventListener('removetrack',refreshSubtitleTracks);
- video.textTracks?.addEventListener('change',refreshSubtitleTracks);
-}catch(e){}
-// External <track> files may be added or loaded after the video metadata.
-video.querySelectorAll('track').forEach(trackEl=>{
- trackEl.addEventListener('load',refreshSubtitleTracks);
- trackEl.addEventListener('error',refreshSubtitleTracks);
-});
-setTimeout(refreshSubtitleTracks,0);
-const subtitleSizes={small:'14px',medium:'18px',large:'23px',huge:'29px'};document.querySelectorAll('[data-subsize]').forEach(b=>b.addEventListener('click',()=>{activeButton(b.parentElement,'[data-subsize]',b);player.style.setProperty('--subtitle-size',subtitleSizes[b.dataset.subsize]);}));
-document.querySelectorAll('[data-subcolor]').forEach(b=>b.addEventListener('click',()=>{activeButton(b.parentElement,'[data-subcolor]',b);player.style.setProperty('--subtitle-color',b.dataset.subcolor)}));
-document.getElementById('subtitleBgToggle').addEventListener('change',e=>player.style.setProperty('--subtitle-bg',e.target.checked?'rgba(0,0,0,.72)':'transparent'));
-function changeSubtitleDelay(v){subtitleDelay=Math.max(-10,Math.min(10,subtitleDelay+v));document.getElementById('subtitleTimingStatus').textContent='Delay: '+subtitleDelay.toFixed(1)+' s';document.querySelectorAll('track').forEach(t=>{t.track.mode=t.track.mode==='disabled'?'hidden':t.track.mode})}
-document.getElementById('subtitleMinus1').addEventListener('click',()=>changeSubtitleDelay(-1));document.getElementById('subtitleMinusHalf').addEventListener('click',()=>changeSubtitleDelay(-.5));document.getElementById('subtitlePlusHalf').addEventListener('click',()=>changeSubtitleDelay(.5));document.getElementById('subtitlePlus1').addEventListener('click',()=>changeSubtitleDelay(1));document.getElementById('subtitleReset').addEventListener('click',()=>{subtitleDelay=0;document.getElementById('subtitleTimingStatus').textContent='Delay: 0.0 s'});
-
-// Picture adjustments are applied directly to the video element.
-const pictureDefaults={brightness:100,contrast:100,saturation:100,zoom:100};
-const pictureValues={...pictureDefaults};
-function applyPicture(){
- video.style.filter=`brightness(${pictureValues.brightness}%) contrast(${pictureValues.contrast}%) saturate(${pictureValues.saturation}%)`;
- video.style.transform=`${document.getElementById('mirrorVideo')?.checked?'scaleX(-1) ':''}scale(${pictureValues.zoom/100})`;
-}
-['brightness','contrast','saturation','zoom'].forEach(key=>{
- const slider=document.getElementById(key),output=document.getElementById(key+'Value');
- slider.addEventListener('input',()=>{
-  pictureValues[key]=Number(slider.value);output.textContent=slider.value+'%';applyPicture();
-  document.querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('active'));
- });
-});
-document.querySelectorAll('[data-fit]').forEach(button=>{
- button.addEventListener('click',()=>{
-  video.style.objectFit=button.dataset.fit;
-  document.querySelectorAll('[data-fit]').forEach(b=>b.classList.toggle('active',b===button));
- });
-});
-document.querySelectorAll('.theme-swatch').forEach(button=>{
- button.addEventListener('click',()=>{
-  const color=button.dataset.color;
-  player.style.setProperty('--accent',color);
-  settingsPanel.style.setProperty('--accent',color);
-  document.querySelectorAll('.theme-swatch').forEach(b=>b.classList.toggle('active',b===button));
- });
-});
-document.getElementById('mirrorVideo').addEventListener('change',e=>{
- video.style.transform=`${e.target.checked?'scaleX(-1) ':''}scale(${pictureValues.zoom/100})`;
-});
-const presets={
- normal:{brightness:100,contrast:100,saturation:100,zoom:100},
- night:{brightness:75,contrast:90,saturation:85,zoom:100},
- vivid:{brightness:110,contrast:125,saturation:150,zoom:100},
- cinema:{brightness:95,contrast:115,saturation:85,zoom:100}
-};
-document.querySelectorAll('[data-preset]').forEach(button=>{
- button.addEventListener('click',()=>{
-  Object.assign(pictureValues,presets[button.dataset.preset]);
-  Object.keys(pictureValues).forEach(key=>{
-   const slider=document.getElementById(key);slider.value=pictureValues[key];
-   document.getElementById(key+'Value').textContent=pictureValues[key]+'%';
-  });
-  applyPicture();
-  video.style.transform=`${document.getElementById('mirrorVideo').checked?'scaleX(-1) ':''}scale(${pictureValues.zoom/100})`;
-  document.querySelectorAll('[data-preset]').forEach(b=>b.classList.toggle('active',b===button));
- });
-});
-
-// Audio tab visibility and controls
-const audioTab=document.querySelector('.settings-tab[data-tab="audio"]');
-const audioPanel=document.querySelector('.settings-tab-panel[data-panel="audio"]');
-const audioVolume=document.getElementById('audioVolume');
-const audioVolumeValue=document.getElementById('audioVolumeValue');
-const audioMute=document.getElementById('audioMute');
-const audioNormalizer=document.getElementById('audioNormalizer');
-const audioStatus=document.getElementById('audioStatus');
-let audioContext=null,audioGain=null,audioCompressor=null,selectedBoost=1,audioPresenceKnown=false;
-function setAudioAvailable(available){
- audioPresenceKnown=true;audioTab.hidden=!available;
- if(!available&&!audioPanel.hidden){
-  audioPanel.hidden=true;
-  settingsPanel.querySelectorAll('.settings-tab').forEach(t=>{const active=t.dataset.tab==='display';t.classList.toggle('active',active);t.setAttribute('aria-selected',String(active))});
-  settingsPanel.querySelectorAll('.settings-tab-panel').forEach(p=>p.hidden=p.dataset.panel!=='display');
- }
-}
-function detectAudio(){
- let found=null;
- try{
-  if(video.audioTracks&&video.audioTracks.length)found=true;
-  else if(video.mozHasAudio===true)found=true;
-  else if(typeof video.webkitAudioDecodedByteCount==='number'){
-   if(video.webkitAudioDecodedByteCount>0)found=true;
-   else if(video.currentTime>2&&video.readyState>=2)found=false;
-  }
- }catch(e){}
- if(found!==null){
-  setAudioAvailable(found);
-  if(!found)audioStatus.textContent='This video appears to have no audio track.';
- }
- else if(!audioPresenceKnown)setAudioAvailable(true);
-}
-['loadedmetadata','loadeddata','playing','timeupdate'].forEach(ev=>video.addEventListener(ev,detectAudio));
-video.addEventListener('emptied',()=>{audioPresenceKnown=false;setAudioAvailable(false)});
-try{if(video.audioTracks){video.audioTracks.addEventListener('addtrack',detectAudio);video.audioTracks.addEventListener('removetrack',detectAudio)}}catch(e){}
-
-function mediaIsSameOrigin(){
- try{
-  const raw=video.currentSrc||video.querySelector('source')?.src||'';
-  if(!raw)return true;
-  const u=new URL(raw,location.href);
-  return u.origin===location.origin || u.protocol==='blob:' || u.protocol==='data:';
- }catch(e){return false}
-}
-
-function mediaAllowsWebAudio(){
- try{
-  const raw=video.currentSrc||video.querySelector('source')?.src||'';
-  if(!raw)return true;
-  const u=new URL(raw,location.href);
-  return u.origin===location.origin || u.protocol==='blob:' || u.protocol==='data:';
- }catch(e){return false}
-}
-function setupAudioProcessing(){
- if(audioContext)return true;
- if(!mediaAllowsWebAudio()){
-  audioStatus.textContent='Sound Boost is blocked for this external video because its server does not allow audio processing (CORS). Normal volume works.';
-  return false;
- }
- try{
-  const AC=window.AudioContext||window.webkitAudioContext;
-  if(!AC){audioStatus.textContent='This browser does not support Sound Boost.';return false;}
-  audioContext=new AC();
-  const source=audioContext.createMediaElementSource(video);
-  audioGain=audioContext.createGain();
-  audioCompressor=audioContext.createDynamicsCompressor();
-  source.connect(audioGain);
-  audioGain.connect(audioCompressor);
-  audioCompressor.connect(audioContext.destination);
-  return true;
- }catch(e){
-  audioStatus.textContent='Sound Boost could not start. Try reloading the player and pressing Play first.';
-  return false;
- }
-}
-function applyAudioSettings(){
- const pct=Math.max(0,Math.min(100,Number(audioVolume.value)||0));
- video.volume=pct/100;
- video.muted=audioMute.checked || pct===0;
- audioVolumeValue.textContent=pct+'%';
- volume.value=pct/100;
- if(selectedBoost>1 || audioNormalizer.checked){
-  if(setupAudioProcessing()){
-   if(audioContext.state==='suspended')audioContext.resume().catch(()=>{});
-   audioGain.gain.value=selectedBoost;
-   audioCompressor.threshold.value=audioNormalizer.checked?-14:-6;
-   audioCompressor.knee.value=audioNormalizer.checked?24:12;
-   audioCompressor.ratio.value=audioNormalizer.checked?8:5;
-   audioCompressor.attack.value=.003;
-   audioCompressor.release.value=.22;
-   audioStatus.textContent='Sound Boost '+Math.round(selectedBoost*100)+'%'+(audioNormalizer.checked?' + Normalizer':'')+' active. Loud audio may distort.';
-  }
- }else{
-  if(audioGain)audioGain.gain.value=1;
-  audioStatus.textContent='';
- }
-}
-audioVolume.addEventListener('input',applyAudioSettings);
-audioMute.addEventListener('change',applyAudioSettings);
-audioNormalizer.addEventListener('change',applyAudioSettings);
-document.querySelectorAll('[data-boost]').forEach(btn=>btn.addEventListener('click',()=>{
- selectedBoost=Number(btn.dataset.boost);
- document.querySelectorAll('[data-boost]').forEach(b=>b.classList.toggle('active',b===btn));
- applyAudioSettings();
-}));
-function renderAudioTracks(){
- const holder=document.getElementById('audioLanguageOptions');
- const section=document.getElementById('audioLanguageSection');
- const info=document.getElementById('audioTrackInfo');
- holder.innerHTML='';
- try{
-  const tracks=video.audioTracks;
-  if(tracks && tracks.length){
-   section.hidden=false;
-   info.textContent=tracks.length+' audio track'+(tracks.length===1?'':'s')+' detected.';
-   Array.from(tracks).forEach((track,index)=>{
-    const b=document.createElement('button');
-    b.type='button';
-    b.className='audio-language-btn'+(track.enabled?' active':'');
-    const lang=track.language ? ' · '+track.language : '';
-    b.textContent=(track.label||('Track '+(index+1)))+lang;
-    b.addEventListener('click',()=>{
-     Array.from(tracks).forEach((t,i)=>{t.enabled=i===index});
-     holder.querySelectorAll('button').forEach((x,i)=>x.classList.toggle('active',i===index));
-     info.textContent='Playing: '+(track.label||('Track '+(index+1)))+(track.language?' ('+track.language+')':'');
-    });
-    holder.appendChild(b);
-   });
-  }else{
-   section.hidden=true;
-  }
- }catch(e){section.hidden=true}
-}
-video.addEventListener('loadedmetadata',renderAudioTracks);
-try{
- if(video.audioTracks){
-  video.audioTracks.addEventListener('addtrack',renderAudioTracks);
-  video.audioTracks.addEventListener('removetrack',renderAudioTracks);
- }
-}catch(e){}
-
-
-function fmt(t){if(!Number.isFinite(t))return '0:00';const h=Math.floor(t/3600),m=Math.floor(t%3600/60),s=Math.floor(t%60);return h?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`}
-function togglePlay(){if(video.paused)video.play().catch(()=>{});else video.pause()}
-function paintPlay(){
- playIcon.innerHTML=video.paused?'<path d="M8 5v14l11-7z"/>':'<path d="M6 5h4v14H6zm8 0h4v14h-4z"/>';
- playBtn.setAttribute('aria-label',video.paused?'Play':'Pause');
- centerPlayBtn.hidden=!video.paused;
- centerPlayBtn.setAttribute('aria-label',video.paused?'Play video':'Pause video');
- if(video.paused){player.classList.remove('hide-controls');clearTimeout(hideTimer)}
-}
-playBtn.addEventListener('click',togglePlay);
-centerPlayBtn.addEventListener('click',e=>{e.stopPropagation();togglePlay();showControls()});
-document.getElementById('back10Btn').addEventListener('click',e=>{e.stopPropagation();jumpBy(-10)});
-document.getElementById('forward10Btn').addEventListener('click',e=>{e.stopPropagation();jumpBy(10)});
-video.addEventListener('click',()=>{if(player.classList.contains('controls-locked'))return;togglePlay()});
-// Double-click/tap left or right side to seek using the selected interval.
-let lastTapAt=0,lastTapSide='';
-video.addEventListener('dblclick',e=>{if(player.classList.contains('controls-locked'))return;const r=video.getBoundingClientRect();jumpBy(e.clientX<r.left+r.width/2?-doubleTapSeconds:doubleTapSeconds)});
-video.addEventListener('touchstart',e=>{if(e.touches.length===1)swipeStart={x:e.touches[0].clientX,y:e.touches[0].clientY,time:Date.now()}},{passive:true});
-video.addEventListener('touchend',e=>{if(!swipeStart||!e.changedTouches.length)return;const t=e.changedTouches[0],dx=t.clientX-swipeStart.x,dy=t.clientY-swipeStart.y,elapsed=Date.now()-swipeStart.time;const r=video.getBoundingClientRect(),side=t.clientX<r.left+r.width/2?'left':'right';if(document.getElementById('swipeToggle').checked&&Math.abs(dx)>55&&Math.abs(dx)>Math.abs(dy))jumpBy(dx>0?doubleTapSeconds:-doubleTapSeconds);else if(elapsed<320&&lastTapSide===side&&Date.now()-lastTapAt<320){jumpBy(side==='left'?-doubleTapSeconds:doubleTapSeconds);lastTapAt=0;lastTapSide=''}else{lastTapAt=Date.now();lastTapSide=side}swipeStart=null},{passive:true});
-video.addEventListener('play',()=>{paintPlay();showControls()});
-video.addEventListener('pause',paintPlay);
-video.addEventListener('loadedmetadata',()=>duration.textContent=fmt(video.duration));
-video.addEventListener('timeupdate',()=>{const p=video.duration?video.currentTime/video.duration*100:0;played.style.width=p+'%';knob.style.left=p+'%';current.textContent=fmt(video.currentTime);updateTimeDisplay()});
-video.addEventListener('progress',()=>{try{if(video.buffered.length&&video.duration)buffered.style.width=video.buffered.end(video.buffered.length-1)/video.duration*100+'%'}catch(e){}});
-function seek(e){if(!video.duration)return;const r=progressWrap.getBoundingClientRect(),p=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));video.currentTime=p*video.duration}
-progressWrap.addEventListener('click',seek);
-progressWrap.addEventListener('keydown',e=>{if(e.key==='ArrowRight')video.currentTime=Math.min(video.duration,video.currentTime+5);if(e.key==='ArrowLeft')video.currentTime=Math.max(0,video.currentTime-5)});
-volume.addEventListener('input',()=>{
- video.volume=Number(volume.value);
- if(video.volume===0){video.muted=true;audioMute.checked=true;}
- else {video.muted=false;audioMute.checked=false;}
- audioVolume.value=Math.round(Number(volume.value)*100);
- audioVolumeValue.textContent=audioVolume.value+'%';
-});
-volumeBtn.addEventListener('click',()=>{
- volumePopup.hidden=!volumePopup.hidden;
- showControls();
-});
-document.addEventListener('click',e=>{
- if(!e.target.closest('.volume-control'))volumePopup.hidden=true;
-});
-document.getElementById('fullBtn').addEventListener('click',async()=>{
- try{
-  if(!document.fullscreenElement){
-   if(player.requestFullscreen) await player.requestFullscreen();
-   else if(player.webkitRequestFullscreen) player.webkitRequestFullscreen();
-  }else{
-   if(document.exitFullscreen) await document.exitFullscreen();
-   else if(document.webkitExitFullscreen) document.webkitExitFullscreen();
-  }
- }catch(e){console.warn('Fullscreen could not be started:',e)}
-});
-document.addEventListener('fullscreenchange',()=>{
- const btn=document.getElementById('fullBtn');
- const active=!!document.fullscreenElement;
- btn.setAttribute('aria-label',active?'Exit full screen':'Full screen');
- btn.title=active?'Exit full screen':'Full screen';
-});
-
-document.getElementById('pipBtn').addEventListener('click',async()=>{try{if(document.pictureInPictureElement)await document.exitPictureInPicture();else if(document.pictureInPictureEnabled)await video.requestPictureInPicture()}catch(e){}});
-function showControls(){player.classList.remove('hide-controls');clearTimeout(hideTimer);if(!video.paused)hideTimer=setTimeout(()=>player.classList.add('hide-controls'),hideDelay*1000)}
-player.addEventListener('mousemove',showControls);player.addEventListener('touchstart',showControls,{passive:true});
-player.addEventListener('mouseleave',()=>{if(!video.paused)player.classList.add('hide-controls');else player.classList.remove('hide-controls')});
-document.addEventListener('keydown',e=>{if(document.activeElement.tagName==='INPUT')return;if(player.classList.contains('controls-locked')){if(e.key==='Escape'){setControlsLocked(false)}return}if(e.code==='Space'){e.preventDefault();togglePlay()}if(e.key==='ArrowRight')jumpBy(doubleTapSeconds);if(e.key==='ArrowLeft')jumpBy(-doubleTapSeconds);if(e.key==='Escape'&&player.classList.contains('controls-locked'))setControlsLocked(false)});
-
-// Show a centered RGB loader only while the media is waiting for network data.
-const loadingOverlay=document.getElementById('loadingOverlay');
-const loadingMessage=document.getElementById('loadingMessage');
-let loadingTimer=null;
-function showVideoLoading(message='Loading video…'){
- loadingMessage.textContent=message;
- loadingOverlay.hidden=false;
-}
-function hideVideoLoading(){loadingOverlay.hidden=true;clearTimeout(loadingTimer)}
-video.addEventListener('loadstart',()=>showVideoLoading('Connecting to video…'));
-video.addEventListener('waiting',()=>showVideoLoading('Buffering…'));
-video.addEventListener('stalled',()=>showVideoLoading('Internet is slow — buffering…'));
-video.addEventListener('seeking',()=>showVideoLoading('Loading…'));
-video.addEventListener('canplay',hideVideoLoading);
-video.addEventListener('playing',hideVideoLoading);
-video.addEventListener('seeked',hideVideoLoading);
-video.addEventListener('error',()=>{
- const code=video.error?.code;
- showVideoLoading(code===4?'Video format or link is not supported.':'Unable to load video. Check internet or video link.');
-});
-paintPlay();
-// Start with the video's native audio enabled; audio effects remain opt-in.
-video.defaultMuted=false;
-video.muted=false;
-video.volume=1;
-audioVolume.value=100;
-audioVolumeValue.textContent='100%';
-audioMute.checked=false;
-audioTab.hidden=true;audioPresenceKnown=false;
-video.muted=false;video.volume=1;
-// Re-check audio-track metadata after the browser has loaded the media.
-if(video.readyState>=1)detectAudio();
-
-
 </script>
 </body>
 </html>
