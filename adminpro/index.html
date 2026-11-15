@@ -384,18 +384,21 @@ video::cue{font-size:var(--subtitle-size,18px);color:var(--subtitle-color,#fff);
 <section class="publish-screen" id="publishScreen">
   <div class="publish-card">
     <h1>Publish Video Player</h1>
-    <p>Paste a direct video file URL, then create a shareable player link for your website.</p>
+    <p>Admin: paste an authorized direct video URL and your private publish key. Visitors can open the generated link without a key.</p>
     <form id="publishForm">
-      <label for="videoUrlInput">Video URL</label>
-      <input id="videoUrlInput" type="url" placeholder="https://example.com/video.mp4" required>
-      <button class="publish-action" type="submit">Create Player Link</button>
+      <label for="videoUrlInput">Video URL (MKV / MP4)</label>
+      <input id="videoUrlInput" type="url" placeholder="https://your-authorized-host/video.mkv" required>
+      <label for="adminApiKey">Admin Publish Key</label>
+      <input id="adminApiKey" type="password" autocomplete="current-password" placeholder="Enter Render API_KEY" required>
+      <button class="publish-action" id="publishSubmit" type="submit">Convert & Publish</button>
+      <p id="publishStatus" class="publish-help" aria-live="polite"></p>
     </form>
     <div class="publish-result" id="publishResult" hidden>
       <label>Your published player link</label>
       <a id="publishedLink" href="#" target="_blank" rel="noopener"></a>
       <button class="publish-action" id="copyPlayerLink" type="button">Copy Player Link</button>
     </div>
-    <p class="publish-help">Note: This page must be uploaded to a web host first. Use a direct MP4 or browser-compatible video URL; ordinary webpage/embed URLs may not work in this player.</p>
+    <p class="publish-help">Only publish videos you own or have permission to stream. Large files may fail on a free Render instance. Keep your publish key private; it is never saved in the share link.</p>
   </div>
 </section>
 
@@ -974,81 +977,208 @@ video.muted=false;video.volume=1;
 if(video.readyState>=1)detectAudio();
 
 </script>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.6.13/dist/hls.min.js"></script>
 <script>
 (function initPublishPlayer(){
-  const params = new URLSearchParams(window.location.search);
-  const videoUrl = params.get('src');
+  const API_BASE = 'https://animeplayer-zi1l.onrender.com';
+  const params = new URLSearchParams(location.search);
+  const sourceUrl = params.get('src');
+  const jobId = params.get('job');
   const publishScreen = document.getElementById('publishScreen');
   const playerEl = document.getElementById('player');
-  const sourceEl = document.getElementById('videoSource');
-  const videoEl = document.getElementById('video');
+  const video = document.getElementById('video');
   const form = document.getElementById('publishForm');
   const input = document.getElementById('videoUrlInput');
+  const keyInput = document.getElementById('adminApiKey');
   const result = document.getElementById('publishResult');
   const link = document.getElementById('publishedLink');
   const copyBtn = document.getElementById('copyPlayerLink');
+  const status = document.getElementById('publishStatus');
+  const submit = document.getElementById('publishSubmit');
+  let hls = null;
 
-  function showPlayer(url){
+  function absoluteMediaUrl(path){
+    return new URL(path, API_BASE).href;
+  }
+  function showPlayer(){
     publishScreen.hidden = true;
     playerEl.hidden = false;
     document.body.style.overflow = 'hidden';
-    sourceEl.src = url;
-    videoEl.load();
   }
-
-  if (videoUrl) {
-    try {
-      const parsed = new URL(videoUrl);
-      if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('Invalid protocol');
-      showPlayer(parsed.href);
-    } catch (_) {
-      publishScreen.hidden = false;
-      playerEl.hidden = true;
-      document.body.style.overflow = 'auto';
-      input.value = videoUrl;
-      const help = document.querySelector('.publish-help');
-      if (help) help.textContent = 'The saved video URL is invalid. Please enter a valid direct video URL.';
-    }
-  } else {
-    publishScreen.hidden = false;
-    playerEl.hidden = true;
-    document.body.style.overflow = 'auto';
+  function setStatus(message, isError=false){
+    if(status){ status.textContent=message; status.style.color=isError?'#ff7777':'#aaa'; }
   }
-
-  form.addEventListener('submit', function(event){
-    event.preventDefault();
-    const raw = input.value.trim();
-    let parsed;
-    try { parsed = new URL(raw); } catch (_) {}
-    if (!parsed || !['http:', 'https:'].includes(parsed.protocol)) {
-      alert('Please enter a complete video URL beginning with https:// or http://');
-      input.focus();
+  function showAudioTracks(tracks){
+    const tab=document.querySelector('.settings-tab[data-tab="audio"]');
+    const holder=document.getElementById('audioLanguageOptions');
+    const section=document.getElementById('audioLanguageSection');
+    const info=document.getElementById('audioTrackInfo');
+    if(!tab||!holder||!section) return;
+    holder.innerHTML='';
+    if(!tracks || !tracks.length){
+      section.hidden=true;
+      tab.hidden=true;
       return;
     }
+    section.hidden=false;
+    tab.hidden=false;
+    if(typeof setAudioAvailable==='function') setAudioAvailable(true);
+    info.textContent=tracks.length+' audio track'+(tracks.length===1?'':'s')+' detected.';
+    tracks.forEach((track,index)=>{
+      const b=document.createElement('button');
+      b.type='button';
+      b.className='audio-language-btn'+(index===0?' active':'');
+      b.textContent=(track.name||track.label||('Audio '+(index+1)))+(track.lang&&track.lang!=='und'?' · '+track.lang:'');
+      b.addEventListener('click',()=>{
+        if(hls) hls.audioTrack=index;
+        holder.querySelectorAll('button').forEach((x,i)=>x.classList.toggle('active',i===index));
+        info.textContent='Playing: '+b.textContent;
+      });
+      holder.appendChild(b);
+    });
+    const visibleTabs=Array.from(document.querySelectorAll('.settings-tab')).filter(t=>!t.hidden).length;
+    document.querySelector('.settings-tabs').style.gridTemplateColumns=`repeat(${visibleTabs},minmax(0,1fr))`;
+  }
+  function addSubtitleTracks(items){
+    video.querySelectorAll('track[data-backend-subtitle]').forEach(el=>el.remove());
+    (items||[]).forEach((item,index)=>{
+      const track=document.createElement('track');
+      track.kind='subtitles';
+      track.label=item.name||('Subtitle '+(index+1));
+      track.srclang=(item.language||'und').slice(0,20);
+      track.src=absoluteMediaUrl(item.url);
+      track.dataset.backendSubtitle='1';
+      track.addEventListener('load',()=>{ if(typeof refreshSubtitleTracks==='function') refreshSubtitleTracks(); });
+      track.addEventListener('error',()=>{ const st=document.getElementById('subtitleStatus'); if(st)st.textContent='A subtitle file could not be loaded.'; });
+      video.appendChild(track);
+    });
+    setTimeout(()=>{ if(typeof refreshSubtitleTracks==='function') refreshSubtitleTracks(); },500);
+  }
+  function startHls(masterUrl, subtitleTracks=[]){
+    showPlayer();
+    video.crossOrigin='anonymous';
+    addSubtitleTracks(subtitleTracks);
+    const url=absoluteMediaUrl(masterUrl);
+    if(window.Hls && Hls.isSupported()){
+      hls=new Hls({enableWorker:true, lowLatencyMode:false, backBufferLength:90});
+      hls.on(Hls.Events.MEDIA_ATTACHED,()=>hls.loadSource(url));
+      hls.on(Hls.Events.MANIFEST_PARSED,(_event,data)=>{
+        showAudioTracks(hls.audioTracks||[]);
+        const msg=document.getElementById('loadingMessage');
+        if(msg)msg.textContent='Video ready';
+        video.play().catch(()=>{});
+      });
+      hls.on(Hls.Events.AUDIO_TRACKS_UPDATED,()=>showAudioTracks(hls.audioTracks||[]));
+      hls.on(Hls.Events.ERROR,(_event,data)=>{
+        if(data && data.fatal){
+          const msg=document.getElementById('loadingMessage');
+          if(msg)msg.textContent='Video stream error. Please reload or try later.';
+          if(data.type===Hls.ErrorTypes.NETWORK_ERROR) hls.startLoad();
+          else if(data.type===Hls.ErrorTypes.MEDIA_ERROR) hls.recoverMediaError();
+          else hls.destroy();
+        }
+      });
+      hls.attachMedia(video);
+    }else if(video.canPlayType('application/vnd.apple.mpegurl')){
+      video.src=url;
+      video.addEventListener('loadedmetadata',()=>video.play().catch(()=>{}),{once:true});
+    }else{
+      alert('This browser does not support HLS playback. Please use updated Chrome, Edge, Firefox or Safari.');
+    }
+  }
+  async function pollJob(id){
+    showPlayer();
+    const msg=document.getElementById('loadingMessage');
+    if(msg)msg.textContent='Waiting for video conversion…';
+    const started=Date.now();
+    while(Date.now()-started < 6*60*60*1000){
+      const response=await fetch(`${API_BASE}/api/jobs/${encodeURIComponent(id)}`,{cache:'no-store'});
+      const data=await response.json().catch(()=>({}));
+      if(!response.ok) throw new Error(data.error||'Could not find this published video. The backend may have restarted.');
+      if(data.status==='ready' && data.result){
+        startHls(data.result.masterUrl,data.result.subtitleTracks||[]);
+        return;
+      }
+      if(data.status==='error') throw new Error(data.error||'Video conversion failed.');
+      if(msg)msg.textContent=data.status==='processing'?'Converting video and audio tracks…':'Waiting in conversion queue…';
+      await new Promise(resolve=>setTimeout(resolve,3000));
+    }
+    throw new Error('Conversion is taking too long. Check the backend status and try again.');
+  }
 
-    // Keep this same hosted player page and place the video URL in the src query.
-    const shareUrl = new URL(window.location.href);
-    shareUrl.search = '';
-    shareUrl.hash = '';
-    shareUrl.searchParams.set('src', parsed.href);
+  if(jobId){
+    publishScreen.hidden=true;
+    pollJob(jobId).catch(err=>{
+      playerEl.hidden=true; publishScreen.hidden=false; document.body.style.overflow='auto';
+      setStatus('Could not open video: '+err.message,true);
+    });
+  }else if(sourceUrl){
+    try{
+      const parsed=new URL(sourceUrl);
+      if(!['http:','https:'].includes(parsed.protocol)) throw new Error('Invalid URL');
+      showPlayer();
+      const ext=parsed.pathname.toLowerCase();
+      if(ext.endsWith('.mkv')){
+        setStatus('MKV playback requires publishing through the Admin conversion form.');
+        publishScreen.hidden=false; playerEl.hidden=true; document.body.style.overflow='auto';
+        input.value=parsed.href;
+      }else{
+        const source=document.getElementById('videoSource');
+        source.src=parsed.href; video.load();
+      }
+    }catch(e){
+      publishScreen.hidden=false; playerEl.hidden=true; document.body.style.overflow='auto';
+      input.value=sourceUrl;
+      setStatus('The saved video URL is invalid.',true);
+    }
+  }else{
+    publishScreen.hidden=false; playerEl.hidden=true; document.body.style.overflow='auto';
+  }
 
-    link.href = shareUrl.toString();
-    link.textContent = shareUrl.toString();
-    result.hidden = false;
-    result.scrollIntoView({behavior:'smooth', block:'nearest'});
-  });
-
-  copyBtn.addEventListener('click', async function(){
-    const playerLink = link.href;
-    if (!playerLink || playerLink === '#') return;
-    try {
-      await navigator.clipboard.writeText(playerLink);
-      copyBtn.textContent = 'Copied!';
-      setTimeout(() => copyBtn.textContent = 'Copy Player Link', 1600);
-    } catch (_) {
-      window.prompt('Copy your player link:', playerLink);
+  form.addEventListener('submit',async function(event){
+    event.preventDefault();
+    const raw=input.value.trim();
+    const apiKey=keyInput.value;
+    let parsed;
+    try{parsed=new URL(raw);}catch(_){}
+    if(!parsed||parsed.protocol!=='https:'){
+      setStatus('Enter a valid HTTPS direct video file URL.',true); input.focus(); return;
+    }
+    if(!apiKey.trim()){
+      setStatus('Admin Publish Key is required.',true); keyInput.focus(); return;
+    }
+    submit.disabled=true; submit.textContent='Sending to converter…'; result.hidden=true;
+    setStatus('Connecting to AnimePlayer backend…');
+    try{
+      const response=await fetch(`${API_BASE}/api/jobs`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json','x-api-key':apiKey.trim()},
+        body:JSON.stringify({url:parsed.href})
+      });
+      const data=await response.json().catch(()=>({}));
+      if(!response.ok) throw new Error(data.error||`Publish failed (${response.status})`);
+      const shareUrl=new URL(location.href);
+      shareUrl.search=''; shareUrl.hash='';
+      shareUrl.searchParams.set('job',data.id);
+      link.href=shareUrl.toString();
+      link.textContent=shareUrl.toString();
+      result.hidden=false;
+      setStatus('Conversion started. Wait until the backend finishes before sharing the link.');
+      result.scrollIntoView({behavior:'smooth',block:'nearest'});
+      keyInput.value='';
+    }catch(err){
+      setStatus('Publish failed: '+err.message,true);
+    }finally{
+      submit.disabled=false; submit.textContent='Convert & Publish';
     }
   });
+  copyBtn.addEventListener('click',async()=>{
+    const value=link.href;
+    if(!value||value==='#')return;
+    try{await navigator.clipboard.writeText(value);copyBtn.textContent='Copied!';setTimeout(()=>copyBtn.textContent='Copy Player Link',1600);}
+    catch(_){window.prompt('Copy your player link:',value);}
+  });
+  window.addEventListener('beforeunload',()=>{if(hls)hls.destroy();});
 })();
 </script>
 </body>
