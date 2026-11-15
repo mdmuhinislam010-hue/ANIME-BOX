@@ -378,24 +378,373 @@ video::cue{font-size:var(--subtitle-size,18px);color:var(--subtitle-color,#fff);
 .publish-result{margin-top:16px;padding:12px;border:1px solid #333;border-radius:10px;background:#080808;overflow-wrap:anywhere}
 .publish-result a{color:#59c7ff;font-size:13px}
 .publish-help{font-size:11px!important;color:#888!important;margin-top:14px!important}
+
+/* Improved responsive AB PLAY manager dashboard */
+.publish-screen{display:block;min-height:100vh;height:100vh;overflow:auto;padding:clamp(12px,3vw,30px);background:radial-gradient(circle at 12% 0%,#17243a 0,#090d16 38%,#05070c 75%)}
+.publish-card{width:min(1180px,100%)!important;margin:0 auto;padding:clamp(16px,2.5vw,30px);border:1px solid #263449;border-radius:20px;background:linear-gradient(145deg,#111a29,#0b111c 70%);box-shadow:0 22px 70px #0009}
+.publish-card h1{font-size:clamp(21px,3vw,29px);letter-spacing:-.5px}
+.publish-card p{color:#9eacc0}
+.publish-card label{font-size:12px;font-weight:700;color:#b9c8dc}
+.publish-card input,.publish-card select{min-height:44px;border:1px solid #34445c!important;border-radius:10px!important;background:#080e18!important;color:#f4f7fb!important}
+.publish-card input:focus,.publish-card select:focus{border-color:#27c5ff!important;box-shadow:0 0 0 3px #27c5ff20}
+.publish-action{min-height:42px;padding:10px 15px;border-radius:10px;background:linear-gradient(110deg,#087fc2,#1b5fd0);transition:transform .15s,filter .15s;white-space:nowrap}
+.publish-action:hover{filter:brightness(1.15);transform:translateY(-1px)}
+#managerBox .manager-top{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding-bottom:16px;border-bottom:1px solid #263449}
+#managerBox .manager-brand{display:flex;align-items:center;gap:12px}
+#managerBox .manager-mark{width:44px;height:44px;display:grid;place-items:center;border-radius:13px;background:linear-gradient(135deg,#00c6ff,#3156db);font-weight:900;font-size:17px;box-shadow:0 8px 24px #087fc255}
+#managerBox .manager-subtitle{margin:4px 0 0;font-size:12px}
+.manager-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:16px 0}
+.manager-stat{padding:14px;border:1px solid #293950;border-radius:13px;background:#101b2b}
+.manager-stat small{display:block;color:#8fa3bd;font-size:11px}
+.manager-stat strong{display:block;margin-top:5px;font-size:23px;color:#f5f9ff}
+.manager-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:16px;border:1px solid #293950;border-radius:15px;background:#0c1523}
+.manager-form .field{min-width:0}
+.manager-form .field input,.manager-form .field select{width:100%;padding:12px}
+.manager-form .wide{grid-column:1/-1}
+.manager-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:20px 0 10px}
+.manager-toolbar input{width:min(360px,100%);padding:11px 13px}
+#folderList{gap:8px!important}
+#folderList>div{display:flex;align-items:center;gap:6px;background:#101b2b!important;border:1px solid #2a3b53!important;border-radius:11px!important;padding:5px 8px!important}
+#folderList button{font-size:12px;padding:7px 9px;border-radius:7px}
+#folderList button[data-open-folder]{background:#1a2b42}
+#videoList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;margin-top:12px}
+.video-manager-card{min-width:0;padding:14px;background:linear-gradient(145deg,#121f30,#0d1623);border:1px solid #293b53;border-radius:14px;overflow:hidden}
+.video-manager-card strong{display:block;font-size:14px;line-height:1.4;overflow-wrap:anywhere}
+.video-manager-card .video-url{font-size:11px;color:#8ea3bc;margin-top:7px;overflow-wrap:anywhere;word-break:break-all}
+.video-manager-card .video-meta{font-size:11px;color:#8fa3bd;margin-top:5px}
+.video-manager-card .card-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}
+.video-manager-card .card-actions .publish-action{font-size:11px;min-height:34px;padding:7px 10px}
+.video-manager-card select{max-width:100%;padding:7px;border-radius:8px;background:#080e18;color:#fff;border:1px solid #34445c}
+.video-manager-card a{display:inline-block;margin-top:10px;color:#4ccaff;font-size:12px}
+.manager-empty{grid-column:1/-1;padding:26px;text-align:center;border:1px dashed #34445c;border-radius:13px;color:#9eacc0}
+#managerStatus{padding:10px 12px;border-radius:9px;background:#0b1c2c;border:1px solid #1d405b}
+#logoutManager{background:#26364d!important}
+#loginBox{max-width:430px;margin:8vh auto;padding:clamp(20px,4vw,34px);border:1px solid #293b53;border-radius:18px;background:#0d1725}
+#loginBox h1{margin-bottom:7px}
+#loginBox input{width:100%;padding:13px}
+#loginBox .publish-action{width:100%}
+@media(max-width:680px){
+ .publish-screen{padding:10px}
+ .publish-card{padding:14px;border-radius:15px}
+ .manager-stats{gap:7px}
+ .manager-stat{padding:10px}
+ .manager-stat strong{font-size:19px}
+ #videoList{grid-template-columns:1fr}
+ .manager-form{grid-template-columns:1fr;padding:12px}
+ .manager-form .wide{grid-column:auto}
+ .manager-toolbar{align-items:stretch}
+ .manager-toolbar input{width:100%}
+}
+@media(max-width:380px){.manager-stats{grid-template-columns:1fr}.manager-stat{display:flex;justify-content:space-between;align-items:center}.manager-stat strong{margin:0}}
+
+
+.manager-breadcrumb{display:flex;align-items:center;gap:8px;margin:14px 0 8px;padding:11px 13px;border:1px solid #2b405a;border-radius:10px;background:#101c2b;color:#c5d7eb;font-size:13px;font-weight:700}
+#folderList>div.active-folder{border-color:#21baff!important;background:#10263a!important;box-shadow:0 0 0 1px #21baff30}
+#folderList button[data-open-folder]{font-weight:700;padding:9px 11px}
+#folderList button[data-delete-folder]{width:30px;height:30px;padding:0;font-size:18px;background:#51252c;color:#ffb3b3!important}
+#folderList .folder-count{display:block;color:#91a9c4;font-size:10px;font-weight:500;margin-top:2px}
+.manager-confirm{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:18px;background:#02060dcc;backdrop-filter:blur(7px)}
+.manager-confirm[hidden]{display:none}
+.manager-confirm-card{width:min(420px,100%);padding:24px;border:1px solid #3a4b63;border-radius:18px;background:linear-gradient(145deg,#172438,#0b121e);box-shadow:0 25px 90px #000b;text-align:center}
+.confirm-icon{width:48px;height:48px;margin:0 auto 12px;display:grid;place-items:center;border-radius:50%;background:#57252c;color:#ffb7b7;font-size:25px;font-weight:900}
+.manager-confirm-card h2{margin:0 0 8px;font-size:20px}
+.manager-confirm-card p{margin:0;color:#b1c0d2;font-size:13px;line-height:1.6;overflow-wrap:anywhere}
+.confirm-actions{display:flex;gap:10px;margin-top:22px}
+.confirm-actions button{flex:1;margin:0!important}
+.cancel-confirm{background:#34445c!important}
+.danger-confirm{background:linear-gradient(110deg,#b83242,#81232e)!important}
+@media(max-width:480px){.manager-confirm-card{padding:20px}.confirm-actions{flex-direction:column}}
+
+
+.folder-create-icon{background:#153d58;color:#b5eaff;font-size:24px}
+.create-folder-card input:focus{outline:none;border-color:#27c5ff!important;box-shadow:0 0 0 3px #27c5ff20}
+.create-folder-card .confirm-actions{margin-top:18px}
+#createFolderBtn{background:linear-gradient(110deg,#087fc2,#1b5fd0)!important}
+
+
+/* Abyss-inspired folder and video file manager */
+.filemanager-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:13px 0 8px;padding:10px 12px;border:1px solid #2b3a4f;border-radius:10px;background:#111b29;color:#dce7f5;font-size:13px;font-weight:700}
+#folderList,#videoList{width:100%;overflow-x:auto;border:1px solid #29384d;border-radius:12px;background:#0c1420;margin:10px 0 16px}
+#folderList[hidden],#videoList[hidden]{display:none}
+.fm-table{width:100%;min-width:760px;border-collapse:collapse;font-size:12px}
+.fm-table thead{background:#1b2636;color:#aebed1}
+.fm-table th{padding:12px 10px;text-align:left;font-weight:700;white-space:nowrap;border-bottom:1px solid #35445a}
+.fm-table td{padding:12px 10px;border-bottom:1px solid #202d3e;color:#d5e0ee;vertical-align:middle}
+.fm-table tbody tr:hover{background:#142237}
+.fm-name{display:flex;align-items:center;gap:9px;min-width:180px}
+.fm-folder-icon{width:28px;height:28px;display:grid;place-items:center;border-radius:8px;background:#1a3049;color:#7fcaff;font-size:15px}
+.fm-name strong{font-size:12px;font-weight:700;overflow-wrap:anywhere}
+.fm-muted{color:#8295ad;font-size:11px}
+.fm-status{display:inline-block;padding:4px 8px;border-radius:5px;background:#123d2b;color:#70e3a4;font-size:10px;font-weight:800}
+.fm-actions{display:flex;align-items:center;gap:5px;white-space:nowrap}
+.fm-icon-btn{width:29px;height:29px;display:inline-grid;place-items:center;border:1px solid #35465d;border-radius:7px;background:#152235;color:#c6d4e5;cursor:pointer;font-size:13px}
+.fm-icon-btn:hover{border-color:#27baff;color:#fff;background:#1b3651}
+.fm-icon-btn.danger{color:#ff9d9d}
+.fm-open-folder{border:0;background:transparent;color:#dceaff;cursor:pointer;text-align:left;padding:0}
+.fm-open-folder:hover{color:#58caff}
+.fm-empty{padding:32px;text-align:center;color:#91a4bc;font-size:13px}
+.fm-link{display:inline-block;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#79cfff;text-decoration:none}
+.fm-link:hover{text-decoration:underline}
+.fm-download-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border-radius:7px;background:#123b35;color:#8cf0c3;text-decoration:none;font-size:11px;font-weight:700;white-space:nowrap}
+.fm-download-btn:hover{background:#185747}
+#backToFoldersBtn{background:#34445c!important}
+@media(max-width:680px){.filemanager-toolbar{align-items:flex-start;flex-direction:column}.fm-table{min-width:700px}}
+
+
+/* AB PLAY — Abyss workspace shell */
+body:has(#managerBox:not([hidden])){background:#080d16;color:#e8eef8}
+#publishScreen{padding:0!important;min-height:100vh;height:auto;overflow:visible;background:#080d16!important}
+#publishScreen>.publish-card{width:100%!important;max-width:none!important;min-height:100vh;margin:0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}
+#loginBox{margin:8vh auto!important;max-width:430px!important;background:#101a2a!important;border:1px solid #273951!important}
+#managerBox{display:block;min-height:100vh;color:#e8eef8}
+#managerBox[hidden]{display:none!important}
+.abyss-sidebar{position:fixed;z-index:1000;left:0;top:0;bottom:0;width:244px;padding:24px 15px 16px;background:#0c1421;border-right:1px solid #1e2c40;display:flex;flex-direction:column}
+.abyss-brand{display:flex;align-items:center;gap:11px;padding:0 9px 29px;font-weight:850;letter-spacing:1.1px;font-size:15px}
+.abyss-brand>span:last-child{display:flex;flex-direction:column;gap:4px}
+.abyss-brand small{font-size:9px;color:#72859f;letter-spacing:1.5px;font-weight:700}
+.abyss-brand-mark{width:38px;height:38px;display:grid;place-items:center;border-radius:12px;background:linear-gradient(135deg,#26c4f5,#3467df);color:white;box-shadow:0 7px 20px #1678d744}
+.sidebar-caption{padding:0 11px 9px;color:#64758e;font-size:9px;font-weight:800;letter-spacing:1.5px}
+.abyss-nav{display:grid;gap:5px}
+.abyss-nav-item{display:flex;align-items:center;gap:13px;width:100%;padding:11px 12px;border:1px solid transparent;border-radius:9px;background:transparent;color:#8fa1b9;text-align:left;font-size:12px;font-weight:650;transition:.18s}
+.abyss-nav-item span{width:18px;text-align:center;font-size:16px;color:#7e93ad}
+.abyss-nav-item:hover{background:#14243a;color:#e8f4ff}
+.abyss-nav-item.active{background:linear-gradient(100deg,#123e68,#142b4b);border-color:#1d5b8d;color:#6fd0ff;box-shadow:inset 3px 0 #32baff}
+.abyss-nav-item.active span{color:#65d0ff}
+.sidebar-bottom-caption{margin-top:28px}
+.sidebar-footer{margin-top:auto;padding:13px 8px 2px;border-top:1px solid #1d2a3d;color:#71839b;font-size:10px}
+.online-dot{display:inline-block;width:7px;height:7px;margin-right:7px;border-radius:50%;background:#36d58a;box-shadow:0 0 10px #36d58a}
+.abyss-main{margin-left:244px;min-height:100vh;padding:0 30px 36px;max-width:1800px}
+.abyss-topbar{height:76px;display:flex;align-items:center;justify-content:space-between;gap:18px;border-bottom:1px solid #1d2a3c}
+.topbar-title{display:flex;flex-direction:column;gap:4px}
+.topbar-title strong{font-size:16px;letter-spacing:-.2px}
+.topbar-title span{font-size:10px;color:#7588a2}
+.topbar-tools{display:flex;align-items:center;gap:9px}
+.global-search{height:37px;width:min(280px,28vw);display:flex;align-items:center;gap:8px;padding:0 11px;border:1px solid #293950;border-radius:9px;background:#101a29;color:#8ca0b9}
+.global-search input{width:100%;min-width:0;border:0!important;outline:0;background:transparent!important;color:#eaf2fc!important;font-size:11px}
+.topbar-create{height:37px;padding:0 14px;border-radius:9px;background:#167bc1;color:white;font-size:11px;font-weight:750;white-space:nowrap}
+.topbar-icon,.mobile-menu-btn{width:37px;height:37px;border:1px solid #293950;border-radius:9px;background:#101a29;color:#b9c9dc;font-size:16px}
+.mobile-menu-btn{display:none}
+.manager-top{padding:19px 0 14px;border:0!important}
+.manager-brand h1{font-size:14px!important;margin:0!important;color:#eaf2fc}
+.manager-mark{width:34px!important;height:34px!important;border-radius:10px!important}
+.manager-subtitle{font-size:10px!important;color:#7186a1!important}
+#logoutManager{display:none}
+.abyss-welcome{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:21px 22px;margin:5px 0 17px;border:1px solid #233650;border-radius:13px;background:radial-gradient(circle at 90% 10%,#183758 0,transparent 40%),linear-gradient(110deg,#111e30,#101a29)}
+.abyss-welcome .eyebrow{font-size:9px;letter-spacing:1.5px;font-weight:800;color:#53c5fa}
+.abyss-welcome h2{font-size:20px;margin:7px 0 5px;letter-spacing:-.5px}
+.abyss-welcome p{margin:0;font-size:11px;color:#91a4bd}
+.abyss-welcome .publish-action{width:auto;margin:0}
+.manager-stats{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:0 0 17px}
+.manager-stat{padding:15px 17px;border:1px solid #22334a;background:#101a29;border-radius:12px}
+.manager-stat small{font-size:10px;color:#8194ad}
+.manager-stat strong{font-size:22px;color:#f0f6ff}
+.manager-form{padding:17px;border:1px solid #263850;background:#0f1928;border-radius:13px;gap:12px}
+.manager-form .field input,.manager-form .field select{font-size:12px!important}
+.manager-form label{color:#aabbd0!important}
+.manager-form .wide:first-child{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.manager-form .wide:first-child span{margin:0!important}
+.publish-action{font-size:11px}
+#managerStatus{padding:10px 12px!important;border:1px solid #233a52!important;border-radius:8px;background:#101c2b!important;color:#8ddcff!important}
+.manager-breadcrumb{margin:14px 0 8px;background:#101b2b;border-color:#263951;color:#c3d5e9}
+.manager-toolbar{justify-content:flex-start!important;margin:12px 0 9px!important;gap:8px!important}
+.manager-toolbar input,.manager-toolbar select{height:38px;padding:0 11px;border:1px solid #2a3c54;border-radius:8px;background:#101a29;color:#dce8f6;font-size:11px}
+.manager-toolbar select{max-width:155px}
+.filemanager-toolbar{margin-top:12px;background:#101a29;border-color:#25374f}
+#folderList,#videoList{border:1px solid #26374d;background:#0e1725;border-radius:12px}
+.fm-table{min-width:880px;font-size:11px}
+.fm-table thead{background:#152236}
+.fm-table th{padding:12px;color:#8ea2bd;border-color:#26374d;font-size:9px;letter-spacing:.5px;text-transform:uppercase}
+.fm-table td{padding:12px 10px;border-color:#1c2b3e;color:#cbd8e8}
+.fm-table tbody tr{transition:background .15s}
+.fm-table tbody tr:hover{background:#13233a}
+.fm-folder-icon{background:#162e49;color:#62caff}
+.fm-name strong{color:#e5effb}
+.fm-status{background:#123729;color:#5fe0a0;border:1px solid #1e6247;font-size:9px;letter-spacing:.4px}
+.fm-icon-btn{background:#142238;border-color:#2b405b;color:#a9bdd5}
+.fm-icon-btn:hover{background:#173757;border-color:#299ee0}
+.fm-icon-btn.danger{color:#ff999f}
+.fm-download-btn{background:#12352e;color:#75e4b4}
+.fm-empty{padding:38px;color:#8297b2}
+.fm-row-check{accent-color:#249fe7;width:14px;height:14px}
+#managerBox input:focus-visible,#managerBox select:focus-visible,#managerBox button:focus-visible{outline:2px solid #38bdf8;outline-offset:2px}
+.manager-confirm-card{background:#111d2d;border-color:#30445e}
+.manager-confirm-card p{color:#a9bad0}
+.create-folder-card input{background:#091321!important}
+#managerBox .publish-help{display:none}
+.mobile-menu-btn{flex:none}
+body.abyss-light{background:#f3f6fb!important;color:#172338!important}
+body.abyss-light #publishScreen{background:#f3f6fb!important}
+body.abyss-light .abyss-sidebar{background:#fff;border-color:#e1e7f0}
+body.abyss-light .abyss-brand,body.abyss-light .topbar-title strong{color:#172338}
+body.abyss-light .abyss-nav-item{color:#64748b}
+body.abyss-light .abyss-nav-item.active{background:#e7f4ff;color:#0878bd;border-color:#c5e7ff}
+body.abyss-light .abyss-main{color:#172338}
+body.abyss-light .abyss-topbar{border-color:#e0e7f0}
+body.abyss-light .global-search,body.abyss-light .global-search input,body.abyss-light .topbar-icon,body.abyss-light .manager-toolbar input,body.abyss-light .manager-toolbar select{background:#fff!important;color:#334155!important;border-color:#dce4ee}
+body.abyss-light .abyss-welcome,body.abyss-light .manager-stat,body.abyss-light .manager-form,body.abyss-light #folderList,body.abyss-light #videoList,body.abyss-light .filemanager-toolbar{background:#fff;border-color:#e0e7f0}
+body.abyss-light .abyss-welcome h2,body.abyss-light .fm-name strong,body.abyss-light .fm-table td{color:#243247}
+body.abyss-light .fm-table thead{background:#f1f5f9}
+body.abyss-light .fm-table th{color:#64748b;border-color:#e2e8f0}
+body.abyss-light .fm-table td{border-color:#edf1f6}
+body.abyss-light .manager-breadcrumb{background:#fff;color:#334155;border-color:#e0e7f0}
+body.abyss-light #managerStatus{background:#eff8ff!important;color:#0877b8!important}
+@media(max-width:900px){
+ .abyss-sidebar{width:220px}.abyss-main{margin-left:220px;padding:0 18px 28px}
+ .topbar-tools{gap:6px}.global-search{width:190px}
+}
+@media(max-width:700px){
+ .abyss-sidebar{transform:translateX(-100%);transition:transform .22s ease;width:250px;box-shadow:15px 0 40px #0007}
+ body.sidebar-open .abyss-sidebar{transform:translateX(0)}
+ .abyss-main{margin-left:0;padding:0 12px 24px}
+ .abyss-topbar{height:64px}.mobile-menu-btn{display:grid;place-items:center}
+ .topbar-title{margin-right:auto}.topbar-title strong{font-size:13px}
+ .topbar-title span{display:none}.global-search{display:none}
+ .topbar-create{height:34px;padding:0 9px;font-size:10px}
+ .topbar-icon{width:34px;height:34px}
+ .manager-top{padding-top:13px}
+ .abyss-welcome{padding:17px;align-items:flex-start;flex-direction:column}
+ .manager-stats{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .manager-stat{padding:11px}.manager-stat strong{font-size:18px}
+ .manager-form{padding:12px}
+ .manager-toolbar{display:flex!important}.manager-toolbar>div{width:100%}
+ .manager-toolbar input{width:100%!important}
+ .manager-toolbar select{flex:1;max-width:none}
+}
+@media(max-width:420px){
+ .manager-stats{gap:6px}.manager-stat small{font-size:9px}.manager-stat strong{font-size:16px}
+ .topbar-icon#settingsNavBtn{display:none}
+ .topbar-create{font-size:0;width:35px;padding:0}.topbar-create::after{content:"＋";font-size:18px}
+}
+
 </style>
 </head>
 <body>
+
 <section class="publish-screen" id="publishScreen">
-  <div class="publish-card">
-    <h1>Publish Video Player</h1>
-    <p>Paste a direct video file URL, then create a shareable player link for your website.</p>
-    <form id="publishForm">
-      <label for="videoUrlInput">Video URL</label>
-      <input id="videoUrlInput" type="url" placeholder="https://example.com/video.mp4" required>
-      <button class="publish-action" type="submit">Create Player Link</button>
-    </form>
-    <div class="publish-result" id="publishResult" hidden>
-      <label>Your published player link</label>
-      <a id="publishedLink" href="#" target="_blank" rel="noopener"></a>
-      <button class="publish-action" id="copyPlayerLink" type="button">Copy Player Link</button>
+  <div class="publish-card" style="width:min(920px,100%)">
+    <div id="loginBox">
+      <h1>AB PLAY · Manager Login</h1>
+      <p>Sign in to manage folders, video links and published player URLs.</p>
+      <form id="managerLoginForm">
+        <label for="managerPassword">Manager password</label>
+        <input id="managerPassword" type="password" placeholder="Enter password" autocomplete="current-password" required>
+        <button class="publish-action" type="submit">Login</button>
+      </form>
+      <p class="publish-help">Default password: moin23. Change it in the manager code before publishing if needed.</p>
     </div>
-    <p class="publish-help">Note: This page must be uploaded to a web host first. Use a direct MP4 or browser-compatible video URL; ordinary webpage/embed URLs may not work in this player.</p>
+    <div id="managerBox" hidden>
+      <aside class="abyss-sidebar" id="abyssSidebar">
+        <div class="abyss-brand"><span class="abyss-brand-mark">AB</span><span>AB PLAY<small>VIDEO WORKSPACE</small></span></div>
+        <div class="sidebar-caption">WORKSPACE</div>
+        <nav class="abyss-nav" aria-label="Manager navigation">
+          <button type="button" class="abyss-nav-item active" data-nav="dashboard"><span>▦</span>Dashboard</button>
+          <button type="button" class="abyss-nav-item" data-nav="manager"><span>▤</span>Manager</button>
+          <button type="button" class="abyss-nav-item" data-nav="new-folder"><span>＋</span>New Folder</button>
+          <button type="button" class="abyss-nav-item" data-nav="all-videos"><span>▶</span>All Videos</button>
+          <button type="button" class="abyss-nav-item" data-nav="downloads"><span>⇩</span>Download Links</button>
+          <button type="button" class="abyss-nav-item" data-nav="remote"><span>↗</span>Remote</button>
+          <button type="button" class="abyss-nav-item" data-nav="analytics"><span>◷</span>Analytics</button>
+          <button type="button" class="abyss-nav-item" data-nav="player"><span>▷</span>Player</button>
+        </nav>
+        <div class="sidebar-caption sidebar-bottom-caption">PREFERENCES</div>
+        <nav class="abyss-nav">
+          <button type="button" class="abyss-nav-item" data-nav="settings"><span>⚙</span>Settings</button>
+          <button type="button" class="abyss-nav-item" id="sidebarLogout"><span>↪</span>Logout</button>
+        </nav>
+        <div class="sidebar-footer"><span class="online-dot"></span> Firebase connected workspace</div>
+      </aside>
+      <div class="abyss-main">
+      <div class="abyss-topbar">
+        <button type="button" class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle navigation">☰</button>
+        <div class="topbar-title"><strong id="topbarHeading">Dashboard</strong><span>Manage your video library</span></div>
+        <div class="topbar-tools">
+          <div class="global-search"><span>⌕</span><input id="managerGlobalSearch" type="search" placeholder="Search Manager…"></div>
+          <button type="button" class="topbar-create" id="topCreateBtn">＋ Create New</button>
+          <button type="button" class="topbar-icon" id="themeToggle" title="Toggle theme">☼</button>
+          <button type="button" class="topbar-icon" id="settingsNavBtn" title="Settings">⚙</button>
+        </div>
+      </div>
+      <div class="manager-top">
+        <div class="manager-brand"><div class="manager-mark">AB</div><div><h1>Video Link Manager</h1><p class="manager-subtitle">Organize folders, save episode URLs and publish player links.</p></div></div>
+        <button class="publish-action" id="logoutManager" type="button" style="width:auto;margin:0">Logout</button>
+      </div>
+      <section class="abyss-welcome">
+        <div><div class="eyebrow">OVERVIEW</div><h2>Your video workspace</h2><p>Organize folders, manage direct links and publish your player URLs.</p></div>
+        <button class="publish-action" type="button" id="welcomeAddVideo">＋ Add video link</button>
+      </section>
+      <div class="manager-stats">
+        <div class="manager-stat"><small>Total saved links</small><strong id="totalVideoCount">0</strong></div>
+        <div class="manager-stat"><small>Folders</small><strong id="totalFolderCount">0</strong></div>
+        <div class="manager-stat"><small>Current view</small><strong id="currentViewCount">0</strong></div>
+      </div>
+      <div class="manager-form">
+        <div class="field wide"><label>Folder management</label><button class="publish-action" id="openCreateFolderBtn" type="button" style="width:auto">＋ Create New Folder</button><span style="display:block;margin-top:7px;color:#8fa3bd;font-size:11px">Create a folder, give it a name, then open it to manage its video links.</span></div>
+        <div class="field"><label for="videoTitleInput">Video / Episode title</label><input id="videoTitleInput" placeholder="e.g. Naruto Shippuden Episode 363"></div>
+        <div class="field"><label for="videoFolderSelect">Save in folder</label><select id="videoFolderSelect"><option value="root">Main folder</option></select></div>
+        <div class="field wide"><label for="videoUrlInput">Direct video URL</label><input id="videoUrlInput" type="url" placeholder="https://example.com/video.mp4"></div>
+        <div class="field wide" style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="publish-action" id="saveVideoBtn" type="button">＋ Save Video Link</button>
+          <button class="publish-action" id="cancelEditBtn" type="button" hidden style="background:#34445c">Cancel Edit</button>
+        </div>
+      </div>
+      <div id="managerStatus" style="font-size:12px;color:#9bdcff;margin:12px 0" aria-live="polite">Connecting to Firebase…</div>
+      <div id="createFolderModal" class="manager-confirm" hidden role="dialog" aria-modal="true" aria-labelledby="createFolderTitle">
+        <div class="manager-confirm-card create-folder-card">
+          <div class="confirm-icon folder-create-icon">📁</div>
+          <h2 id="createFolderTitle">Create New Folder</h2>
+          <p>Enter a name for your new folder. You can open it later and save or organize video links inside it.</p>
+          <label for="newFolderName" style="display:block;text-align:left;margin:18px 0 7px">Folder name</label>
+          <input id="newFolderName" type="text" maxlength="70" autocomplete="off" placeholder="e.g. Naruto Shippuden" style="width:100%;padding:13px;border:1px solid #34445c;border-radius:10px;background:#080e18;color:#fff">
+          <div class="confirm-actions">
+            <button type="button" id="cancelCreateFolder" class="publish-action cancel-confirm">Cancel</button>
+            <button type="button" id="createFolderBtn" class="publish-action">Create Folder</button>
+          </div>
+        </div>
+      </div>
+      <div id="renameFolderModal" class="manager-confirm" hidden role="dialog" aria-modal="true" aria-labelledby="renameFolderTitle">
+        <div class="manager-confirm-card create-folder-card">
+          <div class="confirm-icon folder-create-icon">✎</div>
+          <h2 id="renameFolderTitle">Rename Folder</h2>
+          <p>Enter a new name for this folder.</p>
+          <label for="renameFolderInput" style="display:block;text-align:left;margin:18px 0 7px">Folder name</label>
+          <input id="renameFolderInput" type="text" maxlength="70" autocomplete="off" style="width:100%;padding:13px;border:1px solid #34445c;border-radius:10px;background:#080e18;color:#fff">
+          <div class="confirm-actions">
+            <button type="button" id="cancelRenameFolder" class="publish-action cancel-confirm">Cancel</button>
+            <button type="button" id="saveRenameFolder" class="publish-action">Save Name</button>
+          </div>
+        </div>
+      </div>
+      <div id="managerConfirm" class="manager-confirm" hidden role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+        <div class="manager-confirm-card">
+          <div class="confirm-icon">!</div>
+          <h2 id="confirmTitle">Confirm action</h2>
+          <p id="confirmMessage"></p>
+          <div class="confirm-actions">
+            <button type="button" id="confirmCancel" class="publish-action cancel-confirm">Cancel</button>
+            <button type="button" id="confirmAccept" class="publish-action danger-confirm">Delete</button>
+          </div>
+        </div>
+      </div>
+      <div class="manager-breadcrumb" id="managerBreadcrumb">📁 All folders and videos</div>
+      <div class="manager-toolbar">
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="publish-action" id="showAllVideos" type="button" style="width:auto;margin:0">All Links</button>
+          <button class="publish-action" id="showRootVideos" type="button" style="width:auto;margin:0;background:#34445c">Main Folder</button>
+          <button class="publish-action" id="quickAddVideoBtn" type="button" style="width:auto;margin:0">＋ Add Video Link</button>
+        </div>
+        <input id="videoSearchInput" type="search" placeholder="Search folders or video names / URLs…">
+        <select id="statusFilter" aria-label="Filter by status"><option value="all">All statuses</option><option value="ready">Ready / Active</option></select>
+        <select id="sortFilter" aria-label="Sort items"><option value="updated">Recently updated</option><option value="name">Name A–Z</option><option value="created">Created date</option></select>
+      </div>
+      <div class="filemanager-toolbar">
+        <button class="publish-action" id="backToFoldersBtn" type="button" hidden style="width:auto">← Back to folders</button>
+        <span id="filemanagerViewLabel">Folders</span>
+      </div>
+      <div id="folderList"></div>
+      <div id="videoList"></div>
+      </div><!-- /.abyss-main -->
+    </div><!-- /#managerBox -->
+    <p class="publish-help">Only the manager interface is password-gated. Published player URLs are public and can be opened by anyone who has the link.</p>
   </div>
 </section>
 
@@ -974,82 +1323,297 @@ video.muted=false;video.volume=1;
 if(video.readyState>=1)detectAudio();
 
 </script>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
 <script>
-(function initPublishPlayer(){
-  const params = new URLSearchParams(window.location.search);
-  const videoUrl = params.get('src');
-  const publishScreen = document.getElementById('publishScreen');
-  const playerEl = document.getElementById('player');
-  const sourceEl = document.getElementById('videoSource');
-  const videoEl = document.getElementById('video');
-  const form = document.getElementById('publishForm');
-  const input = document.getElementById('videoUrlInput');
-  const result = document.getElementById('publishResult');
-  const link = document.getElementById('publishedLink');
-  const copyBtn = document.getElementById('copyPlayerLink');
+(function initFirebaseVideoManager(){
+  const authFirebaseConfig = {
+    apiKey: "AIzaSyCt0Ex7G_xpcklm6NN0P4Bc49enwvWc5dE",
+    authDomain: "vpnyt-ffb68.firebaseapp.com",
+    databaseURL: "https://vpnyt-ffb68-default-rtdb.firebaseio.com",
+    projectId: "vpnyt-ffb68",
+    storageBucket: "vpnyt-ffb68.firebasestorage.app",
+    messagingSenderId: "919770851500",
+    appId: "1:919770851500:web:54b1c43a8f9f2440d59709"
+  };
+  const MANAGER_PASSWORD = 'moin23';
+  const params = new URLSearchParams(location.search);
+  const publishScreen=document.getElementById('publishScreen');
+  const playerEl=document.getElementById('player');
+  const sourceEl=document.getElementById('videoSource');
+  const videoEl=document.getElementById('video');
+  const loginBox=document.getElementById('loginBox');
+  const managerBox=document.getElementById('managerBox');
+  const statusEl=document.getElementById('managerStatus');
+  let db, folders={}, videos={}, activeFolder='*', editingId=null, listenersStarted=false;
 
+  function status(msg){statusEl.textContent=msg}
+  function safeUrl(value){
+    try{const u=new URL(value);return ['http:','https:'].includes(u.protocol)?u.href:null}catch(e){return null}
+  }
   function showPlayer(url){
-    publishScreen.hidden = true;
-    playerEl.hidden = false;
-    document.body.style.overflow = 'hidden';
-    sourceEl.src = url;
-    videoEl.load();
+    publishScreen.hidden=true;playerEl.hidden=false;document.body.style.overflow='hidden';
+    sourceEl.src=url;videoEl.load();
   }
-
-  if (videoUrl) {
-    try {
-      const parsed = new URL(videoUrl);
-      if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('Invalid protocol');
-      showPlayer(parsed.href);
-    } catch (_) {
-      publishScreen.hidden = false;
-      playerEl.hidden = true;
-      document.body.style.overflow = 'auto';
-      input.value = videoUrl;
-      const help = document.querySelector('.publish-help');
-      if (help) help.textContent = 'The saved video URL is invalid. Please enter a valid direct video URL.';
-    }
-  } else {
-    publishScreen.hidden = false;
-    playerEl.hidden = true;
-    document.body.style.overflow = 'auto';
+  function publicLink(id){
+    const u=new URL(location.href);u.search='';u.hash='';u.searchParams.set('id',id);return u.href;
   }
+  function escapeHtml(v){return String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+  function askConfirm(title,message,actionLabel='Delete'){
+    return new Promise(resolve=>{
+      const modal=document.getElementById('managerConfirm');
+      document.getElementById('confirmTitle').textContent=title;
+      document.getElementById('confirmMessage').textContent=message;
+      document.getElementById('confirmAccept').textContent=actionLabel;
+      modal.hidden=false;
+      const finish=value=>{modal.hidden=true;document.getElementById('confirmAccept').removeEventListener('click',yes);document.getElementById('confirmCancel').removeEventListener('click',no);modal.removeEventListener('click',outside);document.removeEventListener('keydown',esc);resolve(value)};
+      const yes=()=>finish(true),no=()=>finish(false),outside=e=>{if(e.target===modal)no()},esc=e=>{if(e.key==='Escape')no()};
+      document.getElementById('confirmAccept').addEventListener('click',yes);
+      document.getElementById('confirmCancel').addEventListener('click',no);
+      modal.addEventListener('click',outside);
+      document.addEventListener('keydown',esc);
+    });
+  }
+  function formatDate(ts){
+    if(!ts)return '—';
+    try{return new Date(ts).toLocaleString()}catch(_){return '—'}
+  }
+  function render(){
+    const folderSelect=document.getElementById('videoFolderSelect');
+    const selected=activeFolder!=='*'?activeFolder:(folderSelect.value||'root');
+    folderSelect.innerHTML='<option value="root">Main folder</option>'+Object.entries(folders).map(([id,f])=>`<option value="${id}">${escapeHtml(f.name)}</option>`).join('');
+    folderSelect.value=(selected==='root'||folders[selected])?selected:'root';
 
-  form.addEventListener('submit', function(event){
-    event.preventDefault();
-    const raw = input.value.trim();
-    let parsed;
-    try { parsed = new URL(raw); } catch (_) {}
-    if (!parsed || !['http:', 'https:'].includes(parsed.protocol)) {
-      alert('Please enter a complete video URL beginning with https:// or http://');
-      input.focus();
-      return;
+    const isRootView=activeFolder==='*';
+    const folderList=document.getElementById('folderList');
+    const videoList=document.getElementById('videoList');
+    const backBtn=document.getElementById('backToFoldersBtn');
+    const viewLabel=document.getElementById('filemanagerViewLabel');
+    folderList.hidden=!isRootView;
+    videoList.hidden=isRootView;
+    backBtn.hidden=isRootView;
+
+    const search=(document.getElementById('videoSearchInput')?.value||'').trim().toLowerCase();
+    const folderRows=Object.entries(folders)
+      .filter(([id,f])=>!search||String(f.name||'').toLowerCase().includes(search))
+      .sort((a,b)=>String(a[1].name||'').localeCompare(String(b[1].name||'')));
+    const mainCount=Object.values(videos).filter(v=>!v.folderId).length;
+    viewLabel.textContent=isRootView?'Folders and Main Folder':(activeFolder==='all'?'All Video Links':`Folder: ${activeFolder==='root'?'Main Folder':(folders[activeFolder]?.name||'Unknown Folder')}`);
+
+    if(isRootView){
+      folderList.innerHTML=`<table class="fm-table"><thead><tr><th style="width:38px">Select</th><th>Name</th><th>Videos</th><th>Created</th><th>Updated</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+        <tr><td><input type="checkbox" class="fm-row-check" aria-label="Select Main Folder" disabled></td><td><div class="fm-name"><span class="fm-folder-icon">⌂</span><button class="fm-open-folder" data-open-folder="root"><strong>Main Folder</strong></button></div></td><td>${mainCount} links</td><td>Default</td><td>—</td><td><span class="fm-status">ACTIVE</span></td><td><div class="fm-actions"><button class="fm-icon-btn" data-open-folder="root" title="Open Main Folder">↗</button></div></td></tr>
+        ${folderRows.map(([id,f])=>{
+          const count=Object.values(videos).filter(v=>v.folderId===id).length;
+          return `<tr><td><input type="checkbox" class="fm-row-check" data-folder-check="${id}" aria-label="Select folder"></td><td><div class="fm-name"><span class="fm-folder-icon">▰</span><button class="fm-open-folder" data-open-folder="${id}" title="Open folder"><strong>${escapeHtml(f.name)}</strong></button></div></td><td>${count} links</td><td>${formatDate(f.createdAt)}</td><td>${formatDate(f.updatedAt||f.createdAt)}</td><td><span class="fm-status">ACTIVE</span></td><td><div class="fm-actions"><button class="fm-icon-btn" data-open-folder="${id}" title="Open folder">📂</button><button class="fm-icon-btn" data-rename-folder="${id}" title="Rename folder">✎</button><button class="fm-icon-btn danger" data-delete-folder="${id}" title="Delete folder">▤</button></div></td></tr>`;
+        }).join('')}
+      </tbody></table>`;
+      if(!folderRows.length&&!mainCount)folderList.innerHTML+='<div class="fm-empty">No folders yet. Click “Create New Folder” to get started.</div>';
+    } else {
+      const entries=Object.entries(videos)
+        .filter(([id,v])=>activeFolder==='all'?true:(activeFolder==='root'?!v.folderId:v.folderId===activeFolder))
+        .filter(([id,v])=>!search||String(v.title||'').toLowerCase().includes(search)||String(v.url||'').toLowerCase().includes(search))
+        .sort((a,b)=>(b[1].updatedAt||b[1].createdAt||0)-(a[1].updatedAt||a[1].createdAt||0));
+      document.getElementById('managerBreadcrumb').textContent=`📁 Folders  /  ${activeFolder==='root'?'Main Folder':(folders[activeFolder]?.name||'Folder')}  /  ${entries.length} video links`;
+      videoList.innerHTML=entries.length?`<table class="fm-table"><thead><tr><th style="width:38px">Select</th><th>Video Name</th><th>Video URL</th><th>Download Link</th><th>Created</th><th>Updated</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+        ${entries.map(([id,v],i)=>`<tr>
+          <td><input type="checkbox" class="fm-row-check" data-video-check="${id}" aria-label="Select video"></td>
+          <td><div class="fm-name"><span class="fm-folder-icon">▣</span><strong>${escapeHtml(v.title||'Untitled video')}</strong></div></td>
+          <td><a class="fm-link" href="${escapeHtml(v.url)}" target="_blank" rel="noopener" title="${escapeHtml(v.url)}">${escapeHtml(v.url)}</a></td>
+          <td><a class="fm-download-btn" href="${escapeHtml(v.url)}" download target="_blank" rel="noopener" title="Open direct video URL">⬇ Download</a></td>
+          <td class="fm-muted">${formatDate(v.createdAt)}</td>
+          <td class="fm-muted">${formatDate(v.updatedAt||v.createdAt)}</td>
+          <td><span class="fm-status">READY</span></td>
+          <td><div class="fm-actions">
+            <button class="fm-icon-btn" data-play-video="${id}" title="Open player">▶</button>
+            <button class="fm-icon-btn" data-copy-link="${id}" title="Copy player link">⧉</button>
+            <button class="fm-icon-btn" data-copy-download="${id}" title="Copy download URL">⬇</button>
+            <button class="fm-icon-btn" data-edit-video="${id}" title="Edit video">✎</button>
+            <select data-move-video="${id}" aria-label="Move video folder" style="max-width:110px;padding:5px;background:#101b29;color:#dce7f5;border:1px solid #35465d;border-radius:6px"><option value="root" ${!v.folderId?'selected':''}>Main</option>${Object.entries(folders).map(([fid,f])=>`<option value="${fid}" ${v.folderId===fid?'selected':''}>${escapeHtml(f.name)}</option>`).join('')}</select>
+            <button class="fm-icon-btn danger" data-delete-video="${id}" title="Delete video link">▤</button>
+          </div></td>
+        </tr>`).join('')}
+      </tbody></table>`:'<div class="fm-empty">📂<br><br>This folder is empty.<br>Add a video title and direct URL using the form above.</div>';
+      document.getElementById('currentViewCount').textContent=entries.length;
     }
-
-    // Keep this same hosted player page and place the video URL in the src query.
-    const shareUrl = new URL(window.location.href);
-    shareUrl.search = '';
-    shareUrl.hash = '';
-    shareUrl.searchParams.set('src', parsed.href);
-
-    link.href = shareUrl.toString();
-    link.textContent = shareUrl.toString();
-    result.hidden = false;
-    result.scrollIntoView({behavior:'smooth', block:'nearest'});
+    document.getElementById('totalVideoCount').textContent=Object.keys(videos).length;
+    document.getElementById('totalFolderCount').textContent=Object.keys(folders).length;
+    if(isRootView)document.getElementById('currentViewCount').textContent=folderRows.length+(mainCount?1:0);
+  }
+  window.ABManagerShowAllVideos=()=>{activeFolder='all';render()};
+  window.ABManagerShowFolders=()=>{activeFolder='*';render()};
+  function watchData(){
+    if(listenersStarted)return;listenersStarted=true;
+    db.ref('videoPlayerManager/folders').on('value',s=>{folders=s.val()||{};render()},e=>status('Folder read error: '+e.message));
+    db.ref('videoPlayerManager/videos').on('value',s=>{videos=s.val()||{};render()},e=>status('Video read error: '+e.message));
+  }
+  try{
+    if(!firebase.apps.length)firebase.initializeApp(authFirebaseConfig);
+    db=firebase.database();
+  }catch(e){
+    publishScreen.hidden=false;playerEl.hidden=true;
+    document.querySelector('.publish-help').textContent='Firebase could not initialize. Check the Firebase project configuration.';
+    return;
+  }
+  const publicId=params.get('id');
+  if(publicId){
+    publishScreen.hidden=true;playerEl.hidden=true;
+    db.ref('videoPlayerManager/videos/'+publicId).once('value').then(s=>{
+      const v=s.val(),url=v&&safeUrl(v.url);
+      if(url)showPlayer(url);
+      else{publishScreen.hidden=false;document.body.style.overflow='auto';document.querySelector('.publish-card').innerHTML='<h1>Video unavailable</h1><p>This published video link does not exist or its URL is invalid.</p>'}
+    }).catch(()=>{publishScreen.hidden=false;document.body.style.overflow='auto';status('Could not load the published video. Check database read rules.')});
+    return;
+  }
+  playerEl.hidden=true;publishScreen.hidden=false;document.body.style.overflow='auto';
+  document.getElementById('managerLoginForm').addEventListener('submit',e=>{
+    e.preventDefault();
+    if(document.getElementById('managerPassword').value!==MANAGER_PASSWORD){status('Incorrect password. Please try again.');document.getElementById('managerPassword').select();return}
+    loginBox.hidden=true;managerBox.hidden=false;watchData();status('Connecting to Firebase Realtime Database…');
   });
-
-  copyBtn.addEventListener('click', async function(){
-    const playerLink = link.href;
-    if (!playerLink || playerLink === '#') return;
-    try {
-      await navigator.clipboard.writeText(playerLink);
-      copyBtn.textContent = 'Copied!';
-      setTimeout(() => copyBtn.textContent = 'Copy Player Link', 1600);
-    } catch (_) {
-      window.prompt('Copy your player link:', playerLink);
+  document.getElementById('logoutManager').addEventListener('click',()=>{managerBox.hidden=true;loginBox.hidden=false;document.getElementById('managerPassword').value=''});
+  const createFolderModal=document.getElementById('createFolderModal');
+  const folderNameInput=document.getElementById('newFolderName');
+  function closeCreateFolder(){createFolderModal.hidden=true;folderNameInput.value=''}
+  document.getElementById('openCreateFolderBtn').addEventListener('click',()=>{
+    createFolderModal.hidden=false;setTimeout(()=>folderNameInput.focus(),30);
+  });
+  document.getElementById('cancelCreateFolder').addEventListener('click',closeCreateFolder);
+  createFolderModal.addEventListener('click',e=>{if(e.target===createFolderModal)closeCreateFolder()});
+  folderNameInput.addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('createFolderBtn').click();if(e.key==='Escape')closeCreateFolder()});
+  document.getElementById('createFolderBtn').addEventListener('click',async()=>{
+    const name=folderNameInput.value.trim();
+    if(!name){folderNameInput.focus();return status('Please enter a folder name.')}
+    if(Object.values(folders).some(f=>String(f.name||'').trim().toLowerCase()===name.toLowerCase())){folderNameInput.focus();return status('A folder with this name already exists.')}
+    const btn=document.getElementById('createFolderBtn');btn.disabled=true;btn.textContent='Creating…';
+    try{
+      const ref=await db.ref('videoPlayerManager/folders').push({name,createdAt:Date.now()});
+      activeFolder=ref.key;closeCreateFolder();status(`Folder “${name}” created. Open folder and add video links.`);
+      render();
+    }catch(e){status('Folder create failed: '+e.message)}
+    finally{btn.disabled=false;btn.textContent='Create Folder'}
+  });
+  document.getElementById('saveVideoBtn').addEventListener('click',async()=>{
+    const title=document.getElementById('videoTitleInput').value.trim(),url=safeUrl(document.getElementById('videoUrlInput').value.trim());
+    if(!url)return status('Enter a valid http/https video URL.');
+    const record={title:title||'Untitled video',url,folderId:document.getElementById('videoFolderSelect').value==='root'?'':document.getElementById('videoFolderSelect').value,updatedAt:Date.now()};
+    try{
+      if(editingId){await db.ref('videoPlayerManager/videos/'+editingId).update(record);editingId=null;document.getElementById('saveVideoBtn').textContent='Save Video Link'}
+      else{record.createdAt=Date.now();await db.ref('videoPlayerManager/videos').push(record)}
+      document.getElementById('videoTitleInput').value='';document.getElementById('videoUrlInput').value='';document.getElementById('videoFolderSelect').value='root';document.getElementById('cancelEditBtn').hidden=true;status('Video link saved to Firebase.');
+    }catch(e){status('Save failed: '+e.message)}
+  });
+  document.getElementById('showAllVideos').onclick=()=>{activeFolder='*';render()};
+  document.getElementById('showRootVideos').onclick=()=>{activeFolder='root';render()};
+  document.getElementById('backToFoldersBtn').onclick=()=>{activeFolder='*';render()};
+  document.getElementById('videoSearchInput').addEventListener('input',render);
+  document.getElementById('cancelEditBtn').addEventListener('click',()=>{
+    editingId=null;document.getElementById('videoTitleInput').value='';document.getElementById('videoUrlInput').value='';
+    document.getElementById('videoFolderSelect').value='root';document.getElementById('saveVideoBtn').textContent='＋ Save Video Link';
+    document.getElementById('cancelEditBtn').hidden=true;status('Edit cancelled.');
+  });
+  let renamingFolderId=null;
+  const renameModal=document.getElementById('renameFolderModal');
+  document.getElementById('folderList').addEventListener('click',async e=>{
+    const open=e.target.closest('[data-open-folder]'),del=e.target.closest('[data-delete-folder]'),rename=e.target.closest('[data-rename-folder]');
+    if(open){activeFolder=open.dataset.openFolder;render()}
+    if(rename){
+      renamingFolderId=rename.dataset.renameFolder;
+      document.getElementById('renameFolderInput').value=folders[renamingFolderId]?.name||'';
+      renameModal.hidden=false;document.getElementById('renameFolderInput').focus();
     }
+    if(del){
+      const id=del.dataset.deleteFolder,folder=folders[id];if(!folder)return;
+      const count=Object.values(videos).filter(v=>v.folderId===id).length;
+      const ok=await askConfirm('Delete folder?',`Delete “${folder.name}”? It contains ${count} video link(s). The folder will be removed, but its video links will be moved to Main Folder and will not be deleted.`);
+      if(!ok)return;
+      const updates={};Object.entries(videos).forEach(([vid,v])=>{if(v.folderId===id)updates['videoPlayerManager/videos/'+vid+'/folderId']=''});
+      updates['videoPlayerManager/folders/'+id]=null;
+      try{await db.ref().update(updates);activeFolder='*';status(`Folder “${folder.name}” deleted. ${count} video link(s) moved to Main Folder.`)}catch(err){status('Delete failed: '+err.message)}
+    }
+  });
+  document.getElementById('cancelRenameFolder').onclick=()=>{renameModal.hidden=true;renamingFolderId=null};
+  renameModal.addEventListener('click',e=>{if(e.target===renameModal)document.getElementById('cancelRenameFolder').click()});
+  document.getElementById('saveRenameFolder').onclick=async()=>{
+    const name=document.getElementById('renameFolderInput').value.trim();
+    if(!name||!renamingFolderId)return status('Enter a folder name.');
+    if(Object.entries(folders).some(([id,f])=>id!==renamingFolderId&&String(f.name||'').toLowerCase()===name.toLowerCase()))return status('A folder with this name already exists.');
+    try{await db.ref('videoPlayerManager/folders/'+renamingFolderId).update({name,updatedAt:Date.now()});renameModal.hidden=true;renamingFolderId=null;status('Folder renamed successfully.')}catch(err){status('Rename failed: '+err.message)}
+  };
+  document.getElementById('videoList').addEventListener('click',async e=>{
+    const copy=e.target.closest('[data-copy-link]'),copyDownload=e.target.closest('[data-copy-download]'),play=e.target.closest('[data-play-video]'),edit=e.target.closest('[data-edit-video]'),del=e.target.closest('[data-delete-video]');
+    if(copy){const url=publicLink(copy.dataset.copyLink);try{await navigator.clipboard.writeText(url);status('Public player link copied.')}catch(_){prompt('Copy published URL:',url)}}
+    if(copyDownload){const url=videos[copyDownload.dataset.copyDownload]?.url;if(url)try{await navigator.clipboard.writeText(url);status('Direct download URL copied.')}catch(_){prompt('Copy download URL:',url)}}
+    if(play){const url=publicLink(play.dataset.playVideo);window.open(url,'_blank','noopener')}
+    if(edit){const id=edit.dataset.editVideo,v=videos[id];if(!v)return;editingId=id;document.getElementById('videoTitleInput').value=v.title||'';document.getElementById('videoUrlInput').value=v.url||'';document.getElementById('videoFolderSelect').value=v.folderId||'root';document.getElementById('saveVideoBtn').textContent='Update Video Link';document.getElementById('cancelEditBtn').hidden=false;document.getElementById('videoTitleInput').focus();status('Editing '+(v.title||'video'))}
+    if(del){const id=del.dataset.deleteVideo,v=videos[id];if(!v)return;
+      if(await askConfirm('Delete video link?',`Permanently delete “${v.title||'Untitled video'}”? This removes its saved URL and public player link from Firebase.`, 'Delete link'))
+        try{await db.ref('videoPlayerManager/videos/'+id).remove();status('Video link deleted.')}catch(err){status('Delete failed: '+err.message)}
+    }
+  });
+  document.getElementById('videoList').addEventListener('change',async e=>{
+    const sel=e.target.closest('[data-move-video]');if(!sel)return;
+    try{await db.ref('videoPlayerManager/videos/'+sel.dataset.moveVideo+'/folderId').set(sel.value==='root'?'':sel.value);status('Video moved.')}catch(err){status('Move failed: '+err.message)}
   });
 })();
 </script>
+
+<script>
+/* Abyss dashboard navigation and convenience controls */
+document.addEventListener('DOMContentLoaded',()=>{
+  const $=id=>document.getElementById(id);
+  const manager=$('managerBox');
+  if(!manager)return;
+  const search=$('managerGlobalSearch'),legacySearch=$('videoSearchInput');
+  if(search&&legacySearch){
+    search.addEventListener('input',()=>{legacySearch.value=search.value;legacySearch.dispatchEvent(new Event('input'))});
+    legacySearch.addEventListener('input',()=>{if(search.value!==legacySearch.value)search.value=legacySearch.value});
+  }
+  const openFolderModal=()=>{$('openCreateFolderBtn')?.click()};
+  const addVideo=()=>{
+    const form=$('videoTitleInput');
+    if(form){form.scrollIntoView({behavior:'smooth',block:'center'});form.focus()}
+  };
+  $('topCreateBtn')?.addEventListener('click',openFolderModal);
+  $('welcomeAddVideo')?.addEventListener('click',addVideo);
+  $('quickAddVideoBtn')?.addEventListener('click',addVideo);
+  $('sidebarLogout')?.addEventListener('click',()=>$('logoutManager')?.click());
+  $('mobileMenuBtn')?.addEventListener('click',()=>document.body.classList.toggle('sidebar-open'));
+  $('themeToggle')?.addEventListener('click',()=>{
+    document.body.classList.toggle('abyss-light');
+    $('themeToggle').textContent=document.body.classList.contains('abyss-light')?'☾':'☼';
+  });
+  $('settingsNavBtn')?.addEventListener('click',()=>{$('managerPassword')?.focus();$('managerStatus').textContent='Settings: theme and workspace preferences are available in the top bar.'});
+  manager.querySelectorAll('[data-nav]').forEach(btn=>btn.addEventListener('click',()=>{
+    manager.querySelectorAll('[data-nav]').forEach(b=>b.classList.toggle('active',b===btn));
+    const page=btn.dataset.nav;
+    const heading=page==='all-videos'?'All Videos':page==='downloads'?'Download Links':page==='new-folder'?'New Folder':page.charAt(0).toUpperCase()+page.slice(1);
+    $('topbarHeading').textContent=heading;
+    document.body.classList.remove('sidebar-open');
+    if(page==='new-folder'){openFolderModal();return}
+    if(page==='manager'||page==='dashboard'){ $('showAllVideos')?.click();$('folderList')?.scrollIntoView({behavior:'smooth',block:'start'}); }
+    else if(page==='all-videos'||page==='downloads'){ window.ABManagerShowAllVideos?.();$('managerBreadcrumb').textContent=page==='downloads'?'Download links · Open or copy the original direct URL':'All saved video links';$('videoSearchInput').value='';$('videoSearchInput').dispatchEvent(new Event('input')); }
+    else if(page==='player'){ $('managerStatus').textContent='Public player is preserved. Open a video with its Play action to launch the player.'; }
+    else if(page==='remote'){ $('managerStatus').textContent='Remote links: add any valid direct HTTP/HTTPS video URL using the Add Video Link form.';addVideo(); }
+    else if(page==='analytics'){ $('managerStatus').textContent='Live library totals are shown in the overview cards above.';$('totalVideoCount').scrollIntoView({behavior:'smooth',block:'center'}); }
+    else if(page==='settings'){ $('managerStatus').textContent='Use the theme button in the top navigation to switch dark and light appearance.'; }
+  }));
+  $('statusFilter')?.addEventListener('change',()=>{ $('managerStatus').textContent='Status filter: showing '+$('statusFilter').selectedOptions[0].text+'.'; });
+  $('sortFilter')?.addEventListener('change',()=>{
+    const sort=$('sortFilter').value;
+    const table=$('folderList').querySelector('tbody')||$('videoList').querySelector('tbody');
+    if(!table)return;
+    const rows=[...table.rows];
+    const cellIndex=sort==='name'?1:sort==='created'?3:sort==='updated'?4:1;
+    rows.sort((a,b)=>{
+      const av=a.cells[cellIndex]?.textContent.trim()||'',bv=b.cells[cellIndex]?.textContent.trim()||'';
+      return sort==='name'?av.localeCompare(bv):bv.localeCompare(av);
+    });
+    rows.forEach(r=>table.appendChild(r));
+  });
+});
+</script>
+
 </body>
 </html>
