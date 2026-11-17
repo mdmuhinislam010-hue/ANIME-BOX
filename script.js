@@ -2061,3 +2061,42 @@ document.addEventListener('DOMContentLoaded',abInitNotifications);
     card.style.setProperty('--rx','0deg'); card.style.setProperty('--ry','0deg');
   },{passive:true});
 })();
+
+
+/* AnimeBox progressive blur-up image enhancement.
+   Delegated events + MutationObserver cover both initial and dynamically
+   rendered Supabase cards without changing data fetching or routing. */
+(function abProgressiveBlurUp(){
+  if(window.__abProgressiveBlurUp) return;
+  window.__abProgressiveBlurUp=true;
+  const finish=(img,failed=false)=>{
+    if(!(img instanceof HTMLImageElement)) return;
+    img.classList.remove('ab-img-blur-loading');
+    img.classList.add('ab-img-blur-ready');
+    if(failed) img.classList.remove('ab-img-loading');
+  };
+  const prepare=(img)=>{
+    if(!(img instanceof HTMLImageElement) || img.dataset.abBlurPrepared==='1') return;
+    img.dataset.abBlurPrepared='1';
+    if(img.complete){ finish(img, !img.naturalWidth); return; }
+    img.classList.add('ab-img-blur-loading');
+  };
+  const scan=(root)=>{
+    if(!root) return;
+    if(root instanceof HTMLImageElement) prepare(root);
+    if(root.querySelectorAll) root.querySelectorAll('img').forEach(prepare);
+  };
+  document.addEventListener('load',e=>finish(e.target),true);
+  document.addEventListener('error',e=>finish(e.target,true),true);
+  const start=()=>{
+    scan(document);
+    if('MutationObserver' in window){
+      const observer=new MutationObserver(records=>records.forEach(record=>record.addedNodes.forEach(node=>{
+        if(node.nodeType===1) scan(node);
+      })));
+      observer.observe(document.documentElement,{childList:true,subtree:true});
+    }
+  };
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',start,{once:true});
+  else start();
+})();

@@ -811,3 +811,22 @@ html[data-theme="light"] .ab-card-views{color:#fff;background:rgba(14,20,32,.78)
   .ab-card-views{font-size:8px;min-height:13px;padding:2px 3px;border-radius:2px;gap:2px}
   .ab-views-icon{width:9px;height:9px;stroke-width:2.4}
 }
+
+
+/* Video-inspired progressive blur-up: keep existing skeleton shimmer, then
+   smoothly sharpen each poster/hero image when its own file has loaded. */
+img.ab-img-blur-loading{
+  filter:blur(12px);
+  transform:scale(1.025);
+  opacity:.72;
+  transition:filter .42s ease,transform .42s ease,opacity .42s ease;
+  will-change:filter,transform;
+}
+img.ab-img-blur-ready{
+  filter:blur(0);
+  transform:scale(1);
+  opacity:1;
+}
+@media(prefers-reduced-motion:reduce){
+  img.ab-img-blur-loading,img.ab-img-blur-ready{transition:none;filter:none;transform:none;}
+}
