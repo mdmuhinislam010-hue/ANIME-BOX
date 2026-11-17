@@ -1686,7 +1686,7 @@ let passwordResetEmail = '';
 function renderPasswordResetPage(email=''){
   const content=document.getElementById('pageContent'); if(!content)return;
   passwordResetEmail=String(email||'').trim();
-  content.innerHTML=`<section class="auth-page"><div class="auth-card"><div class="auth-brand-mark auth-brand-left">AB <span>ACCOUNT RECOVERY</span></div><h1 class="auth-title">Forgot Password?</h1><p class="auth-subtitle">তোমার AnimeBox অ্যাকাউন্টের ইমেইল দাও। Supabase থেকে password reset link পাঠানো হবে।</p><form id="abResetEmailForm" class="auth-form"><input id="abResetEmail" type="email" autocomplete="email" placeholder="Registered Email Address" value="${safeText(passwordResetEmail)}" required><div id="abResetMessage" class="auth-status info" hidden></div><button class="auth-primary-btn" id="abResetSend" type="submit">SEND RESET LINK</button></form><button class="auth-secondary-btn" id="abResetBack">Back to Login</button><p class="auth-terms">AB • AnimeBox Account Security</p></div></section>`;
+  content.innerHTML=`<section class="auth-page"><div class="auth-card"><div class="auth-brand-mark auth-brand-left">AB <span>ACCOUNT RECOVERY</span></div><h1 class="auth-title">Forgot Password?</h1><p class="auth-subtitle">তোমার AB Play অ্যাকাউন্টের ইমেইল দাও। Supabase থেকে password reset link পাঠানো হবে।</p><form id="abResetEmailForm" class="auth-form"><input id="abResetEmail" type="email" autocomplete="email" placeholder="Registered Email Address" value="${safeText(passwordResetEmail)}" required><div id="abResetMessage" class="auth-status info" hidden></div><button class="auth-primary-btn" id="abResetSend" type="submit">SEND RESET LINK</button></form><button class="auth-secondary-btn" id="abResetBack">Back to Login</button><p class="auth-terms">AB Play • Account Security</p></div></section>`;
   const show=(msg,kind='info')=>{const el=document.getElementById('abResetMessage');if(el){el.textContent=msg;el.className='auth-status '+kind;el.hidden=!msg;}};
   document.getElementById('abResetBack')?.addEventListener('click',()=>{authViewMode='login';renderProfilePage();});
   document.getElementById('abResetEmailForm')?.addEventListener('submit',async e=>{e.preventDefault();passwordResetEmail=document.getElementById('abResetEmail').value.trim();const btn=document.getElementById('abResetSend');btn.disabled=true;btn.textContent='SENDING…';try{await animeBoxAuth.sendPasswordResetEmail(passwordResetEmail,location.origin+'/');show('ইমেইলটি যদি নিবন্ধিত থাকে, reset link পাঠানো হয়েছে। Inbox/Spam দেখো। লিংকে ক্লিক করে নতুন password সেট করো।','success');}catch(err){show(authErrorText(err),'error');}finally{btn.disabled=false;btn.textContent='SEND RESET LINK';}});
@@ -1703,7 +1703,7 @@ function renderProfilePage(){
   showHomeSections(false);
   const user = animeBoxAuth.currentUser;
   if(user){
-    const display = user.displayName || (user.email ? user.email.split('@')[0] : 'AnimeBox User');
+    const display = user.displayName || (user.email ? user.email.split('@')[0] : 'AB Play User');
     const initial = display.trim().charAt(0).toUpperCase() || 'U';
     let savedPhoto = user.photoURL || '';
     try { savedPhoto = localStorage.getItem('ab_profile_photo_' + (user.uid || 'user')) || savedPhoto; } catch(e) {}
@@ -1720,8 +1720,8 @@ function renderProfilePage(){
         <button class="ab-profile-link ab-coin" type="button"><span class="ab-link-icon">🪙</span><span><b>Your Coin Balance</b><small>Rewards will be available later</small></span><strong>0</strong><i>›</i></button>
         <button class="ab-profile-link ab-support" type="button"><span class="ab-link-icon">➤</span><span><b>Team Support</b><small>Having issues? Contact us here</small></span><i>›</i></button>
         <div class="ab-profile-info"><h3>♙ &nbsp; MY ACCOUNT CREDENTIALS</h3><div><span>Profile Name</span><b>${safeText(display)}</b></div><div><span>Registered Email</span><b>${safeText(user.email || '—')}</b></div><div><span>Account Password</span><b>••••••••</b></div><div><span>Member Since</span><b>${user.metadata && user.metadata.creationTime ? new Date(user.metadata.creationTime).toLocaleDateString() : '—'}</b></div></div>
-        <div class="ab-profile-info"><h3>♢ &nbsp; SECURITY INFORMATION</h3><div><span>Account Status</span><b class="ab-blue-text">${user.emailVerified ? 'Verified' : 'Active'}</b></div><div><span>Platform</span><b>AnimeBox</b></div><div class="ab-security-grid"><div class="ab-security-item"><span>Device</span><b id="abSecDevice">Detecting…</b></div><div class="ab-security-item"><span>OS</span><b id="abSecOS">Detecting…</b></div><div class="ab-security-item"><span>Browser</span><b id="abSecBrowser">Detecting…</b></div><div class="ab-security-item"><span>Virtual IP / Public IP</span><b id="abSecIP">Not checked</b></div><div class="ab-security-item"><span>Privacy Law</span><b>Privacy policy applies; GDPR depends on eligibility</b></div><div class="ab-security-item"><span>Encryption Standard</span><b id="abSecEncryption">Connection status checking…</b></div></div></div>
-        <div id="authStatusMessage" class="auth-status ${authStatusKind}" ${authStatusMessage?'':'hidden'}>${safeText(authStatusMessage)}</div><button class="auth-secondary-btn" id="authHomeBtn" type="button">Home-এ ফিরে যাও</button><div id="abAdminProfileButtons"></div><p class="auth-terms">AB • AnimeBox Account</p>
+        <div class="ab-profile-info"><h3>♢ &nbsp; SECURITY INFORMATION</h3><div><span>Account Status</span><b class="ab-blue-text">${user.emailVerified ? 'Verified' : 'Active'}</b></div><div><span>Platform</span><b>AB Play</b></div><div class="ab-security-grid"><div class="ab-security-item"><span>Device</span><b id="abSecDevice">Detecting…</b></div><div class="ab-security-item"><span>OS</span><b id="abSecOS">Detecting…</b></div><div class="ab-security-item"><span>Browser</span><b id="abSecBrowser">Detecting…</b></div><div class="ab-security-item"><span>Virtual IP / Public IP</span><b id="abSecIP">Not checked</b></div><div class="ab-security-item"><span>Privacy Law</span><b>Privacy policy applies; GDPR depends on eligibility</b></div><div class="ab-security-item"><span>Encryption Standard</span><b id="abSecEncryption">Connection status checking…</b></div></div></div>
+        <div id="authStatusMessage" class="auth-status ${authStatusKind}" ${authStatusMessage?'':'hidden'}>${safeText(authStatusMessage)}</div><button class="auth-secondary-btn" id="authHomeBtn" type="button">Home-এ ফিরে যাও</button><div id="abAdminProfileButtons"></div><p class="auth-terms">AB Play • Account</p>
       </div></section>`;
     // Populate device/browser information from this browser; never claim encryption not verified.
     try {
@@ -1754,7 +1754,7 @@ function renderProfilePage(){
     loadAdminProfileButtons();
     document.getElementById('abPhotoEdit')?.addEventListener('click',()=>document.getElementById('abPhotoInput')?.click());
     document.getElementById('abNameEdit')?.addEventListener('click',async()=>{
-      const currentName=user.displayName || (user.email ? user.email.split('@')[0] : 'AnimeBox User');
+      const currentName=user.displayName || (user.email ? user.email.split('@')[0] : 'AB Play User');
       const nextName=window.prompt('নতুন Profile Name লিখো:',currentName);
       if(nextName===null) return;
       const cleanName=nextName.trim();
@@ -1800,7 +1800,7 @@ function renderProfilePage(){
         <div id="authStatusMessage" class="auth-status ${authStatusKind}" ${authStatusMessage?'':'hidden'}>${safeText(authStatusMessage)}</div>
         <button class="auth-primary-btn" id="authSubmitBtn" type="submit">${signup?'REGISTER PROFILE':'SIGN IN'}</button>
       </form>
-      <p class="auth-terms">AB • AnimeBox Account</p><p class="auth-switch-line">${signup?'Registered user?':'New to AB?'} <button type="button" id="authSwitchLink">${signup?'Sign In Here':'Create an Account'}</button></p>
+      <p class="auth-terms">AB Play • Account</p><p class="auth-switch-line">${signup?'Registered user?':'New to AB?'} <button type="button" id="authSwitchLink">${signup?'Sign In Here':'Create an Account'}</button></p>
     </div></section>`;
   document.getElementById('authLoginTab')?.addEventListener('click',()=>{authViewMode='login';authStatusMessage='';renderProfilePage();});
   document.getElementById('authSignupTab')?.addEventListener('click',()=>{authViewMode='signup';authStatusMessage='';renderProfilePage();});
@@ -1842,7 +1842,7 @@ function syncLiveUserProfile(user){
   // Do not overwrite a custom profile photo with an empty Supabase Auth photoURL.
   ref.once('value').then(snap=>{
     const existing=snap.val()||{};
-    const profile={uid:user.uid,name:user.displayName||(user.email?user.email.split('@')[0]:'AnimeBox User'),email:user.email||'',photo:user.photoURL||existing.photo||existing.photoURL||existing.avatar||'',online:true,lastSeen:Date.now(),createdAt:(existing.createdAt||(user.metadata&&user.metadata.creationTime)||'')};
+    const profile={uid:user.uid,name:user.displayName||(user.email?user.email.split('@')[0]:'AB Play User'),email:user.email||'',photo:user.photoURL||existing.photo||existing.photoURL||existing.avatar||'',online:true,lastSeen:Date.now(),createdAt:(existing.createdAt||(user.metadata&&user.metadata.creationTime)||'')};
     return ref.update(profile);
   }).catch(err=>console.warn('Live user profile sync failed:',err.message));
 }
@@ -1996,7 +1996,7 @@ function abSaveReadIds(set){try{localStorage.setItem(AB_NOTIFICATION_READ_KEY,JS
 function abNotificationLink(item){const raw=String(item.link||'/home');if(/^https?:\/\//i.test(raw))return raw;return raw.startsWith('/')?raw:'/home';}
 function abEnsureNotificationUI(){
   if(document.getElementById('abNotificationOverlay'))return;
-  const overlay=document.createElement('div');overlay.id='abNotificationOverlay';overlay.className='ab-notification-overlay';overlay.innerHTML=`<section class="ab-notification-panel" role="dialog" aria-modal="true" aria-label="Notifications"><header class="ab-notification-head"><div><b>🔔 Notifications</b><small id="abNotificationSubtitle">Your latest AnimeBox updates</small></div><div class="ab-notification-head-actions"><button type="button" id="abNotificationReadAll">Read all</button><button type="button" id="abNotificationClose" aria-label="Close notifications">✕</button></div></header><div id="abNotificationList" class="ab-notification-list"><div class="ab-notification-empty">Loading notifications…</div></div></section>`;
+  const overlay=document.createElement('div');overlay.id='abNotificationOverlay';overlay.className='ab-notification-overlay';overlay.innerHTML=`<section class="ab-notification-panel" role="dialog" aria-modal="true" aria-label="Notifications"><header class="ab-notification-head"><div><b>🔔 Notifications</b><small id="abNotificationSubtitle">Your latest AB Play updates</small></div><div class="ab-notification-head-actions"><button type="button" id="abNotificationReadAll">Read all</button><button type="button" id="abNotificationClose" aria-label="Close notifications">✕</button></div></header><div id="abNotificationList" class="ab-notification-list"><div class="ab-notification-empty">Loading notifications…</div></div></section>`;
   document.body.appendChild(overlay);
   overlay.addEventListener('click',e=>{if(e.target===overlay)abCloseNotifications();});
   document.getElementById('abNotificationClose').addEventListener('click',abCloseNotifications);
@@ -2008,12 +2008,12 @@ function abRenderNotifications(){
   if(!count||!list)return;
   const read=abGetReadIds();const unread=abNotificationItems.filter(n=>!read.has(n.id)).length;
   count.textContent=unread>99?'99+':String(unread);count.hidden=unread===0;
-  if(subtitle)subtitle.textContent=unread?`${unread} unread · Latest AnimeBox updates`:'You are all caught up';
+  if(subtitle)subtitle.textContent=unread?`${unread} unread · Latest AB Play updates`:'You are all caught up';
   if(!abNotificationItems.length){list.innerHTML='<div class="ab-notification-empty"><span>🔔</span><b>No notifications yet</b><small>New Movie, Anime and Series updates will appear here.</small></div>';return;}
   list.innerHTML=abNotificationItems.slice(0,50).map(n=>{
     const isRead=read.has(n.id);const image=n.image?`<img src="${abNotificationEscape(n.image)}" alt="" loading="lazy" onerror="this.style.display='none'">`:'<div class="ab-notification-thumb-fallback">🔔</div>';
     const time=n.createdAt?new Date(Number(n.createdAt)).toLocaleString():'Recently';
-    return `<button type="button" class="ab-notification-item ${isRead?'is-read':'is-unread'}" data-notification-id="${abNotificationEscape(n.id)}">${image}<span class="ab-notification-copy"><b>${abNotificationEscape(n.title||'AnimeBox Update')}</b><span>${abNotificationEscape(n.message||'')}</span><small>${abNotificationEscape(n.type||'Update')} · ${abNotificationEscape(time)}</small></span>${isRead?'':'<i aria-label="Unread"></i>'}</button>`;
+    return `<button type="button" class="ab-notification-item ${isRead?'is-read':'is-unread'}" data-notification-id="${abNotificationEscape(n.id)}">${image}<span class="ab-notification-copy"><b>${abNotificationEscape(n.title||'AB Play Update')}</b><span>${abNotificationEscape(n.message||'')}</span><small>${abNotificationEscape(n.type||'Update')} · ${abNotificationEscape(time)}</small></span>${isRead?'':'<i aria-label="Unread"></i>'}</button>`;
   }).join('');
   list.querySelectorAll('[data-notification-id]').forEach(btn=>btn.addEventListener('click',()=>{
     const item=abNotificationItems.find(n=>n.id===btn.dataset.notificationId);if(!item)return;
@@ -2026,7 +2026,7 @@ function abOpenNotifications(){abEnsureNotificationUI();abRenderNotifications();
 function abCloseNotifications(){document.getElementById('abNotificationOverlay')?.classList.remove('show');document.body.classList.remove('ab-notifications-open');}
 function abShowNewNotificationToast(item){
   let toast=document.getElementById('abNotificationToast');if(!toast){toast=document.createElement('button');toast.type='button';toast.id='abNotificationToast';toast.className='ab-notification-toast';document.body.appendChild(toast);}
-  toast.innerHTML=`<span class="ab-toast-icon">🔔</span><span><b>${abNotificationEscape(item.title||'AnimeBox Update')}</b><small>${abNotificationEscape(item.message||'')}</small></span><span class="ab-toast-close">✕</span>`;
+  toast.innerHTML=`<span class="ab-toast-icon">🔔</span><span><b>${abNotificationEscape(item.title||'AB Play Update')}</b><small>${abNotificationEscape(item.message||'')}</small></span><span class="ab-toast-close">✕</span>`;
   toast.classList.add('show');toast.onclick=()=>{abOpenNotifications();toast.classList.remove('show');};
   clearTimeout(window.__abNotificationToastTimer);window.__abNotificationToastTimer=setTimeout(()=>toast.classList.remove('show'),6500);
 }
@@ -2037,7 +2037,7 @@ function abInitNotifications(){
     const raw=snap.val()||{};const incoming=Object.entries(raw).map(([id,v])=>({id,...(v||{})})).filter(n=>n.active!==false).sort((a,b)=>(Number(b.createdAt)||0)-(Number(a.createdAt)||0));
     if(!abNotificationFirstSnapshot){const newest=incoming.find(n=>!abNotificationSeenIds.has(n.id));if(newest)abShowNewNotificationToast(newest);}
     abNotificationItems=incoming;abNotificationSeenIds=new Set(incoming.map(n=>n.id));abNotificationFirstSnapshot=false;abRenderNotifications();
-  },err=>console.warn('AnimeBox notifications could not load:',err));
+  },err=>console.warn('AB Play notifications could not load:',err));
 }
 document.addEventListener('DOMContentLoaded',abInitNotifications);
 
