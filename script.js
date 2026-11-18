@@ -2050,6 +2050,19 @@ document.addEventListener('DOMContentLoaded',abInitNotifications);
 const AB_PUSH_API='https://creator-notify.ydh.workers.dev';
 const AB_PUSH_PROMPT_KEY='ab_creator_push_prompt_seen_v2';
 const AB_PUSH_READY_KEY='ab_creator_push_subscription_ready_v1';
+const AB_PUSH_DEVICE_KEY='ab_creator_push_device_id_v1';
+let abPushDeviceId='';
+function abGetPushDeviceId(){
+  try{let id=localStorage.getItem(AB_PUSH_DEVICE_KEY);if(!id){id=(crypto.randomUUID?crypto.randomUUID():('ab_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2)));localStorage.setItem(AB_PUSH_DEVICE_KEY,id);}return id;}
+  catch(_){return 'session_'+Math.random().toString(36).slice(2)+'_'+Date.now().toString(36);}
+}
+function abPushReportStatus(patch={}){
+  try{
+    abPushDeviceId=abPushDeviceId||abGetPushDeviceId();
+    const current={deviceId:abPushDeviceId,site:'AB Play',platform:/Android/i.test(navigator.userAgent)?'Android':(/iPhone|iPad|iPod/i.test(navigator.userAgent)?'iOS':'Desktop'),updatedAt:Date.now(),...patch};
+    return db.ref('pushDevices/'+abPushDeviceId).update(current).catch(e=>console.warn('Push status could not sync to Admin:',e));
+  }catch(e){console.warn('Push status report failed:',e);return Promise.resolve();}
+}
 function abPushB64(value){
   const pad='='.repeat((4-(value.length%4))%4);
   const raw=atob((value+pad).replace(/-/g,'+').replace(/_/g,'/'));
@@ -2064,23 +2077,44 @@ async function abPushApi(path,options={}){
   return data;
 }
 async function abEnsureWebPushSubscription(){
-  if(!('Notification' in window)||!('serviceWorker' in navigator)||!('PushManager' in window))throw new Error('This browser does not support Web Push.');
-  if(Notification.permission!=='granted')throw new Error('Notification permission has not been granted.');
-  const swUrl=new URL('/creator-notify-sw.js',location.origin).href;
-  const registration=await navigator.serviceWorker.register(swUrl,{scope:'/',updateViaCache:'none'});
-  const ready=await navigator.serviceWorker.ready;
-  const site=await abPushApi('/v1/sites/lookup');
-  let subscription=await ready.pushManager.getSubscription();
-  if(!subscription){
-    let vapid=site?.vapid_public_key;
-    if(!vapid){const config=await abPushApi('/v1/subscriptions/config?website_id='+encodeURIComponent(site.website_id));vapid=config?.vapid_public_key;}
-    if(!vapid)throw new Error('Push service did not return a VAPID public key.');
-    subscription=await ready.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:abPushB64(vapid)});
+  if(!('Notification' in window)||!('serviceWorker' in navigator)||!('PushManager' in window)){
+    await abPushReportStatus({permission:'unsupported',receiver:'unsupported',connection:'unsupported',error:'Web Push is not supported by this browser.'});
+    throw new Error('This browser does not support Web Push.');
   }
-  const json=subscription.toJSON();
-  await abPushApi('/v1/subscriptions',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({website_id:site.website_id,subscription:{endpoint:subscription.endpoint,expirationTime:subscription.expirationTime||null,keys:{p256dh:json.keys?.p256dh,auth:json.keys?.auth}}})});
-  try{localStorage.setItem(AB_PUSH_READY_KEY,'1');}catch(_){}
-  return true;
+  const permission=Notification.permission;
+  if(permission!=='granted'){
+    await abPushReportStatus({permission,receiver:'not_checked',connection:'not_registered',error:''});
+    throw new Error('Notification permission has not been granted.');
+  }
+  await abPushReportStatus({permission,receiver:'checking',connection:'waiting',error:''});
+  let receiverReady=false;
+  try{
+    const swUrl=new URL('/creator-notify-sw.js',location.origin).href;
+    const registration=await navigator.serviceWorker.register(swUrl,{scope:'/',updateViaCache:'none'});
+    const ready=await navigator.serviceWorker.ready;
+    const activeRegistration=registration.active?registration:ready;
+    if(!activeRegistration||!activeRegistration.active)throw new Error('Service Worker is not active yet. Reload the website and try again.');
+    receiverReady=true;
+    await abPushReportStatus({permission:'granted',receiver:'ready',connection:'connecting',error:''});
+    const site=await abPushApi('/v1/sites/lookup');
+    if(!site?.website_id)throw new Error('Creator Notify did not identify this website. Check the registered website domain.');
+    let subscription=await activeRegistration.pushManager.getSubscription();
+    if(!subscription){
+      let vapid=site?.vapid_public_key;
+      if(!vapid){const config=await abPushApi('/v1/subscriptions/config?website_id='+encodeURIComponent(site.website_id));vapid=config?.vapid_public_key;}
+      if(!vapid)throw new Error('Push service did not return a VAPID public key.');
+      subscription=await activeRegistration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:abPushB64(vapid)});
+    }
+    const json=subscription.toJSON();
+    if(!json.keys?.p256dh||!json.keys?.auth)throw new Error('Browser subscription is missing encryption keys.');
+    await abPushApi('/v1/subscriptions',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({website_id:site.website_id,subscription:{endpoint:subscription.endpoint,expirationTime:subscription.expirationTime||null,keys:{p256dh:json.keys.p256dh,auth:json.keys.auth}}})});
+    try{localStorage.setItem(AB_PUSH_READY_KEY,'1');}catch(_){}
+    await abPushReportStatus({permission:'granted',receiver:'ready',connection:'registered',websiteId:site.website_id,error:'',lastRegisteredAt:Date.now()});
+    return true;
+  }catch(error){
+    await abPushReportStatus({permission:Notification.permission,receiver:receiverReady?'ready':'failed',connection:'failed',error:String(error?.message||error).slice(0,240)});
+    throw error;
+  }
 }
 function abShowPushPermissionPrompt(){
   if(!('Notification' in window))return;
@@ -2107,7 +2141,10 @@ function abShowPushPermissionPrompt(){
     btn.disabled=true;btn.textContent='চালু হচ্ছে…';
     try{
       const permission=await Notification.requestPermission();
-      if(permission!=='granted')throw new Error(permission==='denied'?'Browser settings → Site settings → Notifications থেকে Allow করুন, তারপর Reload দিন।':'Permission দেওয়া হয়নি।');
+      if(permission!=='granted'){
+        await abPushReportStatus({permission,receiver:'not_checked',connection:'not_registered',error:permission==='denied'?'User denied notification permission.':''});
+        throw new Error(permission==='denied'?'Browser settings → Site settings → Notifications থেকে Allow করুন, তারপর Reload দিন।':'Permission দেওয়া হয়নি।');
+      }
       status.textContent='Permission পাওয়া গেছে, সংযোগ করা হচ্ছে…';
       await abEnsureWebPushSubscription();
       status.textContent='✓ Notification চালু হয়েছে।';
@@ -2117,12 +2154,16 @@ function abShowPushPermissionPrompt(){
   });
 }
 function abInitWebPush(){
-  if(!('Notification' in window)||!('serviceWorker' in navigator)||!('PushManager' in window))return;
+  if(!('Notification' in window)||!('serviceWorker' in navigator)||!('PushManager' in window)){
+    abPushReportStatus({permission:'unsupported',receiver:'unsupported',connection:'unsupported',error:'Web Push is not supported by this browser.'});return;
+  }
+  abPushDeviceId=abGetPushDeviceId();
   if(Notification.permission==='granted'){
     // Existing permission: silently repair/register the subscription on later visits.
     abEnsureWebPushSubscription().catch(error=>console.warn('Web Push subscription setup failed:',error));
     return;
   }
+  abPushReportStatus({permission:Notification.permission,receiver:'not_checked',connection:'not_registered',error:''});
   if(Notification.permission==='default'||Notification.permission==='denied')setTimeout(abShowPushPermissionPrompt,1100);
 }
 document.addEventListener('DOMContentLoaded',abInitWebPush);
