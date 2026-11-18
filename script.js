@@ -2048,7 +2048,7 @@ document.addEventListener('DOMContentLoaded',abInitNotifications);
    one-time in-site prompt (browser security requirement).
    ============================================================ */
 const AB_PUSH_API='https://creator-notify.ydh.workers.dev';
-const AB_PUSH_PROMPT_KEY='ab_creator_push_prompt_seen_v1';
+const AB_PUSH_PROMPT_KEY='ab_creator_push_prompt_seen_v2';
 const AB_PUSH_READY_KEY='ab_creator_push_subscription_ready_v1';
 function abPushB64(value){
   const pad='='.repeat((4-(value.length%4))%4);
@@ -2083,31 +2083,36 @@ async function abEnsureWebPushSubscription(){
   return true;
 }
 function abShowPushPermissionPrompt(){
-  if(!('Notification' in window)||Notification.permission!=='default')return;
+  if(!('Notification' in window))return;
+  const permission=Notification.permission;
+  if(permission==='granted')return;
   try{if(localStorage.getItem(AB_PUSH_PROMPT_KEY)==='1')return;}catch(_){}
   if(document.getElementById('abPushPermissionPrompt'))return;
+  const blocked=permission==='denied';
   const wrap=document.createElement('div');wrap.id='abPushPermissionPrompt';
-  wrap.style.cssText='position:fixed;z-index:100005;inset:0;background:rgba(0,0,0,.48);display:flex;align-items:flex-end;justify-content:center;padding:16px;box-sizing:border-box;';
-  wrap.innerHTML=`<section role="dialog" aria-modal="true" aria-label="AnimeBox notifications" style="width:min(390px,100%);background:#111827;color:#f8fafc;border:1px solid #334155;border-radius:18px;padding:17px;box-shadow:0 18px 60px #0008;font-family:inherit;">
-    <div style="display:flex;gap:12px;align-items:center"><div style="width:42px;height:42px;border-radius:13px;background:#202f46;display:grid;place-items:center;font-size:22px">🔔</div><div style="flex:1"><b style="font-size:15px">AnimeBox Updates</b><div style="font-size:11px;color:#aab7ca;margin-top:3px">নতুন Anime ও Movie যোগ হলে জানতে চান?</div></div><button id="abPushPromptClose" type="button" aria-label="Close" style="border:0;background:transparent;color:#aab7ca;font-size:20px;cursor:pointer">×</button></div>
-    <p style="font-size:12px;line-height:1.6;color:#cbd5e1;margin:13px 0">নতুন Card ও গুরুত্বপূর্ণ আপডেটের Notification পেতে Allow করুন। আপনি চাইলে এখনই না-ও করতে পারেন।</p>
-    <div style="display:flex;gap:9px"><button id="abPushPromptLater" type="button" style="flex:1;padding:11px;border-radius:10px;border:1px solid #475569;background:#1e293b;color:#e2e8f0;font-weight:700;cursor:pointer">এখন নয়</button><button id="abPushPromptAllow" type="button" style="flex:1;padding:11px;border-radius:10px;border:0;background:#e50914;color:#fff;font-weight:800;cursor:pointer">চালু করুন</button></div>
-    <div id="abPushPromptStatus" aria-live="polite" style="font-size:10px;color:#94a3b8;margin-top:9px"></div>
+  wrap.style.cssText='position:fixed;z-index:100005;right:14px;bottom:14px;width:min(310px,calc(100vw - 28px));box-sizing:border-box;';
+  wrap.innerHTML=`<section role="dialog" aria-label="AnimeBox notifications" style="width:100%;background:#111827;color:#f8fafc;border:1px solid #334155;border-radius:14px;padding:12px;box-shadow:0 10px 34px #0009;font-family:inherit;box-sizing:border-box;">
+    <div style="display:flex;gap:9px;align-items:center"><div style="width:34px;height:34px;flex:0 0 34px;border-radius:10px;background:#202f46;display:grid;place-items:center;font-size:18px">🔔</div><div style="flex:1;min-width:0"><b style="font-size:13px">AnimeBox Updates</b><div style="font-size:10px;color:#aab7ca;margin-top:2px">নতুন Anime ও Movie আপডেট</div></div><button id="abPushPromptClose" type="button" aria-label="Close" style="border:0;background:transparent;color:#aab7ca;font-size:19px;cursor:pointer;padding:2px 5px">×</button></div>
+    <p style="font-size:11px;line-height:1.5;color:#cbd5e1;margin:9px 0 10px">${blocked?'আপনার Browser-এ AB Play Notification Block করা আছে। Site settings থেকে Notifications → Allow করুন, তারপর পেজ Reload দিন।':'নতুন Movie ও Anime যোগ হলে Notification পেতে চালু করুন।'}</p>
+    <div style="display:flex;gap:7px">${blocked?'<button id="abPushPromptAllow" type="button" style="flex:1;padding:8px 7px;border-radius:9px;border:0;background:#e50914;color:#fff;font-size:11px;font-weight:800;cursor:pointer">কীভাবে Allow করবেন</button>':'<button id="abPushPromptLater" type="button" style="flex:1;padding:8px 7px;border-radius:9px;border:1px solid #475569;background:#1e293b;color:#e2e8f0;font-size:11px;font-weight:700;cursor:pointer">এখন নয়</button><button id="abPushPromptAllow" type="button" style="flex:1;padding:8px 7px;border-radius:9px;border:0;background:#e50914;color:#fff;font-size:11px;font-weight:800;cursor:pointer">চালু করুন</button>'}</div>
+    <div id="abPushPromptStatus" aria-live="polite" style="font-size:10px;line-height:1.45;color:#94a3b8;margin-top:7px"></div>
   </section>`;
   document.body.appendChild(wrap);
   const close=()=>{try{localStorage.setItem(AB_PUSH_PROMPT_KEY,'1');}catch(_){}wrap.remove();};
   wrap.querySelector('#abPushPromptClose').addEventListener('click',close);
-  wrap.querySelector('#abPushPromptLater').addEventListener('click',close);
+  wrap.querySelector('#abPushPromptLater')?.addEventListener('click',close);
   wrap.querySelector('#abPushPromptAllow').addEventListener('click',async()=>{
     const btn=wrap.querySelector('#abPushPromptAllow'),status=wrap.querySelector('#abPushPromptStatus');
-    btn.disabled=true;btn.textContent='সংযোগ হচ্ছে…';
+    if(blocked){status.textContent='Address bar-এর Site information আইকন → Site settings → Notifications → Allow নির্বাচন করুন।';return;}
+    btn.disabled=true;btn.textContent='চালু হচ্ছে…';
     try{
       const permission=await Notification.requestPermission();
-      if(permission!=='granted')throw new Error(permission==='denied'?'Browser settings থেকে Notifications Allow করতে হবে।':'Permission দেওয়া হয়নি।');
+      if(permission!=='granted')throw new Error(permission==='denied'?'Browser settings → Site settings → Notifications থেকে Allow করুন, তারপর Reload দিন।':'Permission দেওয়া হয়নি।');
+      status.textContent='Permission পাওয়া গেছে, সংযোগ করা হচ্ছে…';
       await abEnsureWebPushSubscription();
       status.textContent='✓ Notification চালু হয়েছে।';
       try{localStorage.setItem(AB_PUSH_PROMPT_KEY,'1');}catch(_){}
-      setTimeout(()=>wrap.remove(),900);
+      setTimeout(()=>wrap.remove(),1100);
     }catch(error){status.textContent=error.message||'Notification চালু করা যায়নি।';btn.disabled=false;btn.textContent='আবার চেষ্টা করুন';}
   });
 }
@@ -2118,7 +2123,7 @@ function abInitWebPush(){
     abEnsureWebPushSubscription().catch(error=>console.warn('Web Push subscription setup failed:',error));
     return;
   }
-  if(Notification.permission==='default')setTimeout(abShowPushPermissionPrompt,1100);
+  if(Notification.permission==='default'||Notification.permission==='denied')setTimeout(abShowPushPermissionPrompt,1100);
 }
 document.addEventListener('DOMContentLoaded',abInitWebPush);
 
