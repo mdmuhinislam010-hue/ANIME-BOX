@@ -1984,7 +1984,7 @@ db.ref('heroSlides').on('value', snap => {
 /* ============================================================
    ANIMEBOX IN-SITE NOTIFICATIONS
    Supabase RTDB project: ttttt-9bee0 (same database as Admin)
-   Background/browser push is intentionally not enabled in this phase.
+   Browser push receiver is enabled; Admin sends push only for newly added cards.
    ============================================================ */
 const AB_NOTIFICATION_READ_KEY='animebox_notification_reads_v1';
 let abNotificationItems=[];
@@ -2023,7 +2023,7 @@ async function abEnableBrowserPush(){
     const json=subscription.toJSON();
     const saveResponse=await fetch(AB_CREATOR_PUSH_BASE+'/v1/subscriptions',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({website_id:site.website_id,subscription:{endpoint:subscription.endpoint,expirationTime:subscription.expirationTime||null,keys:{p256dh:json.keys.p256dh,auth:json.keys.auth}}})});
     if(!saveResponse.ok){let detail='';try{const data=await saveResponse.json();detail=data?.error?.message||'';}catch(_){}throw new Error(detail||'Subscription save failed ('+saveResponse.status+').');}
-    set('✓ Browser Push চালু হয়েছে। এখন Admin-এর নতুন message ও card-এর push পাবে।');
+    set('✓ Browser Push চালু হয়েছে। এখন শুধু Admin-এর নতুন Card Add হলে Push Notification পাবেন।');
     if(button){button.textContent='✓ Browser Push Enabled';button.disabled=true;}
   }catch(error){console.error('AB Play browser push setup failed:',error);set(error.message||'Browser Push চালু করা যায়নি।');if(button){button.disabled=false;button.textContent='🔔 Enable Browser Push Notifications';}}
 }
