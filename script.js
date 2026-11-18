@@ -1984,7 +1984,7 @@ db.ref('heroSlides').on('value', snap => {
 /* ============================================================
    ANIMEBOX IN-SITE NOTIFICATIONS
    Supabase RTDB project: ttttt-9bee0 (same database as Admin)
-   Browser background push uses Creator Notify Web Push.
+   Background/browser push is intentionally not enabled in this phase.
    ============================================================ */
 const AB_NOTIFICATION_READ_KEY='animebox_notification_reads_v1';
 let abNotificationItems=[];
@@ -1994,10 +1994,46 @@ function abNotificationEscape(v){return String(v??'').replace(/[&<>"']/g,c=>({'&
 function abGetReadIds(){try{return new Set(JSON.parse(localStorage.getItem(AB_NOTIFICATION_READ_KEY)||'[]'));}catch(_){return new Set();}}
 function abSaveReadIds(set){try{localStorage.setItem(AB_NOTIFICATION_READ_KEY,JSON.stringify(Array.from(set).slice(-500)));}catch(_){}}
 function abNotificationLink(item){const raw=String(item.link||'/home');if(/^https?:\/\//i.test(raw))return raw;return raw.startsWith('/')?raw:'/home';}
+// Creator Notify browser push receiver. No API key is present in User Website.
+const AB_CREATOR_PUSH_BASE='https://creator-notify.ydh.workers.dev';
+function abPushDecodeVapid(value){const pad='='.repeat((4-(value.length%4))%4);const raw=atob((value+pad).replace(/-/g,'+').replace(/_/g,'/'));const out=new Uint8Array(raw.length);for(let i=0;i<raw.length;i++)out[i]=raw.charCodeAt(i);return out;}
+async function abEnableBrowserPush(){
+  const button=document.getElementById('abEnableBrowserPush');const status=document.getElementById('abBrowserPushStatus');
+  const set=(message)=>{if(status)status.textContent=message;};
+  if(!('Notification' in window)||!('serviceWorker' in navigator)||!('PushManager' in window)){set('এই browser-এ Browser Push support নেই।');return;}
+  if(location.protocol!=='https:'&&location.hostname!=='localhost'){set('Browser Push চালাতে HTTPS Website প্রয়োজন।');return;}
+  if(Notification.permission==='denied'){set('Browser settings থেকে AnimeBox notification Allow করতে হবে।');return;}
+  try{
+    if(button){button.disabled=true;button.textContent='Connecting…';}
+    const permission=Notification.permission==='granted'?'granted':await Notification.requestPermission();
+    if(permission!=='granted')throw new Error('Notification permission দেওয়া হয়নি।');
+    const registration=await navigator.serviceWorker.register('/creator-notify-sw.js',{scope:'/'});
+    await navigator.serviceWorker.ready;
+    const siteResponse=await fetch(AB_CREATOR_PUSH_BASE+'/v1/sites/lookup');
+    if(!siteResponse.ok)throw new Error('Creator Notify site lookup failed ('+siteResponse.status+').');
+    const site=await siteResponse.json();
+    if(!site||!site.website_id)throw new Error('Creator Notify website configuration পাওয়া যায়নি।');
+    let subscription=await registration.pushManager.getSubscription();
+    if(!subscription){
+      let vapid=site.vapid_public_key;
+      if(!vapid){const configResponse=await fetch(AB_CREATOR_PUSH_BASE+'/v1/subscriptions/config?website_id='+encodeURIComponent(site.website_id));if(!configResponse.ok)throw new Error('Push configuration পাওয়া যায়নি।');const config=await configResponse.json();vapid=config.vapid_public_key;}
+      if(!vapid)throw new Error('VAPID public key পাওয়া যায়নি।');
+      subscription=await registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:abPushDecodeVapid(vapid)});
+    }
+    const json=subscription.toJSON();
+    const saveResponse=await fetch(AB_CREATOR_PUSH_BASE+'/v1/subscriptions',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({website_id:site.website_id,subscription:{endpoint:subscription.endpoint,expirationTime:subscription.expirationTime||null,keys:{p256dh:json.keys.p256dh,auth:json.keys.auth}}})});
+    if(!saveResponse.ok){let detail='';try{const data=await saveResponse.json();detail=data?.error?.message||'';}catch(_){}throw new Error(detail||'Subscription save failed ('+saveResponse.status+').');}
+    set('✓ Browser Push চালু হয়েছে। এখন Admin-এর নতুন message ও card-এর push পাবে।');
+    if(button){button.textContent='✓ Browser Push Enabled';button.disabled=true;}
+  }catch(error){console.error('AB Play browser push setup failed:',error);set(error.message||'Browser Push চালু করা যায়নি।');if(button){button.disabled=false;button.textContent='🔔 Enable Browser Push Notifications';}}
+}
+function abBindBrowserPushButton(){const button=document.getElementById('abEnableBrowserPush');if(!button||button.dataset.bound==='1')return;button.dataset.bound='1';button.addEventListener('click',abEnableBrowserPush);if('Notification'in window&&Notification.permission==='granted'){button.textContent='🔔 Enable / Refresh Browser Push';}}
+
 function abEnsureNotificationUI(){
   if(document.getElementById('abNotificationOverlay'))return;
-  const overlay=document.createElement('div');overlay.id='abNotificationOverlay';overlay.className='ab-notification-overlay';overlay.innerHTML=`<section class="ab-notification-panel" role="dialog" aria-modal="true" aria-label="Notifications"><header class="ab-notification-head"><div><b>🔔 Notifications</b><small id="abNotificationSubtitle">Your latest AB Play updates</small></div><div class="ab-notification-head-actions"><button type="button" id="abNotificationReadAll">Read all</button><button type="button" id="abNotificationClose" aria-label="Close notifications">✕</button></div></header><div id="abNotificationList" class="ab-notification-list"><div class="ab-notification-empty">Loading notifications…</div></div></section>`;
+  const overlay=document.createElement('div');overlay.id='abNotificationOverlay';overlay.className='ab-notification-overlay';overlay.innerHTML=`<section class="ab-notification-panel" role="dialog" aria-modal="true" aria-label="Notifications"><header class="ab-notification-head"><div><b>🔔 Notifications</b><small id="abNotificationSubtitle">Your latest AB Play updates</small></div><div class="ab-notification-head-actions"><button type="button" id="abNotificationReadAll">Read all</button><button type="button" id="abNotificationClose" aria-label="Close notifications">✕</button></div></header><div style="padding:10px 14px;border-bottom:1px solid var(--border)"><button type="button" id="abEnableBrowserPush" style="width:100%;padding:10px 12px;border:0;border-radius:9px;background:#2563eb;color:#fff;font-weight:700;cursor:pointer">🔔 Enable Browser Push Notifications</button><small id="abBrowserPushStatus" style="display:block;margin-top:6px;color:var(--muted)">Allow notifications to receive AnimeBox updates when the website is closed.</small></div><div id="abNotificationList" class="ab-notification-list"><div class="ab-notification-empty">Loading notifications…</div></div></section>`;
   document.body.appendChild(overlay);
+  abBindBrowserPushButton();
   overlay.addEventListener('click',e=>{if(e.target===overlay)abCloseNotifications();});
   document.getElementById('abNotificationClose').addEventListener('click',abCloseNotifications);
   document.getElementById('abNotificationReadAll').addEventListener('click',()=>{const ids=abGetReadIds();abNotificationItems.forEach(n=>ids.add(n.id));abSaveReadIds(ids);abRenderNotifications();});
@@ -2022,7 +2058,7 @@ function abRenderNotifications(){
     if(/^https?:\/\//i.test(link)){window.location.href=link;}else{navigateTo(link);}
   }));
 }
-function abOpenNotifications(){abEnsureNotificationUI();abRenderNotifications();document.getElementById('abNotificationOverlay').classList.add('show');document.body.classList.add('ab-notifications-open');}
+function abOpenNotifications(){abEnsureNotificationUI();abBindBrowserPushButton();abRenderNotifications();document.getElementById('abNotificationOverlay').classList.add('show');document.body.classList.add('ab-notifications-open');}
 function abCloseNotifications(){document.getElementById('abNotificationOverlay')?.classList.remove('show');document.body.classList.remove('ab-notifications-open');}
 function abShowNewNotificationToast(item){
   let toast=document.getElementById('abNotificationToast');if(!toast){toast=document.createElement('button');toast.type='button';toast.id='abNotificationToast';toast.className='ab-notification-toast';document.body.appendChild(toast);}
@@ -2040,133 +2076,6 @@ function abInitNotifications(){
   },err=>console.warn('AB Play notifications could not load:',err));
 }
 document.addEventListener('DOMContentLoaded',abInitNotifications);
-
-/* ============================================================
-   CREATOR NOTIFY WEB PUSH — USER SUBSCRIPTION
-   The API secret is NEVER stored in this public User Website.
-   Permission is requested only after the visitor clicks the small
-   one-time in-site prompt (browser security requirement).
-   ============================================================ */
-const AB_PUSH_API='https://creator-notify.ydh.workers.dev';
-const AB_PUSH_PROMPT_KEY='ab_creator_push_prompt_seen_v2';
-const AB_PUSH_READY_KEY='ab_creator_push_subscription_ready_v1';
-const AB_PUSH_DEVICE_KEY='ab_creator_push_device_id_v1';
-let abPushDeviceId='';
-function abGetPushDeviceId(){
-  try{let id=localStorage.getItem(AB_PUSH_DEVICE_KEY);if(!id){id=(crypto.randomUUID?crypto.randomUUID():('ab_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2)));localStorage.setItem(AB_PUSH_DEVICE_KEY,id);}return id;}
-  catch(_){return 'session_'+Math.random().toString(36).slice(2)+'_'+Date.now().toString(36);}
-}
-function abPushReportStatus(patch={}){
-  try{
-    abPushDeviceId=abPushDeviceId||abGetPushDeviceId();
-    const current={deviceId:abPushDeviceId,site:'AB Play',platform:/Android/i.test(navigator.userAgent)?'Android':(/iPhone|iPad|iPod/i.test(navigator.userAgent)?'iOS':'Desktop'),updatedAt:Date.now(),...patch};
-    return db.ref('pushDevices/'+abPushDeviceId).update(current).catch(e=>console.warn('Push status could not sync to Admin:',e));
-  }catch(e){console.warn('Push status report failed:',e);return Promise.resolve();}
-}
-function abPushB64(value){
-  const pad='='.repeat((4-(value.length%4))%4);
-  const raw=atob((value+pad).replace(/-/g,'+').replace(/_/g,'/'));
-  const out=new Uint8Array(raw.length);
-  for(let i=0;i<raw.length;i++)out[i]=raw.charCodeAt(i);
-  return out;
-}
-async function abPushApi(path,options={}){
-  const response=await fetch(AB_PUSH_API+path,options);
-  const raw=await response.text();let data=null;try{data=raw?JSON.parse(raw):null;}catch(_){}
-  if(!response.ok){const err=new Error(data?.error?.message||('Push API HTTP '+response.status));err.code=data?.error?.code||('HTTP_'+response.status);throw err;}
-  return data;
-}
-async function abEnsureWebPushSubscription(){
-  if(!('Notification' in window)||!('serviceWorker' in navigator)||!('PushManager' in window)){
-    await abPushReportStatus({permission:'unsupported',receiver:'unsupported',connection:'unsupported',error:'Web Push is not supported by this browser.'});
-    throw new Error('This browser does not support Web Push.');
-  }
-  const permission=Notification.permission;
-  if(permission!=='granted'){
-    await abPushReportStatus({permission,receiver:'not_checked',connection:'not_registered',error:''});
-    throw new Error('Notification permission has not been granted.');
-  }
-  await abPushReportStatus({permission,receiver:'checking',connection:'waiting',error:''});
-  let receiverReady=false;
-  try{
-    const swUrl=new URL('/creator-notify-sw.js',location.origin).href;
-    const registration=await navigator.serviceWorker.register(swUrl,{scope:'/',updateViaCache:'none'});
-    const ready=await navigator.serviceWorker.ready;
-    const activeRegistration=registration.active?registration:ready;
-    if(!activeRegistration||!activeRegistration.active)throw new Error('Service Worker is not active yet. Reload the website and try again.');
-    receiverReady=true;
-    await abPushReportStatus({permission:'granted',receiver:'ready',connection:'connecting',error:''});
-    const site=await abPushApi('/v1/sites/lookup');
-    if(!site?.website_id)throw new Error('Creator Notify did not identify this website. Check the registered website domain.');
-    let subscription=await activeRegistration.pushManager.getSubscription();
-    if(!subscription){
-      let vapid=site?.vapid_public_key;
-      if(!vapid){const config=await abPushApi('/v1/subscriptions/config?website_id='+encodeURIComponent(site.website_id));vapid=config?.vapid_public_key;}
-      if(!vapid)throw new Error('Push service did not return a VAPID public key.');
-      subscription=await activeRegistration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:abPushB64(vapid)});
-    }
-    const json=subscription.toJSON();
-    if(!json.keys?.p256dh||!json.keys?.auth)throw new Error('Browser subscription is missing encryption keys.');
-    await abPushApi('/v1/subscriptions',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({website_id:site.website_id,subscription:{endpoint:subscription.endpoint,expirationTime:subscription.expirationTime||null,keys:{p256dh:json.keys.p256dh,auth:json.keys.auth}}})});
-    try{localStorage.setItem(AB_PUSH_READY_KEY,'1');}catch(_){}
-    await abPushReportStatus({permission:'granted',receiver:'ready',connection:'registered',websiteId:site.website_id,error:'',lastRegisteredAt:Date.now()});
-    return true;
-  }catch(error){
-    await abPushReportStatus({permission:Notification.permission,receiver:receiverReady?'ready':'failed',connection:'failed',error:String(error?.message||error).slice(0,240)});
-    throw error;
-  }
-}
-function abShowPushPermissionPrompt(){
-  if(!('Notification' in window))return;
-  const permission=Notification.permission;
-  if(permission==='granted')return;
-  try{if(localStorage.getItem(AB_PUSH_PROMPT_KEY)==='1')return;}catch(_){}
-  if(document.getElementById('abPushPermissionPrompt'))return;
-  const blocked=permission==='denied';
-  const wrap=document.createElement('div');wrap.id='abPushPermissionPrompt';
-  wrap.style.cssText='position:fixed;z-index:100005;right:14px;bottom:14px;width:min(310px,calc(100vw - 28px));box-sizing:border-box;';
-  wrap.innerHTML=`<section role="dialog" aria-label="AnimeBox notifications" style="width:100%;background:#111827;color:#f8fafc;border:1px solid #334155;border-radius:14px;padding:12px;box-shadow:0 10px 34px #0009;font-family:inherit;box-sizing:border-box;">
-    <div style="display:flex;gap:9px;align-items:center"><div style="width:34px;height:34px;flex:0 0 34px;border-radius:10px;background:#202f46;display:grid;place-items:center;font-size:18px">🔔</div><div style="flex:1;min-width:0"><b style="font-size:13px">AnimeBox Updates</b><div style="font-size:10px;color:#aab7ca;margin-top:2px">নতুন Anime ও Movie আপডেট</div></div><button id="abPushPromptClose" type="button" aria-label="Close" style="border:0;background:transparent;color:#aab7ca;font-size:19px;cursor:pointer;padding:2px 5px">×</button></div>
-    <p style="font-size:11px;line-height:1.5;color:#cbd5e1;margin:9px 0 10px">${blocked?'আপনার Browser-এ AB Play Notification Block করা আছে। Site settings থেকে Notifications → Allow করুন, তারপর পেজ Reload দিন।':'নতুন Movie ও Anime যোগ হলে Notification পেতে চালু করুন।'}</p>
-    <div style="display:flex;gap:7px">${blocked?'<button id="abPushPromptAllow" type="button" style="flex:1;padding:8px 7px;border-radius:9px;border:0;background:#e50914;color:#fff;font-size:11px;font-weight:800;cursor:pointer">কীভাবে Allow করবেন</button>':'<button id="abPushPromptLater" type="button" style="flex:1;padding:8px 7px;border-radius:9px;border:1px solid #475569;background:#1e293b;color:#e2e8f0;font-size:11px;font-weight:700;cursor:pointer">এখন নয়</button><button id="abPushPromptAllow" type="button" style="flex:1;padding:8px 7px;border-radius:9px;border:0;background:#e50914;color:#fff;font-size:11px;font-weight:800;cursor:pointer">চালু করুন</button>'}</div>
-    <div id="abPushPromptStatus" aria-live="polite" style="font-size:10px;line-height:1.45;color:#94a3b8;margin-top:7px"></div>
-  </section>`;
-  document.body.appendChild(wrap);
-  const close=()=>{try{localStorage.setItem(AB_PUSH_PROMPT_KEY,'1');}catch(_){}wrap.remove();};
-  wrap.querySelector('#abPushPromptClose').addEventListener('click',close);
-  wrap.querySelector('#abPushPromptLater')?.addEventListener('click',close);
-  wrap.querySelector('#abPushPromptAllow').addEventListener('click',async()=>{
-    const btn=wrap.querySelector('#abPushPromptAllow'),status=wrap.querySelector('#abPushPromptStatus');
-    if(blocked){status.textContent='Address bar-এর Site information আইকন → Site settings → Notifications → Allow নির্বাচন করুন।';return;}
-    btn.disabled=true;btn.textContent='চালু হচ্ছে…';
-    try{
-      const permission=await Notification.requestPermission();
-      if(permission!=='granted'){
-        await abPushReportStatus({permission,receiver:'not_checked',connection:'not_registered',error:permission==='denied'?'User denied notification permission.':''});
-        throw new Error(permission==='denied'?'Browser settings → Site settings → Notifications থেকে Allow করুন, তারপর Reload দিন।':'Permission দেওয়া হয়নি।');
-      }
-      status.textContent='Permission পাওয়া গেছে, সংযোগ করা হচ্ছে…';
-      await abEnsureWebPushSubscription();
-      status.textContent='✓ Notification চালু হয়েছে।';
-      try{localStorage.setItem(AB_PUSH_PROMPT_KEY,'1');}catch(_){}
-      setTimeout(()=>wrap.remove(),1100);
-    }catch(error){status.textContent=error.message||'Notification চালু করা যায়নি।';btn.disabled=false;btn.textContent='আবার চেষ্টা করুন';}
-  });
-}
-function abInitWebPush(){
-  if(!('Notification' in window)||!('serviceWorker' in navigator)||!('PushManager' in window)){
-    abPushReportStatus({permission:'unsupported',receiver:'unsupported',connection:'unsupported',error:'Web Push is not supported by this browser.'});return;
-  }
-  abPushDeviceId=abGetPushDeviceId();
-  if(Notification.permission==='granted'){
-    // Existing permission: silently repair/register the subscription on later visits.
-    abEnsureWebPushSubscription().catch(error=>console.warn('Web Push subscription setup failed:',error));
-    return;
-  }
-  abPushReportStatus({permission:Notification.permission,receiver:'not_checked',connection:'not_registered',error:''});
-  if(Notification.permission==='default'||Notification.permission==='denied')setTimeout(abShowPushPermissionPrompt,1100);
-}
-document.addEventListener('DOMContentLoaded',abInitWebPush);
 
 /* ===== Card hover: 3D tilt + glare follow the pointer (desktop mouse only) ===== */
 (function abCardTilt(){
