@@ -1984,7 +1984,7 @@ db.ref('heroSlides').on('value', snap => {
 /* ============================================================
    ANIMEBOX IN-SITE NOTIFICATIONS
    Supabase RTDB project: ttttt-9bee0 (same database as Admin)
-   Background/browser push is intentionally not enabled in this phase.
+   Browser background push uses Creator Notify Web Push.
    ============================================================ */
 const AB_NOTIFICATION_READ_KEY='animebox_notification_reads_v1';
 let abNotificationItems=[];
@@ -2040,6 +2040,87 @@ function abInitNotifications(){
   },err=>console.warn('AB Play notifications could not load:',err));
 }
 document.addEventListener('DOMContentLoaded',abInitNotifications);
+
+/* ============================================================
+   CREATOR NOTIFY WEB PUSH — USER SUBSCRIPTION
+   The API secret is NEVER stored in this public User Website.
+   Permission is requested only after the visitor clicks the small
+   one-time in-site prompt (browser security requirement).
+   ============================================================ */
+const AB_PUSH_API='https://creator-notify.ydh.workers.dev';
+const AB_PUSH_PROMPT_KEY='ab_creator_push_prompt_seen_v1';
+const AB_PUSH_READY_KEY='ab_creator_push_subscription_ready_v1';
+function abPushB64(value){
+  const pad='='.repeat((4-(value.length%4))%4);
+  const raw=atob((value+pad).replace(/-/g,'+').replace(/_/g,'/'));
+  const out=new Uint8Array(raw.length);
+  for(let i=0;i<raw.length;i++)out[i]=raw.charCodeAt(i);
+  return out;
+}
+async function abPushApi(path,options={}){
+  const response=await fetch(AB_PUSH_API+path,options);
+  const raw=await response.text();let data=null;try{data=raw?JSON.parse(raw):null;}catch(_){}
+  if(!response.ok){const err=new Error(data?.error?.message||('Push API HTTP '+response.status));err.code=data?.error?.code||('HTTP_'+response.status);throw err;}
+  return data;
+}
+async function abEnsureWebPushSubscription(){
+  if(!('Notification' in window)||!('serviceWorker' in navigator)||!('PushManager' in window))throw new Error('This browser does not support Web Push.');
+  if(Notification.permission!=='granted')throw new Error('Notification permission has not been granted.');
+  const swUrl=new URL('/creator-notify-sw.js',location.origin).href;
+  const registration=await navigator.serviceWorker.register(swUrl,{scope:'/',updateViaCache:'none'});
+  const ready=await navigator.serviceWorker.ready;
+  const site=await abPushApi('/v1/sites/lookup');
+  let subscription=await ready.pushManager.getSubscription();
+  if(!subscription){
+    let vapid=site?.vapid_public_key;
+    if(!vapid){const config=await abPushApi('/v1/subscriptions/config?website_id='+encodeURIComponent(site.website_id));vapid=config?.vapid_public_key;}
+    if(!vapid)throw new Error('Push service did not return a VAPID public key.');
+    subscription=await ready.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:abPushB64(vapid)});
+  }
+  const json=subscription.toJSON();
+  await abPushApi('/v1/subscriptions',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({website_id:site.website_id,subscription:{endpoint:subscription.endpoint,expirationTime:subscription.expirationTime||null,keys:{p256dh:json.keys?.p256dh,auth:json.keys?.auth}}})});
+  try{localStorage.setItem(AB_PUSH_READY_KEY,'1');}catch(_){}
+  return true;
+}
+function abShowPushPermissionPrompt(){
+  if(!('Notification' in window)||Notification.permission!=='default')return;
+  try{if(localStorage.getItem(AB_PUSH_PROMPT_KEY)==='1')return;}catch(_){}
+  if(document.getElementById('abPushPermissionPrompt'))return;
+  const wrap=document.createElement('div');wrap.id='abPushPermissionPrompt';
+  wrap.style.cssText='position:fixed;z-index:100005;inset:0;background:rgba(0,0,0,.48);display:flex;align-items:flex-end;justify-content:center;padding:16px;box-sizing:border-box;';
+  wrap.innerHTML=`<section role="dialog" aria-modal="true" aria-label="AnimeBox notifications" style="width:min(390px,100%);background:#111827;color:#f8fafc;border:1px solid #334155;border-radius:18px;padding:17px;box-shadow:0 18px 60px #0008;font-family:inherit;">
+    <div style="display:flex;gap:12px;align-items:center"><div style="width:42px;height:42px;border-radius:13px;background:#202f46;display:grid;place-items:center;font-size:22px">🔔</div><div style="flex:1"><b style="font-size:15px">AnimeBox Updates</b><div style="font-size:11px;color:#aab7ca;margin-top:3px">নতুন Anime ও Movie যোগ হলে জানতে চান?</div></div><button id="abPushPromptClose" type="button" aria-label="Close" style="border:0;background:transparent;color:#aab7ca;font-size:20px;cursor:pointer">×</button></div>
+    <p style="font-size:12px;line-height:1.6;color:#cbd5e1;margin:13px 0">নতুন Card ও গুরুত্বপূর্ণ আপডেটের Notification পেতে Allow করুন। আপনি চাইলে এখনই না-ও করতে পারেন।</p>
+    <div style="display:flex;gap:9px"><button id="abPushPromptLater" type="button" style="flex:1;padding:11px;border-radius:10px;border:1px solid #475569;background:#1e293b;color:#e2e8f0;font-weight:700;cursor:pointer">এখন নয়</button><button id="abPushPromptAllow" type="button" style="flex:1;padding:11px;border-radius:10px;border:0;background:#e50914;color:#fff;font-weight:800;cursor:pointer">চালু করুন</button></div>
+    <div id="abPushPromptStatus" aria-live="polite" style="font-size:10px;color:#94a3b8;margin-top:9px"></div>
+  </section>`;
+  document.body.appendChild(wrap);
+  const close=()=>{try{localStorage.setItem(AB_PUSH_PROMPT_KEY,'1');}catch(_){}wrap.remove();};
+  wrap.querySelector('#abPushPromptClose').addEventListener('click',close);
+  wrap.querySelector('#abPushPromptLater').addEventListener('click',close);
+  wrap.querySelector('#abPushPromptAllow').addEventListener('click',async()=>{
+    const btn=wrap.querySelector('#abPushPromptAllow'),status=wrap.querySelector('#abPushPromptStatus');
+    btn.disabled=true;btn.textContent='সংযোগ হচ্ছে…';
+    try{
+      const permission=await Notification.requestPermission();
+      if(permission!=='granted')throw new Error(permission==='denied'?'Browser settings থেকে Notifications Allow করতে হবে।':'Permission দেওয়া হয়নি।');
+      await abEnsureWebPushSubscription();
+      status.textContent='✓ Notification চালু হয়েছে।';
+      try{localStorage.setItem(AB_PUSH_PROMPT_KEY,'1');}catch(_){}
+      setTimeout(()=>wrap.remove(),900);
+    }catch(error){status.textContent=error.message||'Notification চালু করা যায়নি।';btn.disabled=false;btn.textContent='আবার চেষ্টা করুন';}
+  });
+}
+function abInitWebPush(){
+  if(!('Notification' in window)||!('serviceWorker' in navigator)||!('PushManager' in window))return;
+  if(Notification.permission==='granted'){
+    // Existing permission: silently repair/register the subscription on later visits.
+    abEnsureWebPushSubscription().catch(error=>console.warn('Web Push subscription setup failed:',error));
+    return;
+  }
+  if(Notification.permission==='default')setTimeout(abShowPushPermissionPrompt,1100);
+}
+document.addEventListener('DOMContentLoaded',abInitWebPush);
 
 /* ===== Card hover: 3D tilt + glare follow the pointer (desktop mouse only) ===== */
 (function abCardTilt(){
